@@ -1,0 +1,64 @@
+name: Install Academy Exam
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/install-academy-exam.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Rebuild the exact uploaded HTML
+        shell: python
+        run: |
+          from pathlib import Path
+          import base64
+          import hashlib
+          import zlib
+
+          root = Path(".")
+          exam = root / "Academy-Exam"
+          packed = (root / ".academy-upload/template.zlib.b64").read_text(encoding="utf-8")
+          template = zlib.decompress(base64.b64decode(packed))
+          brand = base64.b64encode((exam / "academy-brand.png").read_bytes())
+          mark = base64.b64encode((exam / "academy-mark.png").read_bytes())
+          output = template.replace(b"__ACADEMY_BRAND_BASE64__", brand, 1)
+          output = output.replace(b"__ACADEMY_MARK_BASE64__", mark, 1)
+
+          expected = "f638ed4e387fc4ea72a60f3c24288fd549654116d7b19e686b60986e683169f6"
+          actual = hashlib.sha256(output).hexdigest()
+          if actual != expected:
+              raise SystemExit(f"SHA-256 mismatch: {actual} != {expected}")
+
+          (exam / "index.html").write_bytes(output)
+          for path in [
+              exam / "app.js",
+              exam / "style.css",
+              exam / "academy-brand.png",
+              exam / "academy-mark.png",
+              root / ".academy-upload/template.zlib.b64",
+              root / ".github/workflows/install-academy-exam.yml",
+          ]:
+              if path.exists():
+                  path.unlink()
+
+      - name: Commit the replacement
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "Replace Academy Exam with exact uploaded HTML"
+          git push
