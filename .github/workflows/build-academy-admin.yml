@@ -1,0 +1,46 @@
+name: Build approved Academy Admin v2
+
+on:
+  push:
+    branches: [academy-admin-v2-build]
+    paths:
+      - '.academy-admin-src/**'
+      - '.github/workflows/build-academy-admin.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: academy-admin-v2-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/academy-admin-v2-build'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: academy-admin-v2-build
+          fetch-depth: 0
+      - name: Rebuild exact approved HTML and check JavaScript
+        run: python3 .academy-admin-src/build.py
+      - name: Commit generated Admin files to staging branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object Academy-Exam/index.html)" = "69f52ed5d49cedc7af2d9dc86b84a9ba402ac027"
+          git add -- Academy-Exam/Admin/index.html Academy-Exam/Admin/build-info.json
+          if git diff --cached --quiet; then
+            echo "Admin already matches approved bundle."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Build exact approved Academy Studio v2 at Academy-Exam/Admin/'
+          git push origin HEAD:academy-admin-v2-build
