@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data: blob:; connect-src https://api.github.com https://mofid-academy.github.io https://miladmirsheriii.app.n8n.cloud; frame-src 'self' blob: about:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<title>مدیریت فرم و سؤال‌ها | Academy Studio 2</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+*{box-sizing:border-box}:root{--ink:#183c39;--muted:#728783;--teal:#087f75;--line:#dce9e5;--light:#f1f7f5}
+html,body{height:100%;margin:0}body{background:#f6f9f8;color:var(--ink);font:13px/1.9 "Noto Sans Arabic",Tahoma,sans-serif}
+button,input,select,textarea{font:inherit;max-width:100%}button{cursor:pointer;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);padding:9px 14px}
+button:hover{background:#eaf5f1}button:disabled{cursor:not-allowed;opacity:.42}.primary{background:var(--teal);border-color:var(--teal);color:white;font-weight:700}.primary:hover{background:#086b64}
+:focus-visible{outline:3px solid #96d8c9;outline-offset:2px}
+input,select,textarea{border:1px solid var(--line);border-radius:9px;background:#fff;padding:9px 11px;color:var(--ink)}
+textarea{width:100%;resize:vertical;min-height:80px;line-height:1.9}input[type=search]{width:100%;background:#f7faf9}
+input[type=range]{padding:0;width:100%;accent-color:var(--teal)}a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+code{font:12px/1.7 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
+.topbar{height:82px;display:flex;justify-content:space-between;align-items:center;padding:14px 24px;border-bottom:1px solid var(--line);background:#fff}
+.brand{display:flex;gap:12px;align-items:center}.brand b{font-size:17px}.brand small{display:block;color:#7c9690;font-size:9px;letter-spacing:2px;line-height:1.5}
+.mark{width:43px;height:43px;border-radius:12px;background:linear-gradient(145deg,#0d9286,#15534d);color:white;display:grid;place-items:center;font:700 25px Georgia,serif;box-shadow:0 4px 10px #0b71601a}
+.actions{display:flex;gap:10px;align-items:center}.badge{font-size:11px;color:#6e8680;padding:6px 12px;background:#f0f6f3;border-radius:30px}.badge.changed{background:#fff3dd;color:#9c6d24}
+.status{min-height:34px;background:#eef6f2;padding:5px 24px;color:#496f65;font-size:12px;border-bottom:1px solid var(--line)}.status.error{background:#fff1ed;color:#a3412d}.status.success{background:#e2f7ef;color:#186347}
+.studio{display:grid;grid-template-columns:196px 330px minmax(300px,1fr);height:calc(100vh - 116px)}
+.rail{display:flex;flex-direction:column;padding:20px 12px;background:#fbfdfc;border-left:1px solid(var(--line));overflow-y:auto}
+.rail-title{color:var(--muted);font-size:11px;padding:0 12px 15px}.rail>button{border:none;background:none;text-align:right;display:flex;align-items:center;gap:13px;margin-bottom:6px;padding:12px 10px}
+.rail>button span{color:#8eaaa3;font:10px ui-monospace,monospace}.rail>button.active{background:#e1f2eb;color:#106554;font-weight:700}
+.rail-foot{margin-top:auto;padding:34px 12px 0;font-size:11px;color:var(--muted)}.rail-foot b{color:var(--ink)}.rail-foot p{margin:5px 0 15px}
+.controls{padding:22px 20px 12px;background:#fff;border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.controls-head h1{font-size:19px;margin:0 0 4px}.controls-head p{color:var(--muted);font-size:11px;margin:0 0 17px;min-height:36px}
+.fields{overflow:auto;padding:15px 1px 25px;flex:1;scrollbar-width:thin;scrollbar-color:#bfd9d0 transparent}
+.field{margin:0 0 20px;scroll-margin-top:12px}.field label{display:block;font-weight:600;font-size:12px;margin-bottom:6px}.field input:not([type=color]):not([type=checkbox]){width:100%}
+.field small{display:block;color:var(--muted);font-size:10px;line-height:1.8;margin-top:5px;overflow-wrap:anywhere}.field.flash{background:#eef8f2;outline:5px solid #eef8f2;border-radius:8px}
+.group-title{font-size:12px;color:var(--teal);margin:22px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}.group-title:first-child{margin-top:0}
+.local-actions{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--line)}.local-actions button{font-size:11px;flex:1}
+.preview-zone{min-width:0;display:flex;flex-direction:column;padding:16px 18px 0;background:#f0f5f3}
+.preview-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.preview-label{display:flex;align-items:center;gap:7px;font-size:12px}.preview-label i{height:6px;width:6px;background:#38a88c;border-radius:50%}.preview-label span{font-size:10px;color:var(--muted);padding-right:8px}
+.toolbar-actions{display:flex;gap:6px}.toolbar-actions select{font-size:10px;padding:7px}
+.preview-canvas{flex:1;min-height:0;overflow:auto;padding:14px 6px 28px;display:flex;justify-content:safe center;align-items:flex-start;background-image:radial-gradient(#bdd5cb 1px,transparent 1px);background-size:20px 20px}
+.frame-wrap{flex:none;width:1100px;height:840px;background:#fff;box-shadow:0 12px 35px #123a3220;border-radius:12px;overflow:hidden}
+iframe{display:block;border:none;width:100%;height:100%;background:white}
+.preview-foot{display:flex;justify-content:space-between;gap:12px;font-size:10px;color:var(--muted);padding:8px 0}
+.color-row{display:grid;grid-template-columns:42px 1fr;direction:ltr;gap:8px}.color-row input[type=color]{width:42px;height:42px;padding:4px}.color-row input[type=text]{font:12px monospace}
+.tip{padding:11px 13px;background:#f1f7f4;border:1px solid var(--line);border-radius:10px;font-size:11px;color:#507369;margin:12px 0}
+.image-preview{height:108px;width:100%;object-fit:contain;background:repeating-conic-gradient(#f0f4f2 0% 25%,#fff 0% 50%) 50% /16px 16px;border:1px solid var(--line);border-radius:9px;margin-bottom:9px}
+.stack{display:grid;gap:9px}.code{direction:ltr;text-align:left;font:12px/1.75 ui-monospace,Consolas,monospace;min-height:300px;white-space:pre}
+.history-item{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0}.history-item time{font-size:10px;color:var(--muted);display:block}.history-item p{margin:4px 0;line-height:1.7;overflow-wrap:anywhere}
+details{margin:12px 0}summary{cursor:pointer;font-weight:600}
+dialog{border:1px solid var(--line);border-radius:22px;max-width:550px;width:calc(100% - 28px);padding:27px;color:var(--ink);box-shadow:0 28px 90px #03241c40;max-height:92vh;overflow:auto}
+dialog::backdrop{background:#052d2780;backdrop-filter:blur(5px)}dialog h2{font-size:22px;margin:5px 0 12px}dialog p{font-size:12px;color:#5a7870}
+dialog label{font-weight:600;font-size:12px;display:block;margin:14px 0 6px}dialog input{width:100%}.dialog-actions{display:flex;gap:10px;margin-top:17px}.dialog-x{position:absolute;left:16px;top:12px;border:0;font-size:22px;background:transparent;padding:0 9px}
+.dialog-icon{height:42px;width:42px;background:#e5f5ee;color:#0e7e61;border-radius:12px;display:grid;place-items:center;font-size:24px}dialog ol{font-size:12px;padding-right:20px}dialog li{padding:4px}#authMessage{font-size:12px;color:#a4422e}
+@media(max-width:1200px){.studio{grid-template-columns:170px 300px minmax(260px,1fr)}.controls{padding-inline:15px}.preview-zone{padding-inline:12px}}
+@media(max-width:950px){.studio{grid-template-columns:145px 285px minmax(340px,1fr);overflow-x:auto}.topbar{padding:12px}.brand b{font-size:14px}.badge{display:none}}
+@media(max-width:640px){.topbar{height:auto;min-height:90px;flex-wrap:wrap;gap:12px}.actions{width:100%;justify-content:space-between}.studio{display:flex;flex-direction:column;height:auto;overflow:visible}.rail{flex-direction:row;gap:4px;overflow:auto;padding:10px}.rail-title,.rail-foot,.rail>button span{display:none}.rail>button{white-space:nowrap;font-size:11px}.controls{height:58vh;border:none}.preview-zone{height:730px}.preview-toolbar{gap:10px}.preview-label span{display:none}.status{padding:7px 12px}.brand small{font-size:8px}dialog{padding:22px}.frame-wrap{height:800px}}
+
+/* Question bank editor */
+.studio.questions-mode{grid-template-columns:176px 425px minmax(300px,1fr)}
+.qb-summary{background:#e7f6ef;border:1px solid #bfe3d5;color:#125d4d;padding:12px 14px;border-radius:12px;margin-bottom:15px;font-weight:700}
+.qb-tools{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.qb-tools button{font-size:11px;padding:7px 10px}
+.qb-add{position:sticky;top:0;z-index:3;background:#ffffffed;backdrop-filter:blur(10px);padding:8px 0;border-bottom:1px solid var(--line)}
+.qb-add button{flex:1;font-size:12px;padding:10px}.qb-error{background:#fff4eb;color:#904922;border:1px solid #f4d3b9;border-radius:12px;padding:8px 12px;margin:12px 0;font-size:11px}.qb-error p{margin:3px 0}
+.qb-card{border:1px solid #d7e7e0;border-radius:14px;margin:12px 0;background:#fff;overflow:hidden;transition:border-color .12s,box-shadow .12s}
+.qb-card[open]{border-color:#8ecfbd;box-shadow:0 5px 18px #154b3410}
+.qb-card>summary{padding:12px 10px;display:flex;gap:8px;align-items:center;list-style:none;font-weight:500;font-size:12px;background:#f7fbf9}
+.qb-card>summary::-webkit-details-marker{display:none}
+.qb-card-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1}
+.qb-drag{cursor:grab;color:#789b90;font-size:22px;line-height:1}
+.qb-number{display:grid;place-items:center;flex:none;width:27px;height:27px;border-radius:8px;background:#daf0e7;color:#096b55;font-weight:700;font-size:11px}
+.qb-type{font-size:10px;color:#5c8377;background:#edf6f1;border-radius:20px;padding:2px 8px;white-space:nowrap}
+.qb-card-body{padding:12px}.qb-card-body .field{margin-bottom:12px}.qb-card-body textarea{font-size:12px}.qb-meta{display:grid;grid-template-columns:1fr 100px;gap:10px}
+.qb-meta select,.qb-exam-fields select,#qb-source{width:100%}.qb-required{display:flex;align-items:flex-start;gap:9px;font-size:11px;margin:10px 0}
+.qb-required input{flex:none;margin-top:5px;width:17px;height:17px;accent-color:var(--teal)}
+.qb-option{display:grid;grid-template-columns:18px 1fr 30px;gap:6px;align-items:start;margin:9px 0}.qb-option>span{padding-top:8px;color:#688d80;font-size:11px}
+.qb-option textarea{min-height:60px;padding:7px 8px;resize:vertical}.qb-option-actions{display:flex;flex-direction:column;gap:2px}.qb-option-actions button{font-size:11px;padding:0;width:28px;height:23px}
+.qb-id{display:block;font:9px/1.7 monospace;color:#93a9a1;overflow-wrap:anywhere;margin-top:10px}.qb-drop{outline:2px dashed var(--teal)}
+.qb-transfer,.qb-backend{border-top:1px solid var(--line);padding-top:12px;margin-top:20px}.qb-transfer>button{margin:6px 0 6px 6px;font-size:11px}#qb-version{font-size:9px}
+@media(max-width:1250px) and (min-width:641px){.studio.questions-mode{grid-template-columns:150px 350px minmax(310px,1fr)}}
+@media(max-width:640px){.studio.questions-mode{display:flex}.qb-meta{grid-template-columns:1fr 90px}.qb-card-body{padding:10px}.controls{height:65vh}}
+
+</style></head><body>
+<header class="topbar"><div class="brand"><span class="mark">A</span><div><b>استودیوی فرم آکادمی</b><small dir="ltr">ACADEMY EXAM / STUDIO 2</small></div></div>
+<div class="actions"><span id="dirty" class="badge">در حال بارگذاری</span><button id="loginBtn">اتصال ادمین</button><button id="publish" class="primary" disabled>انتشار روی سایت</button></div></header>
+<div id="status" class="status" role="status" aria-live="polite">در حال دریافت آخرین نسخه فرم…</div>
+<div class="studio questions-mode">
+<nav class="rail" aria-label="بخش‌های ویرایش"><p class="rail-title">فرم خودت را بساز</p>
+<button data-tab="questions" class="active"><span>00</span>مدیریت سؤال‌ها</button>
+<button data-tab="text"><span>01</span>نوشته‌ها</button>
+<button data-tab="color"><span>02</span>رنگ‌ها</button>
+<button data-tab="style"><span>03</span>فونت و چیدمان</button>
+<button data-tab="image"><span>04</span>لوگو و تصاویر</button>
+<button data-tab="connect"><span>05</span>اتصال n8n</button>
+<button data-tab="advanced"><span>06</span>ویرایش پیشرفته</button>
+<button data-tab="history"><span>07</span>نسخه‌ها و پشتیبان</button>
+<div class="rail-foot"><b>بدون تغییر خودکار</b><p>تا «انتشار» را نزنی، سایت اصلی تغییر نمی‌کند. پیش‌نمایش، پاسخ واقعی ارسال نمی‌کند.</p>
+<a href="https://mofid-academy.github.io/Academy-Exam/" target="_blank" rel="noopener noreferrer">مشاهده فرم اصلی ↗</a></div></nav>
+<section class="controls"><div class="controls-head"><h1 id="panelTitle">نوشته‌ها</h1><p id="panelHelp"></p></div>
+<input id="search" type="search" placeholder="جست‌وجو در متن‌ها…" aria-label="جست‌وجوی تنظیمات">
+<div id="fields" class="fields"></div><div class="local-actions"><button id="undo" disabled>واگرد</button><button id="reload">دریافت نسخه سایت</button></div></section>
+<section class="preview-zone"><div class="preview-toolbar"><div class="preview-label"><i></i><b>پیش‌نمایش زنده</b><span id="previewMode">داده آزمایشی</span></div>
+<div class="toolbar-actions"><select id="scene" aria-label="صفحه پیش‌نمایش"><option value="intro">شروع آزمون</option><option value="selected">سؤال انتخاب‌شده</option><option value="mcq">سؤال چهارگزینه‌ای</option><option value="desc">سؤال تشریحی</option><option value="review">مرور پاسخ‌ها</option><option value="done">پایان آزمون</option><option value="error">خطای بارگذاری</option></select>
+<select id="device" aria-label="اندازه پیش‌نمایش"><option value="desktop">دسکتاپ</option><option value="tablet">تبلت</option><option value="mobile">موبایل</option></select></div></div>
+<div class="preview-canvas"><div id="frameWrap" class="frame-wrap"><iframe id="preview" title="پیش‌نمایش جداشده و آزمایشی فرم" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></div></div>
+<div class="preview-foot"><span>روی یک نوشته در پیش‌نمایش کلیک کن تا تنظیم آن انتخاب شود.</span><span id="fileSize" dir="ltr"></span></div></section></div>
+<dialog id="auth"><button id="authClose" class="dialog-x" aria-label="بستن">×</button><div class="dialog-icon">↗</div>
+<h2>اتصال ادمین به GitHub</h2><p>صفحه ویرایش عمومی است، اما فقط دارنده کلید معتبر و مجوز نوشتن مخزن می‌تواند تغییرات را روی سایت منتشر کند. رمز مشترک داخل فایل قرار داده نشده است.</p>
+<ol><li><a id="tokenLink" target="_blank" rel="noopener noreferrer">ساخت کلید دسترسی محدود در GitHub ↗</a></li><li><b>Resource owner:</b> <code>mofid-academy</code></li><li><b>Only select repositories:</b> فقط <code>mofid-academy.github.io</code></li><li><b>Repository permissions → Contents:</b> <code>Read and write</code></li></ol>
+<p class="tip">انقضای ۳۰روزه انتخاب کن. این کلید در سطح مخزن مجوز دارد، نه فقط یک فایل؛ آن را به کسی نده. به Administration یا Workflows نیاز نیست. اگر تأیید سازمان خواسته شد، مالک سازمان باید آن را تأیید کند.</p>
+<label for="token">کلید Fine-grained personal access token</label><input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" dir="ltr">
+<p class="tip">کلید را در چت نفرست. این پنل آن را تنها در حافظه همین تب نگه می‌دارد و در فایل، پیش‌نویس یا مرورگر ذخیره نمی‌کند. با خروج یا بازخوانی صفحه پاک می‌شود.</p>
+<div id="authMessage" role="status"></div><div class="dialog-actions"><button id="connect" class="primary">بررسی و اتصال</button><button id="logout">خروج / پاک کردن کلید</button></div></dialog>
+<dialog id="confirmPublish"><h2>نسخه جدید منتشر شود؟</h2><p>فقط فایل <code dir="ltr">Academy-Exam/index.html</code> در سایت آزمون جایگزین می‌شود. پروژه مصاحبه دست‌نخورده می‌ماند.</p>
+<p class="tip">در زمان برگزاری آزمون تنظیمات اتصال را تغییر نده. نسخه قبلی در تاریخچه GitHub باقی می‌ماند. تغییر فونت و تصاویر را در هر دو اندازه نمایش بررسی کن.</p>
+<label for="commitNote">توضیح تغییر (اختیاری)</label><input id="commitNote" placeholder="مثلاً اصلاح متن خوشامد و رنگ دکمه‌ها"><div class="dialog-actions"><button id="confirmYes" class="primary">بله، انتشار تغییرات</button><button id="confirmNo">انصراف</button></div></dialog>
+<noscript>برای استفاده از پنل مدیریت، JavaScript مرورگر را فعال کنید.</noscript>
+<script>__ACADEMY_ACORN__</script><script>__ACADEMY_QUESTIONS__</script><script>__ACADEMY_MODEL__</script><script>__ACADEMY_PREVIEW__</script><script>__ACADEMY_APP__</script>
+</body></html>

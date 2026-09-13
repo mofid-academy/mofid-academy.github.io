@@ -1,0 +1,11 @@
+{
+  "version": "Academy Studio 2",
+  "path": "/Academy-Exam/Admin/",
+  "bundle_sha256": "da6c98aa613a70d9ab321cabd8fcb5f4e6fa436ebc41975e2b016c7a5016758b",
+  "bytes": 405728,
+  "offline_reference_blob": "69f52ed5d49cedc7af2d9dc86b84a9ba402ac027",
+  "candidate_blob_at_build": "69f52ed5d49cedc7af2d9dc86b84a9ba402ac027",
+  "scripts_syntax_checked": 5,
+  "publication_requires_github_write_permission": true,
+  "custom_question_submissions_require_n8n_setup": true
+}
