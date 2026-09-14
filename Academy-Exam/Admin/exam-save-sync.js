@@ -1,9 +1,8 @@
-/* Academy Admin -> n8n question-sheet synchronization v7.
-   The live exam still reads questions from the existing n8n exam-questions workflow. */
+/* Academy Admin -> n8n question-sheet synchronization v8. */
 (function(){
 "use strict";
 const EXAM_SAVE_URL="https://miladmirsheriii.app.n8n.cloud/webhook/exam-save";
-const VERSION="7";
+const VERSION="8";
 window.__ACADEMY_EXAM_SAVE_SYNC_VERSION__=VERSION;
 
 function setStatus(message,type){
@@ -14,7 +13,7 @@ function setStatus(message,type){
 function safeClone(value){try{return JSON.parse(JSON.stringify(value));}catch{return value;}}
 function patchQuestionImporter(){
   try{
-    if(!window.AcademyQuestions||window.AcademyQuestions.__examSaveV7)return;
+    if(!window.AcademyQuestions||window.AcademyQuestions.__examSaveV8)return;
     const original=window.AcademyQuestions.fromInput;
     window.AcademyQuestions.fromInput=function(raw){
       const clone=raw&&typeof raw==="object"?safeClone(raw):raw;
@@ -28,16 +27,18 @@ function patchQuestionImporter(){
       if(list)list.forEach(q=>{if(q&&q.question_id==null&&q.id==null&&q.qid!=null)q.question_id=String(q.qid);});
       return original(clone);
     };
-    window.AcademyQuestions.__examSaveV7=true;
+    window.AcademyQuestions.__examSaveV8=true;
   }catch{}
 }
 function currentQuestionBank(){
-  try{if(typeof model!=="undefined"&&model&&model.questionBank)return model.questionBank;}catch{}
+  try{
+    if(typeof window.__ACADEMY_GET_QUESTION_BANK__==="function")return window.__ACADEMY_GET_QUESTION_BANK__();
+  }catch{}
   return null;
 }
 function snapshotBank(){
   const bank=currentQuestionBank();
-  if(!bank)throw new Error("بانک سؤال در حافظه پنل پیدا نشد. صفحه ادمین را یک‌بار با Ctrl+F5 تازه‌سازی کن و دوباره سؤال‌ها را از n8n دریافت کن.");
+  if(!bank)throw new Error("بانک سؤال در حافظه پنل پیدا نشد. نسخه v8 فعال است؛ صفحه را یک‌بار تازه‌سازی کن.");
   return safeClone(bank);
 }
 function validFormId(value){
@@ -47,7 +48,7 @@ function validFormId(value){
 function buildPayload(bank){
   if(!bank||typeof bank!=="object")throw new Error("اطلاعات بانک سؤال در دسترس نیست.");
   const examId=String(bank.originalExamId||bank.examId||bank.exam_id||"").trim();
-  if(!examId)throw new Error("شناسه آزمون از n8n دریافت نشده است. دکمه «دریافت سؤال‌های فعلی از n8n» را بزن و بعد دوباره منتشر کن.");
+  if(!examId)throw new Error("شناسه آزمون از n8n دریافت نشده است. دکمه «دریافت سؤال‌های فعلی از n8n» را بزن.");
   const questions=(Array.isArray(bank.questions)?bank.questions:[]).map((q,index)=>{
     const stableId=String(q.id||q.question_id||q.qid||(examId+"-Q"+(index+1))).trim();
     return {
@@ -58,7 +59,7 @@ function buildPayload(bank){
       required:q.required===true
     };
   });
-  if(!questions.length)throw new Error("بانک سؤال خالی است؛ چیزی برای ارسال به n8n وجود ندارد.");
+  if(!questions.length)throw new Error("بانک سؤال خالی است.");
   const formId=validFormId(bank.formId||bank.form_id);
   const examTitle=String(bank.examTitle||bank.exam_title||"");
   return {
@@ -85,13 +86,7 @@ async function postPayload(payload){
   form.set("questions",JSON.stringify(payload.questions));
   form.set("payload",JSON.stringify(payload));
   const url=EXAM_SAVE_URL+"?source=academy-admin&v="+VERSION+"&ts="+Date.now();
-  try{
-    await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:form.toString(),credentials:"omit",cache:"no-store",keepalive:true});
-  }catch(fetchError){
-    if(!navigator.sendBeacon)throw fetchError;
-    const ok=navigator.sendBeacon(url,new Blob([form.toString()],{type:"application/x-www-form-urlencoded;charset=UTF-8"}));
-    if(!ok)throw fetchError;
-  }
+  await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:form.toString(),credentials:"omit",cache:"no-store",keepalive:true});
   return payload;
 }
 async function sendCurrent(){return postPayload(buildPayload(snapshotBank()));}
@@ -106,29 +101,25 @@ function install(){
   if(dialog){
     let note=document.getElementById("exam-save-sync-note");
     if(!note){note=document.createElement("p");note.id="exam-save-sync-note";note.className="tip";const input=dialog.querySelector("#commitNote");if(input)dialog.insertBefore(note,input);else dialog.append(note);}
-    note.textContent="همگام‌سازی سؤال‌ها فعال است (v7). هنگام ویرایش سؤال‌ها، قبل از انتشار یک POST مستقیم به exam-save فرستاده می‌شود.";
-    if(!document.getElementById("exam-save-test")){
-      const actions=dialog.querySelector(".dialog-actions");
-      if(actions){
-        const test=document.createElement("button");test.id="exam-save-test";test.type="button";test.textContent="تست ارسال به n8n";actions.insertBefore(test,actions.firstChild);
-        test.onclick=async()=>{test.disabled=true;const old=test.textContent;test.textContent="در حال ارسال تست…";try{const p=await sendCurrent();setStatus("POST تست برای "+p.questions.length+" سؤال ارسال شد. Executions در n8n را بررسی کن.","success");}catch(e){setStatus("تست n8n ناموفق بود: "+String(e.message||e),"error");}finally{test.disabled=false;test.textContent=old;}};
-      }
-    }
+    note.textContent="همگام‌سازی سؤال‌ها فعال است (v8). بانک سؤال مستقیماً از پنل خوانده و به exam-save ارسال می‌شود.";
+    let test=document.getElementById("exam-save-test");
+    if(!test){const actions=dialog.querySelector(".dialog-actions");if(actions){test=document.createElement("button");test.id="exam-save-test";test.type="button";test.textContent="تست ارسال به n8n";actions.insertBefore(test,actions.firstChild);}}
+    if(test)test.onclick=async()=>{test.disabled=true;const old=test.textContent;test.textContent="در حال ارسال تست…";try{const p=await sendCurrent();setStatus("POST تست برای "+p.questions.length+" سؤال به exam-save ارسال شد. Executions را بررسی کن.","success");}catch(e){setStatus("تست n8n ناموفق بود: "+String(e.message||e),"error");}finally{test.disabled=false;test.textContent=old;}};
   }
   confirmButton.onclick=async function(event){
     if(confirmButton.dataset.syncing==="1")return;
-    let bank=currentQuestionBank();
-    if(!bank){setStatus("انتشار متوقف شد؛ بانک سؤال در حافظه پنل پیدا نشد. Ctrl+F5 بزن و دوباره تلاش کن.","error");return;}
+    const bank=currentQuestionBank();
+    if(!bank){setStatus("انتشار متوقف شد؛ بانک سؤال پیدا نشد.","error");return;}
     if(bank.mode!=="managed")return original.call(this,event);
-    confirmButton.dataset.syncing="1";const oldText=confirmButton.textContent;confirmButton.disabled=true;confirmButton.textContent="در حال ارسال به n8n…";
+    confirmButton.dataset.syncing="1";const old=confirmButton.textContent;confirmButton.disabled=true;confirmButton.textContent="در حال ارسال به n8n…";
     try{
       const payload=await sendCurrent();
-      bank=currentQuestionBank();if(bank){bank.mode="remote";bank.submitApproved=false;}
-      setStatus("POST برای "+payload.questions.length+" سؤال به exam-save ارسال شد؛ انتشار فرم ادامه پیدا می‌کند.","success");
-      confirmButton.disabled=false;confirmButton.textContent=oldText;confirmButton.dataset.syncing="0";
+      const liveBank=currentQuestionBank();if(liveBank){liveBank.mode="remote";liveBank.submitApproved=false;}
+      setStatus("POST برای "+payload.questions.length+" سؤال ارسال شد؛ انتشار فرم ادامه پیدا می‌کند.","success");
+      confirmButton.disabled=false;confirmButton.textContent=old;confirmButton.dataset.syncing="0";
       return original.call(this,event);
     }catch(error){
-      confirmButton.disabled=false;confirmButton.textContent=oldText;confirmButton.dataset.syncing="0";
+      confirmButton.disabled=false;confirmButton.textContent=old;confirmButton.dataset.syncing="0";
       setStatus("انتشار متوقف شد؛ ارسال به n8n انجام نشد: "+String(error&&error.message||error),"error");
     }
   };
