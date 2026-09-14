@@ -19,11 +19,17 @@
     .replace("script-src 'unsafe-inline';","script-src 'unsafe-inline' 'self';")
     .replace('PATH="Academy-Exam/index.html"','PATH="Academy-Exam/base.html"')
     .replace('LIVE="https://mofid-academy.github.io/Academy-Exam/index.html"','LIVE="https://mofid-academy.github.io/Academy-Exam/base.html"');
+
+  const modelLine='let token="",login="",model=null,loadedSHA="",publishedSource="",active="questions",undoStack=[],timer=0,publishing=false,checking=0;';
+  if(html.includes(modelLine)){
+    html=html.replace(modelLine,modelLine+'\nwindow.__ACADEMY_GET_QUESTION_BANK__=function(){return model&&model.questionBank?model.questionBank:null;};');
+  }
+
   let timing={version:1,enabled:true,openAt:'',lastStartAt:'',durationMinutes:15,timeZone:'Asia/Tehran',timeEndpoint:''};
   if(timeRes.ok){try{timing={...timing,...await timeRes.json()}}catch{}}
   const closeScript='</scr'+'ipt>';
   const timingState='<scr'+'ipt>window.__ACADEMY_TIMING__='+JSON.stringify(timing).replace(/</g,'\\u003c')+closeScript;
-  const extensions='<scr'+'ipt src="timing-admin.js?v=3">'+closeScript+'<scr'+'ipt src="exam-save-sync.js?v=7">'+closeScript;
+  const extensions='<scr'+'ipt src="timing-admin.js?v=3">'+closeScript+'<scr'+'ipt src="exam-save-sync.js?v=8">'+closeScript;
   html=html.replace('<body>','<body>'+timingState);
   html=html.replace('</body>',extensions+'</body>');
   document.open();document.write(html);document.close();
