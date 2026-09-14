@@ -6,38 +6,70 @@
 const EXAM_SAVE_URL="https://miladmirsheriii.app.n8n.cloud/webhook/exam-save";
 
 function setStatus(message,type){
-  try{
-    if(typeof status==="function") return status(message,type);
-  }catch{}
+  try{ if(typeof status==="function") return status(message,type); }catch{}
   const el=document.getElementById("status");
   if(el){el.textContent=message;el.className="status"+(type?" "+type:"");}
 }
+
+/* Keep the sheet question id stable. Some n8n question feeds use qid instead of question_id/id. */
+function patchQuestionImporter(){
+  try{
+    if(!window.AcademyQuestions||window.AcademyQuestions.__qidPatched) return;
+    const original=window.AcademyQuestions.fromInput;
+    window.AcademyQuestions.fromInput=function(raw){
+      const clone=raw&&typeof raw==="object"?JSON.parse(JSON.stringify(raw)):raw;
+      const list=Array.isArray(clone)?clone:(Array.isArray(clone?.questions)?clone.questions:null);
+      if(list){
+        list.forEach(q=>{
+          if(q&&q.question_id==null&&q.id==null&&q.qid!=null){
+            q.question_id=String(q.qid);
+          }
+        });
+      }
+      return original(clone);
+    };
+    window.AcademyQuestions.__qidPatched=true;
+  }catch{}
+}
+patchQuestionImporter();
 
 function currentQuestionBank(){
   try{return (typeof model!=="undefined"&&model&&model.questionBank)?model.questionBank:null;}catch{return null;}
 }
 
 function buildPayload(bank){
-  const questions=(Array.isArray(bank.questions)?bank.questions:[]).map((q,index)=>({
-    question_id:String(q.id||""),
-    id:String(q.id||""),
-    qid:index+1,
-    order:index+1,
-    position:index+1,
-    question:String(q.question||""),
-    type:q.type==="mcq"?"mcq":"desc",
-    options:q.type==="mcq"&&Array.isArray(q.options)?q.options.map(x=>String(x)):[],
-    max_score:Number.isFinite(Number(q.max_score))?Number(q.max_score):0,
-    required:q.required===true
-  }));
+  const examId=String(bank.originalExamId||bank.examId||bank.exam_id||"").trim();
+  if(!examId) throw new Error("شناسه امتحان از منبع سؤال‌ها دریافت نشده است. سؤال‌ها را دوباره از n8n دریافت کن.");
+  const examTitle=String(bank.examTitle||bank.exam_title||"");
+  const formId=String(bank.formId||bank.form_id||"");
+  const questions=(Array.isArray(bank.questions)?bank.questions:[]).map((q,index)=>{
+    const stableId=String(q.id||q.question_id||q.qid||`${examId}-Q${index+1}`).trim();
+    return {
+      question_id:stableId,
+      id:stableId,
+      qid:stableId,
+      order:index+1,
+      position:index+1,
+      question:String(q.question||""),
+      type:q.type==="mcq"?"mcq":"desc",
+      options:q.type==="mcq"&&Array.isArray(q.options)?q.options.map(x=>String(x)):[],
+      max_score:Number.isFinite(Number(q.max_score))?Number(q.max_score):0,
+      required:q.required===true
+    };
+  });
   return {
     event_type:"exam_save",
     action:"sync_questions",
     source:"academy-admin",
     sent_at:new Date().toISOString(),
-    exam_id:String(bank.originalExamId||""),
-    exam_title:String(bank.examTitle||""),
-    form_id:String(bank.formId||""),
+    examId,
+    examTitle,
+    formId,
+    durationMin:0,
+    status:"published",
+    exam_id:examId,
+    exam_title:examTitle,
+    form_id:formId,
     bank_id:String(bank.bankId||""),
     bank_version:String(bank.revision||""),
     question_count:questions.length,
@@ -68,20 +100,20 @@ async function syncQuestions(bank){
         throw new Error(String(ack.message||ack.error||"n8n ذخیره سؤال‌ها را تأیید نکرد."));
       }
     }catch(e){
-      if(e instanceof SyntaxError){/* Empty/non-JSON success responses are accepted. */}
-      else throw e;
+      if(!(e instanceof SyntaxError)) throw e;
     }
   }
   return payload;
 }
 
 function install(){
+  patchQuestionImporter();
   const confirmButton=document.getElementById("confirmYes");
   if(!confirmButton||typeof confirmButton.onclick!=="function"){
     setTimeout(install,80);return;
   }
-  if(confirmButton.dataset.examSaveSync==="1") return;
-  confirmButton.dataset.examSaveSync="1";
+  if(confirmButton.dataset.examSaveSync==="2") return;
+  confirmButton.dataset.examSaveSync="2";
   const original=confirmButton.onclick;
 
   const dialog=document.getElementById("confirmPublish");
@@ -89,9 +121,9 @@ function install(){
     const note=document.createElement("p");
     note.id="exam-save-sync-note";
     note.className="tip";
-    note.textContent="اگر سؤال‌ها را در پنل ویرایش کرده باشی، قبل از انتشار سایت کل بانک سؤال با ترتیب جدید به n8n (exam-save) ارسال می‌شود تا شیت همگام شود. پاسخ صحیح ارسال نمی‌شود و باید در ورک‌فلو/شیت حفظ شود.";
+    note.textContent="ویرایش سؤال‌ها قبل از انتشار با POST به exam-save ارسال می‌شود. پاسخ صحیح از پنل ارسال نمی‌شود و در شیت باید حفظ شود.";
     const input=dialog.querySelector("#commitNote");
-    if(input) dialog.insertBefore(note,input.previousElementSibling||input); else dialog.append(note);
+    if(input) dialog.insertBefore(note,input); else dialog.append(note);
   }
 
   confirmButton.onclick=async function(event){
@@ -106,12 +138,10 @@ function install(){
     confirmButton.textContent="در حال همگام‌سازی شیت…";
     setStatus("در حال ارسال سؤال‌ها و ترتیب جدید به n8n و شیت…");
     try{
-      await syncQuestions(bank);
-      /* The sheet/n8n stays the source of truth. Keep the edited bank only as admin state,
-         but do not embed it as the live question source in the candidate form. */
+      const payload=await syncQuestions(bank);
       bank.mode="remote";
       bank.submitApproved=false;
-      setStatus("سؤال‌ها و ترتیب جدید در n8n ارسال شد؛ حالا نسخه فرم روی سایت منتشر می‌شود.","success");
+      setStatus("n8n ذخیره "+payload.questions.length+" سؤال را تأیید کرد؛ حالا نسخه فرم روی سایت منتشر می‌شود.","success");
       confirmButton.disabled=false;
       confirmButton.textContent=oldText;
       confirmButton.dataset.syncing="0";
