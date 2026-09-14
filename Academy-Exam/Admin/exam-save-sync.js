@@ -1,8 +1,8 @@
-/* Academy Admin -> n8n question-sheet synchronization v9. */
+/* Academy Admin -> n8n question-sheet synchronization v10. */
 (function(){
 "use strict";
 const EXAM_SAVE_URL="https://miladmirsheriii.app.n8n.cloud/webhook/exam-save";
-const VERSION="9";
+const VERSION="10";
 window.__ACADEMY_EXAM_SAVE_SYNC_VERSION__=VERSION;
 
 function setStatus(message,type){
@@ -13,7 +13,7 @@ function setStatus(message,type){
 function safeClone(value){try{return JSON.parse(JSON.stringify(value));}catch{return value;}}
 function patchQuestionImporter(){
   try{
-    if(!window.AcademyQuestions||window.AcademyQuestions.__examSaveV9)return;
+    if(!window.AcademyQuestions||window.AcademyQuestions.__examSaveV10)return;
     const original=window.AcademyQuestions.fromInput;
     window.AcademyQuestions.fromInput=function(raw){
       const clone=raw&&typeof raw==="object"?safeClone(raw):raw;
@@ -38,7 +38,7 @@ function patchQuestionImporter(){
       }
       return normalized;
     };
-    window.AcademyQuestions.__examSaveV9=true;
+    window.AcademyQuestions.__examSaveV10=true;
   }catch{}
 }
 function currentQuestionBank(){
@@ -49,7 +49,7 @@ function currentQuestionBank(){
 }
 function snapshotBank(){
   const bank=currentQuestionBank();
-  if(!bank)throw new Error("بانک سؤال در حافظه پنل پیدا نشد. نسخه v9 فعال است؛ صفحه را یک‌بار تازه‌سازی کن.");
+  if(!bank)throw new Error("بانک سؤال در حافظه پنل پیدا نشد. نسخه v10 فعال است؛ صفحه را یک‌بار تازه‌سازی کن.");
   return safeClone(bank);
 }
 function validFormId(value){
@@ -94,23 +94,16 @@ function buildPayload(bank){
   };
 }
 async function postPayload(payload){
-  const form=new URLSearchParams();
-  form.set("event_type",payload.event_type);
-  form.set("action",payload.action);
-  form.set("source",payload.source);
-  form.set("examId",payload.examId);
-  form.set("exam_id",payload.exam_id);
-  form.set("examTitle",payload.examTitle);
-  form.set("exam_title",payload.exam_title);
-  form.set("formId",payload.formId);
-  form.set("form_id",payload.form_id);
-  form.set("bank_id",payload.bank_id);
-  form.set("bank_version",payload.bank_version);
-  form.set("question_count",String(payload.question_count));
-  form.set("questions",JSON.stringify(payload.questions));
-  form.set("payload",JSON.stringify(payload));
   const url=EXAM_SAVE_URL+"?source=academy-admin&v="+VERSION+"&ts="+Date.now();
-  await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:form.toString(),credentials:"omit",cache:"no-store",keepalive:true});
+  const body=JSON.stringify(payload);
+  await fetch(url,{
+    method:"POST",
+    mode:"no-cors",
+    headers:{"Content-Type":"text/plain;charset=UTF-8"},
+    body,
+    credentials:"omit",
+    cache:"no-store"
+  });
   return payload;
 }
 async function sendCurrent(){return postPayload(buildPayload(snapshotBank()));}
@@ -125,7 +118,7 @@ function install(){
   if(dialog){
     let note=document.getElementById("exam-save-sync-note");
     if(!note){note=document.createElement("p");note.id="exam-save-sync-note";note.className="tip";const input=dialog.querySelector("#commitNote");if(input)dialog.insertBefore(note,input);else dialog.append(note);}
-    note.textContent="همگام‌سازی سؤال‌ها و کلید پاسخ فعال است (v9). گزینه صحیح و پاسخ نمونه همراه سؤال‌ها به exam-save ارسال می‌شوند.";
+    note.textContent="همگام‌سازی سؤال‌ها و کلید پاسخ فعال است (v10). گزینه صحیح و پاسخ نمونه همراه سؤال‌ها به exam-save ارسال می‌شوند.";
     let test=document.getElementById("exam-save-test");
     if(!test){const actions=dialog.querySelector(".dialog-actions");if(actions){test=document.createElement("button");test.id="exam-save-test";test.type="button";test.textContent="تست ارسال به n8n";actions.insertBefore(test,actions.firstChild);}}
     if(test)test.onclick=async()=>{test.disabled=true;const old=test.textContent;test.textContent="در حال ارسال تست…";try{const p=await sendCurrent();setStatus("POST تست برای "+p.questions.length+" سؤال به exam-save ارسال شد. Executions را بررسی کن.","success");}catch(e){setStatus("تست n8n ناموفق بود: "+String(e.message||e),"error");}finally{test.disabled=false;test.textContent=old;}};
