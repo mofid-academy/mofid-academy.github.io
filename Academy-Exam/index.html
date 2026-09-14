@@ -1,18 +1,129 @@
 <!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمون آکادمی مفید</title></head><body><p style="font-family:Tahoma;text-align:center;margin-top:12vh">در حال آماده‌سازی آزمون…</p><script>
 (async()=>{
- const [baseR,tR]=await Promise.all([fetch('base.html?v='+Date.now(),{cache:'no-store'}),fetch('timing.json?v='+Date.now(),{cache:'no-store'})]);
- if(!baseR.ok)throw Error('base '+baseR.status); const base=await baseR.text();
- let cfg={version:1,enabled:true,openAt:'',lastStartAt:'',durationMinutes:15,timeZone:'Asia/Tehran',timeEndpoint:''};
- if(tR.ok){try{cfg={...cfg,...await tR.json()}}catch{} const hd=tR.headers.get('Date');const hm=Date.parse(hd||'');if(Number.isFinite(hm))cfg.serverEpoch=hm}
- const css=`<style id="academy-exam-timer-style">
-.exam-timer{display:none;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:99px;padding:7px 13px;box-shadow:0 6px 18px rgba(11,110,106,.08);font-size:.78rem;color:var(--ink-2);white-space:nowrap}.exam-timer.show{display:flex}.exam-timer b{font:700 1rem/1.2 ui-monospace,Consolas,monospace;color:var(--teal-800);direction:ltr}.exam-timer.warn5{background:#fff8e8;border-color:#f0d79b}.exam-timer.warn5 b{color:#a26b00}.exam-timer.warn1{background:#fff0ee;border-color:#f0b6af;animation:timerPulse 1s ease-in-out infinite}.exam-timer.warn1 b{color:#b0392e}@keyframes timerPulse{50%{box-shadow:0 0 0 5px rgba(224,86,76,.10)}}.exam-gate{margin-top:16px}.exam-gate strong{display:block;color:var(--teal-800);margin-bottom:3px}.exam-gate.closed{background:#fff0ee;border-color:#f6d5d1;color:#8f3e37}.exam-gate.closed strong{color:#a43d34}.exam-gate-count{font:700 1rem/1.5 ui-monospace,Consolas,monospace;direction:ltr;display:inline-block}@media(max-width:880px){.top{flex-wrap:wrap}.exam-timer{order:4;margin-inline-start:auto}.pill{margin-inline-start:0}}
-</style>`;
- const timerBadge=`<div class="exam-timer" id="examTimer" aria-live="polite"><span>زمان باقی‌مانده</span><b id="examTimerValue">--:--</b></div>`;
- const runtime=`<script id="academy-timing-runtime">(()=>{\nconst cfg=${JSON.stringify(cfg).replace(/</g,'\\u003c')};cfg.durationMinutes=Math.max(1,Math.min(480,Number(cfg.durationMinutes)||15));const preview=window.__ACADEMY_PREVIEW__===true;let attempt=null,tick=0,offset=Number.isFinite(cfg.serverEpoch)?cfg.serverEpoch-Date.now():0,lastSync=0,expired=false;\nfunction parseTehran(v){if(!v)return 0;const m=String(v).match(/^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})(?::(\\d{2}))?/);if(!m){const x=Date.parse(v);return Number.isFinite(x)?x:0}return Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0))-210*60000}\nfunction rawNow(){return Date.now()+offset}function now(){return attempt?.lastSeen?Math.max(rawNow(),attempt.lastSeen):rawNow()}\nasync function sync(force=false){if(preview||(!force&&Date.now()-lastSync<60000))return;lastSync=Date.now();try{let ms=NaN;if(cfg.timeEndpoint){const r=await fetch(cfg.timeEndpoint+(cfg.timeEndpoint.includes('?')?'&':'?')+'_='+Date.now(),{cache:'no-store',credentials:'omit'});if(r.ok){const tx=await r.text();let v=tx.trim();try{const j=JSON.parse(tx);v=j.now??j.datetime??j.timestamp??j.time??v}catch{}ms=typeof v==='number'?(v<1e12?v*1000:v):Date.parse(String(v))}}else{const r=await fetch('timing.json?clock='+Date.now(),{cache:'no-store',credentials:'omit'});ms=Date.parse(r.headers.get('Date')||'')}if(Number.isFinite(ms))offset=ms-Date.now()}catch{}}\nfunction fmt(ms){try{return new Intl.DateTimeFormat('fa-IR',{timeZone:'Asia/Tehran',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(ms))}catch{return new Date(ms).toLocaleString('fa-IR')}}\nfunction cd(ms){const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),x=s%60;return(h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0')}\nfunction k(){return'academy-attempt-v3::'+String(exam?.examId||exam?.formId||exam?.examTitle||location.pathname).replace(/[^a-zA-Z0-9_\\-آ-ی]/g,'_').slice(0,160)}\nfunction read(){try{const x=JSON.parse(localStorage.getItem(k())||'null');return x&&x.v===3&&x.deadline?x:null}catch{return null}}function save(){if(!attempt||preview)return;attempt.name=name;attempt.answers=answers;attempt.step=step;attempt.lastSeen=Math.max(attempt.lastSeen||0,rawNow());try{localStorage.setItem(k(),JSON.stringify(attempt))}catch{}}function clear(){try{localStorage.removeItem(k())}catch{}attempt=null}\nfunction gate(){const n=now(),o=parseTehran(cfg.openAt),l=parseTehran(cfg.lastStartAt);if(cfg.enabled&&o&&n<o)return{ok:false,type:'early',at:o};if(cfg.enabled&&l&&n>l&&!attempt)return{ok:false,type:'late',at:l};return{ok:true}}\nconst oldIntro=intro,oldGo=go,oldReview=review,oldSend=send,oldDone=done;\nfunction badge(){const e=document.getElementById('examTimer'),v=document.getElementById('examTimerValue');if(!e||!v||!attempt)return;const r=attempt.deadline-now();e.classList.add('show');e.classList.toggle('warn5',r<=300000&&r>60000);e.classList.toggle('warn1',r<=60000);v.textContent=cd(r);attempt.lastSeen=Math.max(attempt.lastSeen||0,rawNow());if(r<=0){expire();return}if(Math.floor(r/1000)%10===0)save();if(Date.now()-lastSync>60000)sync().then(badge)}\nfunction ticker(){clearInterval(tick);badge();tick=setInterval(badge,1000)}\nfunction introGate(){if(!cfg.enabled||preview)return;const s=gate(),b=document.getElementById('go');document.getElementById('academyGate')?.remove();if(!s.ok){const d=document.createElement('div');d.id='academyGate';d.className='note exam-gate'+(s.type==='late'?' closed':'');d.innerHTML=s.type==='early'?'<div><strong>آزمون هنوز باز نشده است</strong><span>زمان باز شدن: '+fmt(s.at)+' (تهران)</span><br><span>زمان باقی‌مانده: <b class="exam-gate-count" id="gateCountdown"></b></span></div>':'<div><strong>مهلت شروع آزمون به پایان رسیده است</strong><span>آخرین زمان مجاز برای شروع: '+fmt(s.at)+' (تهران)</span></div>';document.querySelector('#view .fade')?.append(d);if(b){b.disabled=true;b.textContent=s.type==='early'?'آزمون هنوز باز نشده':'مهلت شروع پایان یافته'}if(s.type==='early'){const q=setInterval(()=>{const x=document.getElementById('gateCountdown');if(x)x.textContent=cd(s.at-now());if(now()>=s.at){clearInterval(q);oldIntro();wireIntro()}},1000)}}else if(b){b.disabled=false;b.textContent='شروع آزمون ←'}}\nfunction wireIntro(){if(!cfg.enabled||preview)return;introGate();const nm=document.getElementById('nm'),b=document.getElementById('go');const start=async()=>{await sync(true);name=(nm?.value||'').trim();if(!name){nm?.focus();if(nm)nm.style.borderColor='var(--coral)';return}if(!gate().ok){introGate();return}const n=now();attempt={v:3,startedAt:n,deadline:n+cfg.durationMinutes*60000,lastSeen:n,name,answers:{},step:0};answers={};save();oldGo(0);wireQ();ticker()};if(b)b.onclick=start;if(nm)nm.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();start()}}}\nintro=function(){if(!cfg.enabled||preview){oldIntro();return}attempt=read();if(attempt){attempt.expiring=false;name=attempt.name||'';answers=attempt.answers||{};if(now()>=attempt.deadline){setTimeout(expire,0);return}const ss=+attempt.step||0;if(ss>=exam.questions.length){oldReview();ticker();return}oldGo(Math.max(0,Math.min(ss,exam.questions.length-1)));wireQ();ticker();return}oldIntro();wireIntro()};\nfunction wireQ(){if(!attempt||preview)return;document.getElementById('ta')?.addEventListener('input',()=>setTimeout(save,0));document.querySelectorAll('.opt').forEach(x=>x.addEventListener('click',()=>setTimeout(save,0)));save();badge()}go=function(i){if(attempt&&now()>=attempt.deadline){expire();return}oldGo(i);wireQ()};review=function(){if(attempt&&now()>=attempt.deadline){expire();return}oldReview();if(attempt){attempt.step=exam.questions.length;save();badge()}};\nsend=async function(){if(attempt){const ta=document.getElementById('ta');if(ta&&step>=0&&step<exam.questions.length)answers[exam.questions[step].qid]=ta.value;save()}await oldSend()};done=function(){const was=expired;clearInterval(tick);clear();oldDone();document.getElementById('examTimer')?.classList.remove('show','warn5','warn1');if(was){const h=document.querySelector('#view h1');if(h)h.textContent='زمان آزمون پایان یافت و پاسخ‌های شما ثبت شد'}};\nasync function expire(){if(!attempt||attempt.expiring||preview)return;attempt.expiring=true;expired=true;const ta=document.getElementById('ta');if(ta&&step>=0&&step<exam.questions.length)answers[exam.questions[step].qid]=ta.value;save();clearInterval(tick);paint('<div class="center"><div class="spin"></div><p class="eyebrow"><i></i>زمان آزمون پایان یافت</p><h1>در حال ثبت خودکار پاسخ‌ها…</h1><p class="sub">پاسخ‌هایی که تا این لحظه وارد کرده‌اید ارسال می‌شوند.</p></div>','');sending=false;await send()}\ndocument.addEventListener('visibilitychange',()=>{if(!document.hidden&&attempt)sync(true).then(badge)});window.AcademyTiming={config:cfg,sync};sync(true);\n})();<\/script>`;
- let html=base.replace('</head>',css+'</head>');
- html=html.replace('<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>','<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>'+timerBadge);
- html=html.replace('$("fM").textContent = toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3));','$("fM").textContent = '+(cfg.enabled?'toFa('+Number(cfg.durationMinutes||15)+') + " دقیقه"':'toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3))')+';');
- const i=html.lastIndexOf('\nboot();'); if(i<0)throw Error('boot marker'); html=html.slice(0,i)+runtime+html.slice(i);
- document.open();document.write(html);document.close();
-})().catch(e=>{document.body.innerHTML='<div style="font-family:Tahoma;text-align:center;margin:12vh auto;max-width:650px"><h2>آزمون در دسترس نیست</h2><p>'+String(e.message||e)+'</p></div>'});
+  const [baseR,tR]=await Promise.all([
+    fetch('base.html?v='+Date.now(),{cache:'no-store'}),
+    fetch('timing.json?v='+Date.now(),{cache:'no-store'})
+  ]);
+  if(!baseR.ok) throw new Error('base '+baseR.status);
+  const base=await baseR.text();
+  let cfg={version:1,enabled:true,openAt:'',lastStartAt:'',durationMinutes:15,timeZone:'Asia/Tehran',timeEndpoint:''};
+  if(tR.ok){
+    try{cfg={...cfg,...await tR.json()}}catch(e){}
+    const hm=Date.parse(tR.headers.get('Date')||'');
+    if(Number.isFinite(hm)) cfg.serverEpoch=hm;
+  }
+
+  const css=`<style id="academy-exam-timer-style">
+  .exam-timer{display:none;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:99px;padding:7px 13px;box-shadow:0 6px 18px rgba(11,110,106,.08);font-size:.78rem;color:var(--ink-2);white-space:nowrap}
+  .exam-timer.show{display:flex}.exam-timer b{font:700 1rem/1.2 ui-monospace,Consolas,monospace;color:var(--teal-800);direction:ltr}
+  .exam-timer.warn5{background:#fff8e8;border-color:#f0d79b}.exam-timer.warn5 b{color:#a26b00}
+  .exam-timer.warn1{background:#fff0ee;border-color:#f0b6af;animation:timerPulse 1s ease-in-out infinite}.exam-timer.warn1 b{color:#b0392e}
+  @keyframes timerPulse{50%{box-shadow:0 0 0 5px rgba(224,86,76,.10)}}
+  .exam-gate{margin-top:16px}.exam-gate strong{display:block;color:var(--teal-800);margin-bottom:3px}.exam-gate.closed{background:#fff0ee;border-color:#f6d5d1;color:#8f3e37}.exam-gate.closed strong{color:#a43d34}.exam-gate-count{font:700 1rem/1.5 ui-monospace,Consolas,monospace;direction:ltr;display:inline-block}
+  @media(max-width:880px){.top{flex-wrap:wrap}.exam-timer{order:4;margin-inline-start:auto}.pill{margin-inline-start:0}}
+  </style>`;
+  const badge='<div class="exam-timer" id="examTimer" aria-live="polite"><span>زمان باقی‌مانده</span><b id="examTimerValue">--:--</b></div>';
+
+  const runtime=`
+;(()=>{
+const cfg=${JSON.stringify(cfg).replace(/</g,'\\u003c')};
+cfg.durationMinutes=Math.max(1,Math.min(480,Number(cfg.durationMinutes)||15));
+const timingEnabled=cfg.enabled!==false;
+const serverOffset=Number.isFinite(cfg.serverEpoch)?cfg.serverEpoch-Date.now():0;
+let attempt=null,timerId=0,gateId=0,expired=false;
+const oldIntro=intro,oldGo=go,oldReview=review,oldSend=send,oldDone=done;
+
+function parseTehran(v){
+  if(!v)return 0;
+  const m=String(v).match(/^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})(?::(\\d{2}))?/);
+  if(!m){const x=Date.parse(v);return Number.isFinite(x)?x:0;}
+  return Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0))-210*60000;
+}
+function rawNow(){return Date.now()+serverOffset;}
+function now(){return attempt&&attempt.lastSeen?Math.max(rawNow(),attempt.lastSeen):rawNow();}
+function fmt(ms){try{return new Intl.DateTimeFormat('fa-IR',{timeZone:'Asia/Tehran',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(ms));}catch(e){return new Date(ms).toLocaleString('fa-IR');}}
+function cd(ms){const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),x=s%60;return(h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');}
+function storageKey(){const id=exam&&(exam.examId||exam.formId||exam.examTitle)||location.pathname;return 'academy-attempt-v4::'+String(id).replace(/[^a-zA-Z0-9_\\-آ-ی]/g,'_').slice(0,160);}
+function readAttempt(){try{const x=JSON.parse(localStorage.getItem(storageKey())||'null');return x&&x.v===4&&x.deadline?x:null;}catch(e){return null;}}
+function persist(){if(!attempt)return;attempt.name=name;attempt.answers=answers;attempt.step=step;attempt.lastSeen=Math.max(attempt.lastSeen||0,rawNow());try{localStorage.setItem(storageKey(),JSON.stringify(attempt));}catch(e){}}
+function clearAttempt(){try{localStorage.removeItem(storageKey());}catch(e){}attempt=null;}
+function gate(){const n=now(),o=parseTehran(cfg.openAt),l=parseTehran(cfg.lastStartAt);if(!timingEnabled)return{ok:true};if(o&&n<o)return{ok:false,type:'early',at:o};if(l&&n>l&&!attempt)return{ok:false,type:'late',at:l};return{ok:true};}
+function badgeTick(){
+  if(!attempt)return;
+  const e=document.getElementById('examTimer'),v=document.getElementById('examTimerValue');
+  if(!e||!v)return;
+  const r=attempt.deadline-now();
+  e.classList.add('show');e.classList.toggle('warn5',r<=300000&&r>60000);e.classList.toggle('warn1',r<=60000);
+  v.textContent=cd(r);persist();
+  if(r<=0) expire();
+}
+function ticker(){clearInterval(timerId);badgeTick();timerId=setInterval(badgeTick,1000);}
+function gateUI(){
+  clearInterval(gateId);document.getElementById('academyGate')?.remove();
+  if(!timingEnabled)return;
+  const s=gate(),b=document.getElementById('go');
+  if(s.ok){if(b){b.disabled=false;b.textContent='شروع آزمون ←';}return;}
+  const d=document.createElement('div');d.id='academyGate';d.className='note exam-gate'+(s.type==='late'?' closed':'');
+  if(s.type==='early') d.innerHTML='<div><strong>آزمون هنوز باز نشده است</strong><span>زمان باز شدن: '+fmt(s.at)+' (تهران)</span><br><span>زمان باقی‌مانده: <b class="exam-gate-count" id="gateCountdown"></b></span></div>';
+  else d.innerHTML='<div><strong>مهلت شروع آزمون به پایان رسیده است</strong><span>آخرین زمان مجاز برای شروع: '+fmt(s.at)+' (تهران)</span></div>';
+  document.querySelector('#view .fade')?.append(d);
+  if(b){b.disabled=true;b.textContent=s.type==='early'?'آزمون هنوز باز نشده':'مهلت شروع پایان یافته';}
+  if(s.type==='early') gateId=setInterval(()=>{const x=document.getElementById('gateCountdown');if(x)x.textContent=cd(s.at-now());if(now()>=s.at){clearInterval(gateId);oldIntro();gateUI();}},1000);
+}
+
+intro=function(){
+  if(!timingEnabled){oldIntro();return;}
+  attempt=readAttempt();
+  if(attempt){
+    name=attempt.name||'';answers=attempt.answers||{};
+    if(now()>=attempt.deadline){oldIntro();setTimeout(expire,0);return;}
+    const s=Math.max(0,Math.min(Number(attempt.step)||0,exam.questions.length));
+    if(s>=exam.questions.length) oldReview(); else oldGo(s);
+    ticker();return;
+  }
+  oldIntro();gateUI();
+};
+
+go=function(i){
+  if(timingEnabled&&!attempt){
+    const g=gate();
+    if(!g.ok){oldIntro();gateUI();return;}
+    const n=now();attempt={v:4,startedAt:n,deadline:n+cfg.durationMinutes*60000,lastSeen:n,name:name||'',answers:answers||{},step:i,expiring:false};persist();
+  }
+  if(attempt&&now()>=attempt.deadline){expire();return;}
+  if(attempt)persist();
+  oldGo(i);
+  if(attempt){attempt.step=i;persist();ticker();}
+};
+
+review=function(){
+  if(attempt&&now()>=attempt.deadline){expire();return;}
+  if(attempt)persist();
+  oldReview();
+  if(attempt){attempt.step=exam.questions.length;persist();ticker();}
+};
+
+send=async function(){if(attempt)persist();return await oldSend();};
+done=function(){clearInterval(timerId);clearInterval(gateId);clearAttempt();oldDone();const e=document.getElementById('examTimer');if(e)e.classList.remove('show','warn5','warn1');if(expired){const h=document.querySelector('#view h1');if(h)h.textContent='زمان آزمون پایان یافت و پاسخ‌های شما ثبت شد';}};
+
+async function expire(){
+  if(!attempt||attempt.expiring)return;
+  attempt.expiring=true;expired=true;persist();clearInterval(timerId);
+  paint('<div class="center"><div class="spin"></div><p class="eyebrow"><i></i>زمان آزمون پایان یافت</p><h1>در حال ثبت خودکار پاسخ‌ها…</h1><p class="sub">پاسخ‌هایی که تا این لحظه وارد کرده‌اید ارسال می‌شوند.</p></div>','');
+  sending=false;await oldSend();
+}
+
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&attempt)badgeTick();});
+})();
+`;
+
+  let html=base.replace('</head>',css+'</head>');
+  html=html.replace('<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>','<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>'+badge);
+  html=html.replace('$("fM").textContent = toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3));','$("fM").textContent = '+(cfg.enabled!==false?'toFa('+Number(cfg.durationMinutes||15)+') + " دقیقه"':'toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3))')+';');
+  const marker='\nboot();';
+  const i=html.lastIndexOf(marker);
+  if(i<0) throw new Error('boot marker not found');
+  html=html.slice(0,i)+runtime+html.slice(i);
+  document.open();document.write(html);document.close();
+})().catch(e=>{document.body.innerHTML='<div style="font-family:Tahoma;text-align:center;margin:12vh auto;max-width:650px"><h2>آزمون در دسترس نیست</h2><p>'+String(e.message||e)+'</p></div>';console.error(e);});
 </script></body></html>
