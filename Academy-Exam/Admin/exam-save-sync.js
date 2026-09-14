@@ -1,8 +1,8 @@
-/* Academy Admin -> n8n question-sheet synchronization v8. */
+/* Academy Admin -> n8n question-sheet synchronization v9. */
 (function(){
 "use strict";
 const EXAM_SAVE_URL="https://miladmirsheriii.app.n8n.cloud/webhook/exam-save";
-const VERSION="8";
+const VERSION="9";
 window.__ACADEMY_EXAM_SAVE_SYNC_VERSION__=VERSION;
 
 function setStatus(message,type){
@@ -13,7 +13,7 @@ function setStatus(message,type){
 function safeClone(value){try{return JSON.parse(JSON.stringify(value));}catch{return value;}}
 function patchQuestionImporter(){
   try{
-    if(!window.AcademyQuestions||window.AcademyQuestions.__examSaveV8)return;
+    if(!window.AcademyQuestions||window.AcademyQuestions.__examSaveV9)return;
     const original=window.AcademyQuestions.fromInput;
     window.AcademyQuestions.fromInput=function(raw){
       const clone=raw&&typeof raw==="object"?safeClone(raw):raw;
@@ -25,9 +25,20 @@ function patchQuestionImporter(){
       }
       const list=Array.isArray(root)?root:(Array.isArray(root?.questions)?root.questions:null);
       if(list)list.forEach(q=>{if(q&&q.question_id==null&&q.id==null&&q.qid!=null)q.question_id=String(q.qid);});
-      return original(clone);
+      const normalized=original(clone);
+      if(list&&normalized&&Array.isArray(normalized.questions)){
+        normalized.questions.forEach((q,i)=>{
+          const source=list[i]||{};
+          q.correct_answer=String(source.correct_answer??source.correctAnswer??source["گزینه صحیح"]??"");
+          q.sample_answer=String(source.sample_answer??source.sampleAnswer??source["پاسخ نمونه (تشریحی)"]??source["مدل_پاسخ"]??"");
+          let idx=Number(source.correct_option_index??source.correctOptionIndex);
+          if(!Number.isInteger(idx)||idx<0)idx=Array.isArray(q.options)?q.options.findIndex(o=>String(o).trim()===q.correct_answer.trim()):-1;
+          q.correct_option_index=idx>=0?idx:-1;
+        });
+      }
+      return normalized;
     };
-    window.AcademyQuestions.__examSaveV8=true;
+    window.AcademyQuestions.__examSaveV9=true;
   }catch{}
 }
 function currentQuestionBank(){
@@ -38,7 +49,7 @@ function currentQuestionBank(){
 }
 function snapshotBank(){
   const bank=currentQuestionBank();
-  if(!bank)throw new Error("بانک سؤال در حافظه پنل پیدا نشد. نسخه v8 فعال است؛ صفحه را یک‌بار تازه‌سازی کن.");
+  if(!bank)throw new Error("بانک سؤال در حافظه پنل پیدا نشد. نسخه v9 فعال است؛ صفحه را یک‌بار تازه‌سازی کن.");
   return safeClone(bank);
 }
 function validFormId(value){
@@ -51,12 +62,25 @@ function buildPayload(bank){
   if(!examId)throw new Error("شناسه آزمون از n8n دریافت نشده است. دکمه «دریافت سؤال‌های فعلی از n8n» را بزن.");
   const questions=(Array.isArray(bank.questions)?bank.questions:[]).map((q,index)=>{
     const stableId=String(q.id||q.question_id||q.qid||(examId+"-Q"+(index+1))).trim();
+    const options=q.type==="mcq"&&Array.isArray(q.options)?q.options.map(String):[];
+    let correctIndex=Number(q.correct_option_index);
+    if(!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>=options.length){
+      const existing=String(q.correct_answer||"").trim();
+      correctIndex=existing?options.findIndex(o=>String(o).trim()===existing):-1;
+    }
+    const correctAnswer=q.type==="mcq"&&correctIndex>=0?String(options[correctIndex]):"";
+    const sampleAnswer=q.type==="desc"?String(q.sample_answer||""):"";
     return {
       question_id:stableId,id:stableId,qid:stableId,order:index+1,position:index+1,
       question:String(q.question||""),type:q.type==="mcq"?"mcq":"desc",
-      options:q.type==="mcq"&&Array.isArray(q.options)?q.options.map(String):[],
+      options,
       max_score:Number.isFinite(Number(q.max_score))?Number(q.max_score):0,
-      required:q.required===true
+      required:q.required===true,
+      correct_answer:correctAnswer,
+      correct_option_index:correctIndex,
+      sample_answer:sampleAnswer,
+      "گزینه صحیح":correctAnswer,
+      "پاسخ نمونه (تشریحی)":sampleAnswer
     };
   });
   if(!questions.length)throw new Error("بانک سؤال خالی است.");
@@ -101,7 +125,7 @@ function install(){
   if(dialog){
     let note=document.getElementById("exam-save-sync-note");
     if(!note){note=document.createElement("p");note.id="exam-save-sync-note";note.className="tip";const input=dialog.querySelector("#commitNote");if(input)dialog.insertBefore(note,input);else dialog.append(note);}
-    note.textContent="همگام‌سازی سؤال‌ها فعال است (v8). بانک سؤال مستقیماً از پنل خوانده و به exam-save ارسال می‌شود.";
+    note.textContent="همگام‌سازی سؤال‌ها و کلید پاسخ فعال است (v9). گزینه صحیح و پاسخ نمونه همراه سؤال‌ها به exam-save ارسال می‌شوند.";
     let test=document.getElementById("exam-save-test");
     if(!test){const actions=dialog.querySelector(".dialog-actions");if(actions){test=document.createElement("button");test.id="exam-save-test";test.type="button";test.textContent="تست ارسال به n8n";actions.insertBefore(test,actions.firstChild);}}
     if(test)test.onclick=async()=>{test.disabled=true;const old=test.textContent;test.textContent="در حال ارسال تست…";try{const p=await sendCurrent();setStatus("POST تست برای "+p.questions.length+" سؤال به exam-save ارسال شد. Executions را بررسی کن.","success");}catch(e){setStatus("تست n8n ناموفق بود: "+String(e.message||e),"error");}finally{test.disabled=false;test.textContent=old;}};
@@ -115,7 +139,7 @@ function install(){
     try{
       const payload=await sendCurrent();
       const liveBank=currentQuestionBank();if(liveBank){liveBank.mode="remote";liveBank.submitApproved=false;}
-      setStatus("POST برای "+payload.questions.length+" سؤال ارسال شد؛ انتشار فرم ادامه پیدا می‌کند.","success");
+      setStatus("POST برای "+payload.questions.length+" سؤال همراه کلید پاسخ ارسال شد؛ انتشار فرم ادامه پیدا می‌کند.","success");
       confirmButton.disabled=false;confirmButton.textContent=old;confirmButton.dataset.syncing="0";
       return original.call(this,event);
     }catch(error){
