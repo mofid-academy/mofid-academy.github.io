@@ -1,6 +1,6 @@
 /* Academy Admin -> n8n question-sheet synchronization.
-   Question edits are sent only when the admin confirms publication.
-   The live exam remains in remote mode so questions continue to come from the existing n8n exam-questions workflow. */
+   Uses a CORS-simple POST (text/plain JSON) so the browser does not need a preflight OPTIONS request.
+   The live exam keeps reading questions from the existing n8n exam-questions workflow. */
 (function(){
 "use strict";
 const EXAM_SAVE_URL="https://miladmirsheriii.app.n8n.cloud/webhook/exam-save";
@@ -11,7 +11,6 @@ function setStatus(message,type){
   if(el){el.textContent=message;el.className="status"+(type?" "+type:"");}
 }
 
-/* Keep the sheet question id stable. Some n8n question feeds use qid instead of question_id/id. */
 function patchQuestionImporter(){
   try{
     if(!window.AcademyQuestions||window.AcademyQuestions.__qidPatched) return;
@@ -21,9 +20,7 @@ function patchQuestionImporter(){
       const list=Array.isArray(clone)?clone:(Array.isArray(clone?.questions)?clone.questions:null);
       if(list){
         list.forEach(q=>{
-          if(q&&q.question_id==null&&q.id==null&&q.qid!=null){
-            q.question_id=String(q.qid);
-          }
+          if(q&&q.question_id==null&&q.id==null&&q.qid!=null) q.question_id=String(q.qid);
         });
       }
       return original(clone);
@@ -39,7 +36,7 @@ function currentQuestionBank(){
 
 function buildPayload(bank){
   const examId=String(bank.originalExamId||bank.examId||bank.exam_id||"").trim();
-  if(!examId) throw new Error("شناسه امتحان از منبع سؤال‌ها دریافت نشده است. سؤال‌ها را دوباره از n8n دریافت کن.");
+  if(!examId) throw new Error("شناسه امتحان از منبع سؤال‌ها دریافت نشده است. ابتدا سؤال‌ها را از منبع فعلی n8n دریافت کن.");
   const examTitle=String(bank.examTitle||bank.exam_title||"");
   const formId=String(bank.formId||bank.form_id||"");
   const questions=(Array.isArray(bank.questions)?bank.questions:[]).map((q,index)=>{
@@ -82,15 +79,19 @@ function buildPayload(bank){
 async function syncQuestions(bank){
   const payload=buildPayload(bank);
   if(!payload.questions.length) throw new Error("بانک سؤال خالی است؛ چیزی برای ذخیره در شیت وجود ندارد.");
+
+  /* Do not use application/json here. That header causes a browser CORS preflight.
+     Sending the JSON text as text/plain makes the POST itself reach n8n directly. */
   const response=await fetch(EXAM_SAVE_URL,{
     method:"POST",
-    headers:{"Content-Type":"application/json","Accept":"application/json"},
+    headers:{"Content-Type":"text/plain;charset=UTF-8"},
     body:JSON.stringify(payload),
     credentials:"omit",
     cache:"no-store",
     referrerPolicy:"no-referrer",
     signal:AbortSignal.timeout(30000)
   });
+
   if(!response.ok) throw new Error("n8n HTTP "+response.status);
   const text=await response.text();
   if(text.trim()){
@@ -99,9 +100,7 @@ async function syncQuestions(bank){
       if(ack&&typeof ack==="object"&&(ack.ok===false||ack.success===false||ack.saved===false)){
         throw new Error(String(ack.message||ack.error||"n8n ذخیره سؤال‌ها را تأیید نکرد."));
       }
-    }catch(e){
-      if(!(e instanceof SyntaxError)) throw e;
-    }
+    }catch(e){ if(!(e instanceof SyntaxError)) throw e; }
   }
   return payload;
 }
@@ -112,8 +111,8 @@ function install(){
   if(!confirmButton||typeof confirmButton.onclick!=="function"){
     setTimeout(install,80);return;
   }
-  if(confirmButton.dataset.examSaveSync==="2") return;
-  confirmButton.dataset.examSaveSync="2";
+  if(confirmButton.dataset.examSaveSync==="5") return;
+  confirmButton.dataset.examSaveSync="5";
   const original=confirmButton.onclick;
 
   const dialog=document.getElementById("confirmPublish");
@@ -121,7 +120,7 @@ function install(){
     const note=document.createElement("p");
     note.id="exam-save-sync-note";
     note.className="tip";
-    note.textContent="ویرایش سؤال‌ها قبل از انتشار با POST به exam-save ارسال می‌شود. پاسخ صحیح از پنل ارسال نمی‌شود و در شیت باید حفظ شود.";
+    note.textContent="در صورت ویرایش سؤال‌ها، قبل از انتشار یک POST مستقیم به exam-save ارسال و شیت همگام می‌شود. پاسخ صحیح از پنل ارسال نمی‌شود.";
     const input=dialog.querySelector("#commitNote");
     if(input) dialog.insertBefore(note,input); else dialog.append(note);
   }
@@ -132,11 +131,12 @@ function install(){
     if(!bank||bank.mode!=="managed"||!Array.isArray(bank.questions)||!bank.questions.length){
       return original.call(this,event);
     }
+
     confirmButton.dataset.syncing="1";
     const oldText=confirmButton.textContent;
     confirmButton.disabled=true;
-    confirmButton.textContent="در حال همگام‌سازی شیت…";
-    setStatus("در حال ارسال سؤال‌ها و ترتیب جدید به n8n و شیت…");
+    confirmButton.textContent="در حال ارسال به n8n…";
+    setStatus("در حال POST کردن سؤال‌ها و ترتیب جدید به exam-save…");
     try{
       const payload=await syncQuestions(bank);
       bank.mode="remote";
@@ -151,8 +151,7 @@ function install(){
       confirmButton.textContent=oldText;
       confirmButton.dataset.syncing="0";
       const message=String(error&&error.message||error);
-      const cors=/Failed to fetch|NetworkError|Load failed/i.test(message)?" اگر Webhook اجرا نمی‌شود، CORS پاسخ n8n را برای https://mofid-academy.github.io مجاز کن.":"";
-      setStatus("انتشار متوقف شد؛ همگام‌سازی شیت ناموفق بود: "+message+cors,"error");
+      setStatus("انتشار متوقف شد؛ ارسال به n8n ناموفق بود: "+message,"error");
     }
   };
 }
