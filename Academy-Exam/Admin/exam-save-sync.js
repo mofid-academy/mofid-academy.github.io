@@ -1,160 +1,137 @@
-/* Academy Admin -> n8n question-sheet synchronization.
-   Uses a CORS-simple POST (text/plain JSON) so the browser does not need a preflight OPTIONS request.
-   The live exam keeps reading questions from the existing n8n exam-questions workflow. */
+/* Academy Admin -> n8n question-sheet synchronization v7.
+   The live exam still reads questions from the existing n8n exam-questions workflow. */
 (function(){
 "use strict";
 const EXAM_SAVE_URL="https://miladmirsheriii.app.n8n.cloud/webhook/exam-save";
+const VERSION="7";
+window.__ACADEMY_EXAM_SAVE_SYNC_VERSION__=VERSION;
 
 function setStatus(message,type){
-  try{ if(typeof status==="function") return status(message,type); }catch{}
+  try{if(typeof status==="function")return status(message,type);}catch{}
   const el=document.getElementById("status");
   if(el){el.textContent=message;el.className="status"+(type?" "+type:"");}
 }
-
+function safeClone(value){try{return JSON.parse(JSON.stringify(value));}catch{return value;}}
 function patchQuestionImporter(){
   try{
-    if(!window.AcademyQuestions||window.AcademyQuestions.__qidPatched) return;
+    if(!window.AcademyQuestions||window.AcademyQuestions.__examSaveV7)return;
     const original=window.AcademyQuestions.fromInput;
     window.AcademyQuestions.fromInput=function(raw){
-      const clone=raw&&typeof raw==="object"?JSON.parse(JSON.stringify(raw)):raw;
-      const list=Array.isArray(clone)?clone:(Array.isArray(clone?.questions)?clone.questions:null);
-      if(list){
-        list.forEach(q=>{
-          if(q&&q.question_id==null&&q.id==null&&q.qid!=null) q.question_id=String(q.qid);
-        });
+      const clone=raw&&typeof raw==="object"?safeClone(raw):raw;
+      const root=Array.isArray(clone)&&clone.length===1&&clone[0]&&typeof clone[0]==="object"?clone[0]:clone;
+      if(root&&!Array.isArray(root)&&typeof root==="object"){
+        if(root.examId==null&&root.exam_id!=null)root.examId=String(root.exam_id);
+        if(root.formId==null&&root.form_id!=null)root.formId=String(root.form_id);
+        if(root.examTitle==null&&root.exam_title!=null)root.examTitle=String(root.exam_title);
       }
+      const list=Array.isArray(root)?root:(Array.isArray(root?.questions)?root.questions:null);
+      if(list)list.forEach(q=>{if(q&&q.question_id==null&&q.id==null&&q.qid!=null)q.question_id=String(q.qid);});
       return original(clone);
     };
-    window.AcademyQuestions.__qidPatched=true;
+    window.AcademyQuestions.__examSaveV7=true;
   }catch{}
 }
-patchQuestionImporter();
-
 function currentQuestionBank(){
-  try{return (typeof model!=="undefined"&&model&&model.questionBank)?model.questionBank:null;}catch{return null;}
+  try{if(typeof model!=="undefined"&&model&&model.questionBank)return model.questionBank;}catch{}
+  return null;
 }
-
+function snapshotBank(){
+  const bank=currentQuestionBank();
+  if(!bank)throw new Error("بانک سؤال در حافظه پنل پیدا نشد. صفحه ادمین را یک‌بار با Ctrl+F5 تازه‌سازی کن و دوباره سؤال‌ها را از n8n دریافت کن.");
+  return safeClone(bank);
+}
+function validFormId(value){
+  const v=String(value||"").trim();
+  return !v||/^https?:\/\//i.test(v)?"mofid-exam":v;
+}
 function buildPayload(bank){
+  if(!bank||typeof bank!=="object")throw new Error("اطلاعات بانک سؤال در دسترس نیست.");
   const examId=String(bank.originalExamId||bank.examId||bank.exam_id||"").trim();
-  if(!examId) throw new Error("شناسه امتحان از منبع سؤال‌ها دریافت نشده است. ابتدا سؤال‌ها را از منبع فعلی n8n دریافت کن.");
-  const examTitle=String(bank.examTitle||bank.exam_title||"");
-  const formId=String(bank.formId||bank.form_id||"");
+  if(!examId)throw new Error("شناسه آزمون از n8n دریافت نشده است. دکمه «دریافت سؤال‌های فعلی از n8n» را بزن و بعد دوباره منتشر کن.");
   const questions=(Array.isArray(bank.questions)?bank.questions:[]).map((q,index)=>{
-    const stableId=String(q.id||q.question_id||q.qid||`${examId}-Q${index+1}`).trim();
+    const stableId=String(q.id||q.question_id||q.qid||(examId+"-Q"+(index+1))).trim();
     return {
-      question_id:stableId,
-      id:stableId,
-      qid:stableId,
-      order:index+1,
-      position:index+1,
-      question:String(q.question||""),
-      type:q.type==="mcq"?"mcq":"desc",
-      options:q.type==="mcq"&&Array.isArray(q.options)?q.options.map(x=>String(x)):[],
+      question_id:stableId,id:stableId,qid:stableId,order:index+1,position:index+1,
+      question:String(q.question||""),type:q.type==="mcq"?"mcq":"desc",
+      options:q.type==="mcq"&&Array.isArray(q.options)?q.options.map(String):[],
       max_score:Number.isFinite(Number(q.max_score))?Number(q.max_score):0,
       required:q.required===true
     };
   });
+  if(!questions.length)throw new Error("بانک سؤال خالی است؛ چیزی برای ارسال به n8n وجود ندارد.");
+  const formId=validFormId(bank.formId||bank.form_id);
+  const examTitle=String(bank.examTitle||bank.exam_title||"");
   return {
-    event_type:"exam_save",
-    action:"sync_questions",
-    source:"academy-admin",
-    sent_at:new Date().toISOString(),
-    examId,
-    examTitle,
-    formId,
-    durationMin:0,
-    status:"published",
-    exam_id:examId,
-    exam_title:examTitle,
-    form_id:formId,
-    bank_id:String(bank.bankId||""),
-    bank_version:String(bank.revision||""),
-    question_count:questions.length,
-    preserve_correct_answer:true,
-    sort_by:"order",
-    questions
+    event_type:"exam_save",action:"sync_questions",source:"academy-admin",sent_at:new Date().toISOString(),
+    examId,exam_id:examId,examTitle,exam_title:examTitle,formId,form_id:formId,
+    durationMin:0,status:"published",bank_id:String(bank.bankId||""),bank_version:String(bank.revision||""),
+    question_count:questions.length,preserve_correct_answer:true,sort_by:"order",questions
   };
 }
-
-async function syncQuestions(bank){
-  const payload=buildPayload(bank);
-  if(!payload.questions.length) throw new Error("بانک سؤال خالی است؛ چیزی برای ذخیره در شیت وجود ندارد.");
-
-  /* Do not use application/json here. That header causes a browser CORS preflight.
-     Sending the JSON text as text/plain makes the POST itself reach n8n directly. */
-  const response=await fetch(EXAM_SAVE_URL,{
-    method:"POST",
-    headers:{"Content-Type":"text/plain;charset=UTF-8"},
-    body:JSON.stringify(payload),
-    credentials:"omit",
-    cache:"no-store",
-    referrerPolicy:"no-referrer",
-    signal:AbortSignal.timeout(30000)
-  });
-
-  if(!response.ok) throw new Error("n8n HTTP "+response.status);
-  const text=await response.text();
-  if(text.trim()){
-    try{
-      const ack=JSON.parse(text);
-      if(ack&&typeof ack==="object"&&(ack.ok===false||ack.success===false||ack.saved===false)){
-        throw new Error(String(ack.message||ack.error||"n8n ذخیره سؤال‌ها را تأیید نکرد."));
-      }
-    }catch(e){ if(!(e instanceof SyntaxError)) throw e; }
+async function postPayload(payload){
+  const form=new URLSearchParams();
+  form.set("event_type",payload.event_type);
+  form.set("action",payload.action);
+  form.set("source",payload.source);
+  form.set("examId",payload.examId);
+  form.set("exam_id",payload.exam_id);
+  form.set("examTitle",payload.examTitle);
+  form.set("exam_title",payload.exam_title);
+  form.set("formId",payload.formId);
+  form.set("form_id",payload.form_id);
+  form.set("bank_id",payload.bank_id);
+  form.set("bank_version",payload.bank_version);
+  form.set("question_count",String(payload.question_count));
+  form.set("questions",JSON.stringify(payload.questions));
+  form.set("payload",JSON.stringify(payload));
+  const url=EXAM_SAVE_URL+"?source=academy-admin&v="+VERSION+"&ts="+Date.now();
+  try{
+    await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:form.toString(),credentials:"omit",cache:"no-store",keepalive:true});
+  }catch(fetchError){
+    if(!navigator.sendBeacon)throw fetchError;
+    const ok=navigator.sendBeacon(url,new Blob([form.toString()],{type:"application/x-www-form-urlencoded;charset=UTF-8"}));
+    if(!ok)throw fetchError;
   }
   return payload;
 }
-
+async function sendCurrent(){return postPayload(buildPayload(snapshotBank()));}
 function install(){
   patchQuestionImporter();
   const confirmButton=document.getElementById("confirmYes");
-  if(!confirmButton||typeof confirmButton.onclick!=="function"){
-    setTimeout(install,80);return;
-  }
-  if(confirmButton.dataset.examSaveSync==="5") return;
-  confirmButton.dataset.examSaveSync="5";
+  if(!confirmButton||typeof confirmButton.onclick!=="function"){setTimeout(install,100);return;}
+  if(confirmButton.dataset.examSaveSync===VERSION)return;
+  confirmButton.dataset.examSaveSync=VERSION;
   const original=confirmButton.onclick;
-
   const dialog=document.getElementById("confirmPublish");
-  if(dialog&&!document.getElementById("exam-save-sync-note")){
-    const note=document.createElement("p");
-    note.id="exam-save-sync-note";
-    note.className="tip";
-    note.textContent="در صورت ویرایش سؤال‌ها، قبل از انتشار یک POST مستقیم به exam-save ارسال و شیت همگام می‌شود. پاسخ صحیح از پنل ارسال نمی‌شود.";
-    const input=dialog.querySelector("#commitNote");
-    if(input) dialog.insertBefore(note,input); else dialog.append(note);
-  }
-
-  confirmButton.onclick=async function(event){
-    if(confirmButton.dataset.syncing==="1") return;
-    const bank=currentQuestionBank();
-    if(!bank||bank.mode!=="managed"||!Array.isArray(bank.questions)||!bank.questions.length){
-      return original.call(this,event);
+  if(dialog){
+    let note=document.getElementById("exam-save-sync-note");
+    if(!note){note=document.createElement("p");note.id="exam-save-sync-note";note.className="tip";const input=dialog.querySelector("#commitNote");if(input)dialog.insertBefore(note,input);else dialog.append(note);}
+    note.textContent="همگام‌سازی سؤال‌ها فعال است (v7). هنگام ویرایش سؤال‌ها، قبل از انتشار یک POST مستقیم به exam-save فرستاده می‌شود.";
+    if(!document.getElementById("exam-save-test")){
+      const actions=dialog.querySelector(".dialog-actions");
+      if(actions){
+        const test=document.createElement("button");test.id="exam-save-test";test.type="button";test.textContent="تست ارسال به n8n";actions.insertBefore(test,actions.firstChild);
+        test.onclick=async()=>{test.disabled=true;const old=test.textContent;test.textContent="در حال ارسال تست…";try{const p=await sendCurrent();setStatus("POST تست برای "+p.questions.length+" سؤال ارسال شد. Executions در n8n را بررسی کن.","success");}catch(e){setStatus("تست n8n ناموفق بود: "+String(e.message||e),"error");}finally{test.disabled=false;test.textContent=old;}};
+      }
     }
-
-    confirmButton.dataset.syncing="1";
-    const oldText=confirmButton.textContent;
-    confirmButton.disabled=true;
-    confirmButton.textContent="در حال ارسال به n8n…";
-    setStatus("در حال POST کردن سؤال‌ها و ترتیب جدید به exam-save…");
+  }
+  confirmButton.onclick=async function(event){
+    if(confirmButton.dataset.syncing==="1")return;
+    let bank=currentQuestionBank();
+    if(!bank){setStatus("انتشار متوقف شد؛ بانک سؤال در حافظه پنل پیدا نشد. Ctrl+F5 بزن و دوباره تلاش کن.","error");return;}
+    if(bank.mode!=="managed")return original.call(this,event);
+    confirmButton.dataset.syncing="1";const oldText=confirmButton.textContent;confirmButton.disabled=true;confirmButton.textContent="در حال ارسال به n8n…";
     try{
-      const payload=await syncQuestions(bank);
-      bank.mode="remote";
-      bank.submitApproved=false;
-      setStatus("n8n ذخیره "+payload.questions.length+" سؤال را تأیید کرد؛ حالا نسخه فرم روی سایت منتشر می‌شود.","success");
-      confirmButton.disabled=false;
-      confirmButton.textContent=oldText;
-      confirmButton.dataset.syncing="0";
+      const payload=await sendCurrent();
+      bank=currentQuestionBank();if(bank){bank.mode="remote";bank.submitApproved=false;}
+      setStatus("POST برای "+payload.questions.length+" سؤال به exam-save ارسال شد؛ انتشار فرم ادامه پیدا می‌کند.","success");
+      confirmButton.disabled=false;confirmButton.textContent=oldText;confirmButton.dataset.syncing="0";
       return original.call(this,event);
     }catch(error){
-      confirmButton.disabled=false;
-      confirmButton.textContent=oldText;
-      confirmButton.dataset.syncing="0";
-      const message=String(error&&error.message||error);
-      setStatus("انتشار متوقف شد؛ ارسال به n8n ناموفق بود: "+message,"error");
+      confirmButton.disabled=false;confirmButton.textContent=oldText;confirmButton.dataset.syncing="0";
+      setStatus("انتشار متوقف شد؛ ارسال به n8n انجام نشد: "+String(error&&error.message||error),"error");
     }
   };
 }
-
-install();
+patchQuestionImporter();install();
 })();
