@@ -7,5 +7,6 @@
   "candidate_blob_at_build": "69f52ed5d49cedc7af2d9dc86b84a9ba402ac027",
   "scripts_syntax_checked": 5,
   "publication_requires_github_write_permission": true,
-  "custom_question_submissions_require_n8n_setup": true
+  "custom_question_submissions_require_n8n_setup": true,
+  "exam_save_sync_version": 8
 }
