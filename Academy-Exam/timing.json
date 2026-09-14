@@ -1,10 +1,9 @@
 {
   "version": 1,
-  "enabled": true,
+  "enabled": false,
   "openAt": "2026-09-14T09:10",
   "lastStartAt": "",
   "durationMinutes": 15,
   "timeZone": "Asia/Tehran",
-  "timeEndpoint": "",
-  "deployNonce": 2
+  "timeEndpoint": ""
 }
