@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مدیریت فرم و سؤال‌ها | Academy Studio</title>
+<style>html,body{height:100%;margin:0;background:#f6f9f8;font-family:Tahoma,sans-serif}.loading{display:grid;place-items:center;height:100%;color:#315b55}</style>
+</head>
+<body><div class="loading">در حال بارگذاری پنل مدیریت…</div>
+<script>
+(async()=>{
+  const [baseRes,timeRes]=await Promise.all([
+    fetch('base.html?v='+Date.now(),{cache:'no-store'}),
+    fetch('../timing.json?v='+Date.now(),{cache:'no-store'})
+  ]);
+  if(!baseRes.ok)throw Error('base '+baseRes.status);
+  let html=await baseRes.text();
+  html=html
+    .replace("script-src 'unsafe-inline';","script-src 'unsafe-inline' 'self';")
+    .replace('PATH="Academy-Exam/index.html"','PATH="Academy-Exam/base.html"')
+    .replace('LIVE="https://mofid-academy.github.io/Academy-Exam/index.html"','LIVE="https://mofid-academy.github.io/Academy-Exam/base.html"');
+  let timing={version:1,enabled:true,openAt:'',lastStartAt:'',durationMinutes:15,timeZone:'Asia/Tehran',timeEndpoint:''};
+  if(timeRes.ok){try{timing={...timing,...await timeRes.json()}}catch{}}
+  const timingState='<script>window.__ACADEMY_TIMING__='+JSON.stringify(timing).replace(/</g,'\\u003c')+'<\\/script>';
+  html=html.replace('<body>','<body>'+timingState);
+  html=html.replace('</body>','<script src="timing-admin.js?v=2"><\\/script><script src="exam-save-sync.js?v=2"><\\/script></body>');
+  document.open();document.write(html);document.close();
+})().catch(e=>{document.body.innerHTML='<div class="loading"><div><h2>پنل مدیریت بارگذاری نشد</h2><p>'+String(e.message||e)+'</p></div></div>';});
+</script>
+</body>
+</html>
