@@ -1,9 +1,9 @@
 {
   "version": 1,
   "enabled": false,
-  "openAt": "2026-09-14T09:10",
+  "openAt": "2026-09-15T10:20",
   "lastStartAt": "",
-  "durationMinutes": 15,
+  "durationMinutes": 50,
   "timeZone": "Asia/Tehran",
   "timeEndpoint": ""
 }
