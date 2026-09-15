@@ -22,14 +22,14 @@
 
   const modelLine='let token="",login="",model=null,loadedSHA="",publishedSource="",active="questions",undoStack=[],timer=0,publishing=false,checking=0;';
   if(html.includes(modelLine)){
-    html=html.replace(modelLine,modelLine+'\nwindow.__ACADEMY_GET_QUESTION_BANK__=function(){return model&&model.questionBank?model.questionBank:null;};');
+    html=html.replace(modelLine,modelLine+'\nwindow.__ACADEMY_GET_QUESTION_BANK__=function(){return model&&model.questionBank?model.questionBank:null;};\nwindow.__ACADEMY_GET_ADMIN_TOKEN__=function(){return token||"";};');
   }
 
   let timing={version:1,enabled:true,openAt:'',lastStartAt:'',durationMinutes:15,timeZone:'Asia/Tehran',timeEndpoint:''};
   if(timeRes.ok){try{timing={...timing,...await timeRes.json()}}catch{}}
   const closeScript='</scr'+'ipt>';
   const timingState='<scr'+'ipt>window.__ACADEMY_TIMING__='+JSON.stringify(timing).replace(/</g,'\\u003c')+closeScript;
-  const extensions='<scr'+'ipt src="timing-admin.js?v=3">'+closeScript+'<scr'+'ipt src="exam-save-sync.js?v=10">'+closeScript+'<scr'+'ipt src="answer-key-ui.js?v=2">'+closeScript;
+  const extensions='<scr'+'ipt src="timing-admin.js?v=4">'+closeScript+'<scr'+'ipt src="exam-save-sync.js?v=10">'+closeScript+'<scr'+'ipt src="answer-key-ui.js?v=2">'+closeScript;
   html=html.replace('<body>','<body>'+timingState);
   html=html.replace('</body>',extensions+'</body>');
   document.open();document.write(html);document.close();
