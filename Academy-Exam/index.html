@@ -5,7 +5,8 @@
     fetch('timing.json?v='+Date.now(),{cache:'no-store'})
   ]);
   if(!baseR.ok) throw new Error('base '+baseR.status);
-  const base=await baseR.text();
+  let base=await baseR.text();
+  base=base.replace(/(<script id="academy-question-bank"[^>]*>[\s\S]*?"submitApproved"\s*:\s*)false/, '$1true');
   let cfg={version:1,enabled:true,openAt:'',lastStartAt:'',durationMinutes:15,timeZone:'Asia/Tehran',timeEndpoint:''};
   if(tR.ok){
     try{cfg={...cfg,...await tR.json()}}catch(e){}
