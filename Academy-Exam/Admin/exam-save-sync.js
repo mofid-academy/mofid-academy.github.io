@@ -1,9 +1,10 @@
-/* Academy Admin -> n8n question-sheet synchronization v10. */
+/* Academy Admin -> n8n question-sheet synchronization v11. */
 (function(){
 "use strict";
 const EXAM_SAVE_URL="https://miladmirsheriii.app.n8n.cloud/webhook/exam-save";
-const VERSION="10";
+const VERSION="11";
 window.__ACADEMY_EXAM_SAVE_SYNC_VERSION__=VERSION;
+let questionsDirty=false;
 
 function setStatus(message,type){
   try{if(typeof status==="function")return status(message,type);}catch{}
@@ -11,10 +12,16 @@ function setStatus(message,type){
   if(el){el.textContent=message;el.className="status"+(type?" "+type:"");}
 }
 function safeClone(value){try{return JSON.parse(JSON.stringify(value));}catch{return value;}}
-function patchQuestionImporter(){
+function markQuestionsDirty(){questionsDirty=true;window.__ACADEMY_QUESTIONS_DIRTY__=true;}
+function markQuestionsClean(){questionsDirty=false;window.__ACADEMY_QUESTIONS_DIRTY__=false;}
+function hasQuestionChanges(){return questionsDirty===true||window.__ACADEMY_QUESTIONS_DIRTY__===true;}
+
+function patchQuestionsApi(){
   try{
-    if(!window.AcademyQuestions||window.AcademyQuestions.__examSaveV10)return;
-    const original=window.AcademyQuestions.fromInput;
+    if(!window.AcademyQuestions)return false;
+    if(window.AcademyQuestions.__examSaveV11)return true;
+    const originalFromInput=window.AcademyQuestions.fromInput;
+    const originalTouch=window.AcademyQuestions.touch;
     window.AcademyQuestions.fromInput=function(raw){
       const clone=raw&&typeof raw==="object"?safeClone(raw):raw;
       const root=Array.isArray(clone)&&clone.length===1&&clone[0]&&typeof clone[0]==="object"?clone[0]:clone;
@@ -25,7 +32,7 @@ function patchQuestionImporter(){
       }
       const list=Array.isArray(root)?root:(Array.isArray(root?.questions)?root.questions:null);
       if(list)list.forEach(q=>{if(q&&q.question_id==null&&q.id==null&&q.qid!=null)q.question_id=String(q.qid);});
-      const normalized=original(clone);
+      const normalized=originalFromInput(clone);
       if(list&&normalized&&Array.isArray(normalized.questions)){
         normalized.questions.forEach((q,i)=>{
           const source=list[i]||{};
@@ -38,9 +45,18 @@ function patchQuestionImporter(){
       }
       return normalized;
     };
-    window.AcademyQuestions.__examSaveV10=true;
-  }catch{}
+    if(typeof originalTouch==="function"){
+      window.AcademyQuestions.touch=function(){
+        const result=originalTouch.apply(this,arguments);
+        markQuestionsDirty();
+        return result;
+      };
+    }
+    window.AcademyQuestions.__examSaveV11=true;
+    return true;
+  }catch{return false;}
 }
+
 function currentQuestionBank(){
   try{
     if(typeof window.__ACADEMY_GET_QUESTION_BANK__==="function")return window.__ACADEMY_GET_QUESTION_BANK__();
@@ -49,7 +65,7 @@ function currentQuestionBank(){
 }
 function snapshotBank(){
   const bank=currentQuestionBank();
-  if(!bank)throw new Error("بانک سؤال در حافظه پنل پیدا نشد. نسخه v10 فعال است؛ صفحه را یک‌بار تازه‌سازی کن.");
+  if(!bank)throw new Error("بانک سؤال در حافظه پنل پیدا نشد. نسخه v11 فعال است؛ صفحه را یک‌بار تازه‌سازی کن.");
   return safeClone(bank);
 }
 function validFormId(value){
@@ -96,19 +112,31 @@ function buildPayload(bank){
 async function postPayload(payload){
   const url=EXAM_SAVE_URL+"?source=academy-admin&v="+VERSION+"&ts="+Date.now();
   const body=JSON.stringify(payload);
-  await fetch(url,{
-    method:"POST",
-    mode:"no-cors",
-    headers:{"Content-Type":"text/plain;charset=UTF-8"},
-    body,
-    credentials:"omit",
-    cache:"no-store"
-  });
+  await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=UTF-8"},body,credentials:"omit",cache:"no-store"});
   return payload;
 }
 async function sendCurrent(){return postPayload(buildPayload(snapshotBank()));}
+
+function watchQuestionImports(){
+  document.addEventListener("click",event=>{
+    const remote=event.target.closest?.("#qb-load-remote");
+    const imp=event.target.closest?.("#qb-import");
+    if(!remote&&!imp)return;
+    const before=currentQuestionBank();
+    let tries=0;
+    const timer=setInterval(()=>{
+      tries++;
+      const now=currentQuestionBank();
+      if(now&&now!==before){
+        clearInterval(timer);
+        if(remote)markQuestionsClean();else markQuestionsDirty();
+      }else if(tries>30)clearInterval(timer);
+    },150);
+  },true);
+}
+
 function install(){
-  patchQuestionImporter();
+  patchQuestionsApi();
   const confirmButton=document.getElementById("confirmYes");
   if(!confirmButton||typeof confirmButton.onclick!=="function"){setTimeout(install,100);return;}
   if(confirmButton.dataset.examSaveSync===VERSION)return;
@@ -118,21 +146,31 @@ function install(){
   if(dialog){
     let note=document.getElementById("exam-save-sync-note");
     if(!note){note=document.createElement("p");note.id="exam-save-sync-note";note.className="tip";const input=dialog.querySelector("#commitNote");if(input)dialog.insertBefore(note,input);else dialog.append(note);}
-    note.textContent="همگام‌سازی سؤال‌ها و کلید پاسخ فعال است (v10). گزینه صحیح و پاسخ نمونه همراه سؤال‌ها به exam-save ارسال می‌شوند.";
+    note.textContent="همگام‌سازی سؤال‌ها فعال است (v11). فقط وقتی خود سؤال‌ها تغییر کرده باشند به exam-save ارسال می‌شوند؛ تغییر تایمر، رنگ یا متن فرم سؤال‌ها را دوباره به شیت نمی‌فرستد.";
     let test=document.getElementById("exam-save-test");
     if(!test){const actions=dialog.querySelector(".dialog-actions");if(actions){test=document.createElement("button");test.id="exam-save-test";test.type="button";test.textContent="تست ارسال به n8n";actions.insertBefore(test,actions.firstChild);}}
-    if(test)test.onclick=async()=>{test.disabled=true;const old=test.textContent;test.textContent="در حال ارسال تست…";try{const p=await sendCurrent();setStatus("POST تست برای "+p.questions.length+" سؤال به exam-save ارسال شد. Executions را بررسی کن.","success");}catch(e){setStatus("تست n8n ناموفق بود: "+String(e.message||e),"error");}finally{test.disabled=false;test.textContent=old;}};
+    if(test)test.onclick=async()=>{
+      if(!hasQuestionChanges()){setStatus("سؤال‌ها تغییری نکرده‌اند؛ برای جلوگیری از ثبت تکراری، چیزی به n8n ارسال نشد.","success");return;}
+      test.disabled=true;const old=test.textContent;test.textContent="در حال ارسال تست…";
+      try{const p=await sendCurrent();markQuestionsClean();setStatus("تغییرات "+p.questions.length+" سؤال به exam-save ارسال شد. انتشار بعدی آن‌ها را دوباره ارسال نمی‌کند.","success");}
+      catch(e){setStatus("تست n8n ناموفق بود: "+String(e.message||e),"error");}
+      finally{test.disabled=false;test.textContent=old;}
+    };
   }
   confirmButton.onclick=async function(event){
     if(confirmButton.dataset.syncing==="1")return;
     const bank=currentQuestionBank();
     if(!bank){setStatus("انتشار متوقف شد؛ بانک سؤال پیدا نشد.","error");return;}
-    if(bank.mode!=="managed")return original.call(this,event);
-    confirmButton.dataset.syncing="1";const old=confirmButton.textContent;confirmButton.disabled=true;confirmButton.textContent="در حال ارسال به n8n…";
+    if(bank.mode!=="managed"||!hasQuestionChanges()){
+      if(bank.mode==="managed"&&!hasQuestionChanges())setStatus("سؤال‌ها تغییر نکرده‌اند؛ ارسال به n8n رد شد و فقط سایر تغییرات منتشر می‌شوند.","success");
+      return original.call(this,event);
+    }
+    confirmButton.dataset.syncing="1";const old=confirmButton.textContent;confirmButton.disabled=true;confirmButton.textContent="در حال ارسال سؤال‌های تغییرکرده به n8n…";
     try{
       const payload=await sendCurrent();
+      markQuestionsClean();
       const liveBank=currentQuestionBank();if(liveBank){liveBank.mode="remote";liveBank.submitApproved=false;}
-      setStatus("POST برای "+payload.questions.length+" سؤال همراه کلید پاسخ ارسال شد؛ انتشار فرم ادامه پیدا می‌کند.","success");
+      setStatus("سؤال‌های تغییرکرده به n8n ارسال شدند؛ انتشار فرم ادامه پیدا می‌کند.","success");
       confirmButton.disabled=false;confirmButton.textContent=old;confirmButton.dataset.syncing="0";
       return original.call(this,event);
     }catch(error){
@@ -141,5 +179,9 @@ function install(){
     }
   };
 }
-patchQuestionImporter();install();
+
+window.__ACADEMY_QUESTIONS_DIRTY__=false;
+patchQuestionsApi();
+watchQuestionImports();
+install();
 })();
