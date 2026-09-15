@@ -6,7 +6,7 @@ let cfg={...initial};
 
 function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 function fa(v){return String(v).replace(/[0-9]/g,d=>"۰۱۲۳۴۵۶۷۸۹"[d]);}
-function adminToken(){try{return typeof token!=="undefined"?token:"";}catch{return "";}}
+function adminToken(){try{if(typeof window.__ACADEMY_GET_ADMIN_TOKEN__==="function")return String(window.__ACADEMY_GET_ADMIN_TOKEN__()||"").trim();}catch{}try{return typeof token!=="undefined"?String(token||"").trim():"";}catch{return "";}}
 function setStatus(message,type){try{if(typeof status==="function")return status(message,type);}catch{}const s=document.getElementById("status");if(s){s.textContent=message;s.className="status"+(type?" "+type:"");}}
 
 const style=document.createElement("style");
@@ -53,10 +53,14 @@ function install(){
    try{
     const apiUrl="https://api.github.com/repos/mofid-academy/mofid-academy.github.io/contents/Academy-Exam/timing.json";
     const headers={Accept:"application/vnd.github+json",Authorization:"Bearer "+t,"Content-Type":"application/json","X-GitHub-Api-Version":"2022-11-28"};
-    const cur=await fetch(apiUrl+"?ref=main",{headers,cache:"no-store"});if(!cur.ok)throw Error("GitHub "+cur.status);const meta=await cur.json();
+    const cur=await fetch(apiUrl+"?ref=main",{headers,cache:"no-store"});
+    if(cur.status===401){msg.textContent="اتصال GitHub معتبر نیست (401). از بالای صفحه «اتصال ادمین» را باز کن، کلید را پاک کن و دوباره با همان Fine-grained token متصل شو.";setStatus("اتصال GitHub منقضی یا نامعتبر است؛ دوباره متصل شو.","error");return;}
+    if(!cur.ok)throw Error("GitHub "+cur.status);const meta=await cur.json();
     const text=JSON.stringify({...cfg,version:1,timeZone:"Asia/Tehran"},null,2)+"\n";
     const bytes=new TextEncoder().encode(text);let binary="";for(const byte of bytes)binary+=String.fromCharCode(byte);
-    const put=await fetch(apiUrl,{method:"PUT",headers,body:JSON.stringify({message:"Academy Studio: update exam timing",content:btoa(binary),sha:meta.sha,branch:"main"})});if(!put.ok)throw Error("GitHub "+put.status);
+    const put=await fetch(apiUrl,{method:"PUT",headers,body:JSON.stringify({message:"Academy Studio: update exam timing",content:btoa(binary),sha:meta.sha,branch:"main"})});
+    if(put.status===401){msg.textContent="اتصال GitHub معتبر نیست (401). دوباره از «اتصال ادمین» وصل شو و بعد ذخیره را بزن.";setStatus("اتصال GitHub منقضی یا نامعتبر است؛ دوباره متصل شو.","error");return;}
+    if(!put.ok)throw Error("GitHub "+put.status);
     msg.textContent="زمان‌بندی ذخیره شد. فرم اصلی همین تنظیمات را می‌خواند.";setStatus("زمان‌بندی آزمون با موفقیت ذخیره شد.","success");
    }catch(e){msg.textContent="ذخیره ناموفق: "+String(e.message||e);}
   };
