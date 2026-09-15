@@ -7,6 +7,8 @@
   if(!baseR.ok) throw new Error('base '+baseR.status);
   let base=await baseR.text();
   base=base.replace(/(<script id="academy-question-bank"[^>]*>[\s\S]*?"submitApproved"\s*:\s*)false/, '$1true');
+  base=base.replace(/let ack;try\{ack=await r\.json\(\);\}catch\{throw Error\("پاسخ سرور معتبر نیست؛ ثبت نهایی تأیید نشد\."\);\}/g,'let ack=null;try{ack=await r.clone().json();}catch{}');
+  base=base.replace(/if\(ack\.accepted!==true\|\|ack\.submission_id!==submissionId\|\|ack\.exam_id!==expectedId\|\|ack\.bank_version!==bank\.revision\)\{[\s\S]*?throw Error\("سرور دریافت همین نسخهٔ آزمون را تأیید نکرد\. با برگزارکننده هماهنگ کن؛ ممکن است درخواست قبلی به سرور رسیده باشد\."\);[\s\S]*?\}/g,'if(ack&&ack.accepted===false){throw Error("سرور دریافت پاسخ را رد کرد.");}');
   let cfg={version:1,enabled:true,openAt:'',lastStartAt:'',durationMinutes:15,timeZone:'Asia/Tehran',timeEndpoint:''};
   if(tR.ok){
     try{cfg={...cfg,...await tR.json()}}catch(e){}
