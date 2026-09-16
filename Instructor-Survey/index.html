@@ -12,12 +12,13 @@
 (async()=>{
  const source='https://raw.githubusercontent.com/mofid-academy/mofid-academy.github.io/cc25510bfc93774a62bce734d7793960482fef99/Instructor-Survey/index.html';
  let t=await fetch(source,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('load');return r.text()});
+ t=t.replace('https://miladmirsheriii.app.n8n.cloud/webhook/instructor-survey','https://miladmirsh.app.n8n.cloud/webhook/instructor-survey');
  t=t.replace('<title>نظرسنجی مدرس | آکادمی نوزدهم</title>','<title>نظرسنجی مدرس | MOFID ACADEMY</title>');
  t=t.replace('<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">','<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&family=Vazirmatn:wght@400;500;700&display=swap" rel="stylesheet">');
  t=t.replace('--font:"Vazirmatn",Tahoma,sans-serif','--font:"Noto Sans Arabic",Vazirmatn,system-ui,"Segoe UI",Tahoma,sans-serif');
  t=t.replace('<div class="brand"><b>آکادمی مفید | نظرسنجی مدرس</b><span>آکادمی نوزدهم</span></div>','<div class="brand"><b>آکادمی مفید | نظرسنجی مدرس</b><span>MOFID ACADEMY</span></div>');
  t=t.replace('organizational_name:"M.mirsheri"','organizational_name:"m.mirsheri"');
- t=t.replace('storageKey:"mofid-survey-v3"','storageKey:"mofid-survey-v12"');
+ t=t.replace('storageKey:"mofid-survey-v3"','storageKey:"mofid-survey-v13"');
  t=t.replace('<input class="org" id="organizational_name"','<input id="organizational_name"');
  t=t.replace('input.org{direction:ltr;text-align:left;font-family:Arial,sans-serif;font-weight:600}','');
  t=t.replaceAll('عنوان کلاس / کارگاه','عنوان کلاس').replaceAll('عنوان کلاس یا کارگاه','عنوان کلاس');
