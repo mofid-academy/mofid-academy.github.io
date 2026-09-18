@@ -29,7 +29,7 @@
   if(timeRes.ok){try{timing={...timing,...await timeRes.json()}}catch{}}
   const closeScript='</scr'+'ipt>';
   const timingState='<scr'+'ipt>window.__ACADEMY_TIMING__='+JSON.stringify(timing).replace(/</g,'\\u003c')+closeScript;
-  const extensions='<scr'+'ipt src="timing-admin.js?v=5">'+closeScript+'<scr'+'ipt src="exam-save-sync.js?v=11">'+closeScript+'<scr'+'ipt src="answer-key-ui.js?v=2">'+closeScript;
+  const extensions='<scr'+'ipt src="timing-admin.js?v=5">'+closeScript+'<scr'+'ipt src="exam-save-sync.js?v=12">'+closeScript+'<scr'+'ipt src="answer-key-ui.js?v=2">'+closeScript;
   html=html.replace('<body>','<body>'+timingState);
   html=html.replace('</body>',extensions+'</body>');
   document.open();document.write(html);document.close();
