@@ -1,8 +1,8 @@
-/* Academy Admin -> n8n question-sheet synchronization v11. */
+/* Academy Admin -> n8n question-sheet synchronization v12. */
 (function(){
 "use strict";
-const EXAM_SAVE_URL="https://miladmirsheriii.app.n8n.cloud/webhook/exam-save";
-const VERSION="11";
+const EXAM_SAVE_URL="https://miladmirsh.app.n8n.cloud/webhook/exam-save";
+const VERSION="12";
 window.__ACADEMY_EXAM_SAVE_SYNC_VERSION__=VERSION;
 let questionsDirty=false;
 
@@ -19,7 +19,7 @@ function hasQuestionChanges(){return questionsDirty===true||window.__ACADEMY_QUE
 function patchQuestionsApi(){
   try{
     if(!window.AcademyQuestions)return false;
-    if(window.AcademyQuestions.__examSaveV11)return true;
+    if(window.AcademyQuestions.__examSaveV12)return true;
     const originalFromInput=window.AcademyQuestions.fromInput;
     const originalTouch=window.AcademyQuestions.touch;
     window.AcademyQuestions.fromInput=function(raw){
@@ -65,7 +65,7 @@ function currentQuestionBank(){
 }
 function snapshotBank(){
   const bank=currentQuestionBank();
-  if(!bank)throw new Error("بانک سؤال در حافظه پنل پیدا نشد. نسخه v11 فعال است؛ صفحه را یک‌بار تازه‌سازی کن.");
+  if(!bank)throw new Error("بانک سؤال در حافظه پنل پیدا نشد. نسخه v12 فعال است؛ صفحه را یک‌بار تازه‌سازی کن.");
   return safeClone(bank);
 }
 function validFormId(value){
