@@ -1,4 +1,4 @@
-/* Academy Admin file question importer v1 */
+/* Academy Admin file question importer v2 - every file creates a separate exam */
 (function(){
 "use strict";
 const IMPORT_URL="https://miladmirsh.app.n8n.cloud/webhook/exam-import-file";
@@ -34,9 +34,10 @@ function styles(){
   .qb-file-import p{font-size:10px;line-height:1.9;color:#66867d;margin:0 0 10px}
   .qb-file-import-row{display:grid;grid-template-columns:1fr 1.2fr;gap:8px;align-items:end}
   .qb-file-import label{font-size:10px;font-weight:600;display:block;margin-bottom:4px}
-  .qb-file-import select,.qb-file-import button{width:100%;font-size:11px}
+  .qb-file-import input,.qb-file-import button{width:100%;font-size:11px}
   .qb-file-import .import-result{display:block;font-size:10px;margin-top:8px;line-height:1.8;color:#507369}
   .qb-file-import .import-result.error{color:#a3412d}
+  .qb-file-import .notice{background:#e7f6f1;border:1px solid #cce9df;border-radius:10px;padding:8px 10px;margin:8px 0;color:#32675a;font-size:10px;line-height:1.8}
   @media(max-width:640px){.qb-file-import-row{grid-template-columns:1fr}}
   `;
   document.head.appendChild(s);
@@ -50,47 +51,50 @@ function install(){
 
   const box=document.createElement("div");box.className="qb-file-import";
   box.innerHTML=`
-    <h3>ورود خودکار سؤال‌ها از PDF / Word</h3>
-    <p>سؤال‌ها، گزینه‌ها و پاسخ‌هایی که داخل فایل نوشته شده‌اند عیناً استخراج می‌شوند. سیستم سؤال یا پاسخ جدید اختراع نمی‌کند.</p>
+    <h3>ساخت آزمون جدید از PDF / Word</h3>
+    <p>سؤال‌ها، گزینه‌ها و پاسخ‌هایی که داخل فایل نوشته شده‌اند استخراج می‌شوند. هر فایل همیشه یک آزمون جدید و مستقل می‌سازد.</p>
+    <div class="notice">سؤال‌های آزمون قبلی به این فایل اضافه نمی‌شوند و هیچ بانکی با آزمون قبلی ادغام نمی‌شود.</div>
     <div class="qb-file-import-row">
-      <div><label>نحوه وارد کردن</label><select id="academyImportMode">
-        <option value="replace">جایگزینی سؤال‌های فعلی با فایل</option>
-        <option value="append">افزودن به سؤال‌های فعلی</option>
-      </select></div>
+      <div><label>عنوان آزمون — اختیاری</label><input id="academyImportTitle" type="text" placeholder="اگر خالی باشد از نام فایل/عنوان داخل فایل استفاده می‌شود"></div>
       <div><label>فایل سؤال‌ها</label><button id="academyImportBtn" type="button">انتخاب PDF یا Word</button></div>
     </div>
     <input id="academyImportFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
-    <span id="academyImportResult" class="import-result">حداکثر حجم فایل: ۱۰ مگابایت.</span>
+    <span id="academyImportResult" class="import-result">حداکثر حجم فایل: ۱۰ مگابایت. هر آپلود یک شناسه آزمون جدید می‌گیرد.</span>
   `;
   tools.insertAdjacentElement("afterend",box);
 
-  const mode=box.querySelector("#academyImportMode");
+  const title=box.querySelector("#academyImportTitle");
   const btn=box.querySelector("#academyImportBtn");
   const file=box.querySelector("#academyImportFile");
   const result=box.querySelector("#academyImportResult");
   btn.onclick=()=>file.click();
+
   file.onchange=async()=>{
     const f=file.files&&file.files[0]; if(!f)return;
     result.classList.remove("error");
     const ext=(f.name.split(".").pop()||"").toLowerCase();
     if(!["pdf","docx"].includes(ext)){result.textContent="فقط فایل PDF یا DOCX قابل قبول است.";result.classList.add("error");return;}
     if(f.size>MAX_FILE_BYTES){result.textContent="حجم فایل بیشتر از ۱۰ مگابایت است.";result.classList.add("error");return;}
-    if(mode.value==="replace"&&!confirm("سؤال‌های داخل فایل جایگزین سؤال‌های فعلی شوند؟")){file.value="";return;}
+    if(!confirm("از این فایل یک آزمون جدید و جدا ساخته شود؟")){file.value="";return;}
 
     const bank=currentBank()||{};
     const fd=new FormData();
     fd.append("file",f,f.name);
-    fd.append("mode",mode.value);
-    fd.append("exam_id",String(bank.originalExamId||bank.examId||bank.exam_id||""));
-    fd.append("exam_title",String(bank.examTitle||bank.exam_title||""));
-    fd.append("form_id",String(bank.formId||bank.form_id||"mofid-exam"));
-    fd.append("bank_id",String(bank.bankId||""));
-    fd.append("bank_version",String(bank.revision||""));
 
-    btn.disabled=true;mode.disabled=true;file.disabled=true;
-    btn.textContent="در حال خواندن فایل…";
-    result.textContent="فایل به n8n ارسال شد؛ در حال استخراج سؤال‌ها و پاسخ‌ها…";
-    setStatus("در حال وارد کردن سؤال‌ها از فایل…");
+    // IMPORTANT: blank exam_id/bank_id forces the workflow to create a NEW exam.
+    // We deliberately never use the currently loaded exam id here.
+    fd.append("mode","replace");
+    fd.append("exam_id","");
+    fd.append("exam_title",String(title.value||"").trim());
+    fd.append("form_id",String(bank.formId||bank.form_id||"mofid-exam"));
+    fd.append("bank_id","");
+    fd.append("bank_version","");
+    fd.append("create_new_exam","true");
+
+    btn.disabled=true;title.disabled=true;file.disabled=true;
+    btn.textContent="در حال ساخت آزمون جدید…";
+    result.textContent="فایل به n8n ارسال شد؛ سؤال‌ها و پاسخ‌ها در حال استخراج هستند…";
+    setStatus("در حال ساخت آزمون جدید از فایل…");
 
     try{
       const r=await fetch(IMPORT_URL,{
@@ -103,22 +107,23 @@ function install(){
 
       const count=Number(data?.imported_count||data?.question_count||0);
       const missing=Number(data?.missing_answer_count||0);
-      result.textContent=(count?count+" سؤال وارد شد. ":"سؤال‌ها وارد شدند. ")+(missing?missing+" سؤال در فایل پاسخ صریح نداشت. ":"")+"در حال تازه‌سازی پنل…";
+      const examId=String(data?.exam_id||"");
+      result.textContent=(count?count+" سؤال برای آزمون جدید ثبت شد. ":"آزمون جدید ثبت شد. ")+(examId?"شناسه: "+examId+". ":"")+(missing?missing+" سؤال پاسخ صریح نداشت. ":"")+"در حال تازه‌سازی پنل…";
 
       const refreshed=await refreshQuestions();
       if(refreshed){
-        result.textContent=(count?count+" سؤال با موفقیت وارد شد. ":"ورود سؤال‌ها موفق بود. ")+(missing?missing+" سؤال بدون پاسخ صریح در فایل بود. ":"")+"حالا «انتشار روی سایت» را بزن.";
-        setStatus("فایل با موفقیت پردازش شد؛ سؤال‌های جدید در پنل آماده‌اند. برای نمایش در فرم اصلی، «انتشار روی سایت» را بزن.","success");
+        result.textContent=(count?count+" سؤال در آزمون جدید و مستقل وارد شد. ":"آزمون جدید آماده است. ")+(examId?"شناسه: "+examId+". ":"")+(missing?missing+" سؤال بدون پاسخ صریح بود. ":"")+"سؤال‌های آزمون قبلی با این آزمون ادغام نشده‌اند.";
+        setStatus("آزمون جدید با موفقیت ساخته شد؛ پنل فقط سؤال‌های همین آزمون را نمایش می‌دهد.","success");
       }else{
-        result.textContent="ورود موفق بود. برای دیدن سؤال‌ها دکمه «دریافت سؤال‌های فعلی از n8n» را بزن.";
-        setStatus("فایل پردازش شد. سؤال‌ها را دوباره از n8n دریافت کن.","success");
+        result.textContent="آزمون جدید ساخته شد. دکمه «دریافت سؤال‌های فعلی از n8n» را بزن تا همین آزمون جدید لود شود.";
+        setStatus("آزمون جدید ساخته شد. سؤال‌ها را دوباره از n8n دریافت کن.","success");
       }
     }catch(e){
       result.textContent="ورود فایل ناموفق بود: "+String(e.message||e);
       result.classList.add("error");
       setStatus("ورود فایل ناموفق بود: "+String(e.message||e),"error");
     }finally{
-      btn.disabled=false;mode.disabled=false;file.disabled=false;btn.textContent="انتخاب PDF یا Word";file.value="";
+      btn.disabled=false;title.disabled=false;file.disabled=false;btn.textContent="انتخاب PDF یا Word";file.value="";
     }
   };
 }
