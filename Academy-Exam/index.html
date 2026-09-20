@@ -120,6 +120,38 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&attempt)b
 })();
 `;
 
+  // academy-option-continuation-fix: repair accidental option splits caused by PDF/OCR line breaks
+  const optionGuard = `
+function normalizeExamOptions(raw){
+  const a=(Array.isArray(raw)?raw:[])
+    .map(x=>String(x??'').replace(/\\s+/g,' ').trim())
+    .filter(Boolean);
+  if(a.length<=4) return a;
+
+  const terminal=/[.!؟!؛…][\\\"'»)]*$/;
+  while(a.length>4){
+    let best=-1, bestScore=-1;
+    for(let i=0;i<a.length-1;i++){
+      const prev=a[i], next=a[i+1];
+      let score=0;
+      if(!terminal.test(prev)) score+=6;
+      if(next.length<=60) score+=3;
+      if(prev.length>=45) score+=2;
+      if(i>0 && i<a.length-1) score+=1;
+      if(score>bestScore){bestScore=score;best=i;}
+    }
+    if(best<0 || bestScore<6) break;
+    a.splice(best,2,(a[best]+' '+a[best+1]).replace(/\\s+/g,' ').trim());
+  }
+  return a;
+}
+`;
+  base=base.replace('async function boot(){', optionGuard+'\\nasync function boot(){');
+  base=base.replace(
+    'question:q.question||"", options:q.options||[],',
+    'question:q.question||"", options:normalizeExamOptions(q.options||[]),'
+  );
+
   let html=base.replace('</head>',css+'</head>');
   html=html.replace('<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>','<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>'+badge);
   html=html.replace('$("fM").textContent = toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3));','$("fM").textContent = '+(cfg.enabled!==false?'toFa('+Number(cfg.durationMinutes||15)+') + " دقیقه"':'toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3))')+';');
