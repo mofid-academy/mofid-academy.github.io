@@ -146,7 +146,7 @@ function normalizeExamOptions(raw){
   return a;
 }
 `;
-  base=base.replace('async function boot(){', optionGuard+'\\nasync function boot(){');
+  base=base.replace('async function boot(){', optionGuard+'\nasync function boot(){');
   base=base.replace(
     'question:q.question||"", options:q.options||[],',
     'question:q.question||"", options:normalizeExamOptions(q.options||[]),'
