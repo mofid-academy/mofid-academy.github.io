@@ -10,6 +10,7 @@
 <body><div class="loading"><span>در حال بارگذاری فرم…</span></div>
 <script>
 (async()=>{
+ const pinarData=(await Promise.all(Array.from({length:16},(_,i)=>i+1).map(i=>fetch(`./pinar-vf-q-${String(i).padStart(2,'0')}.txt`,{cache:'force-cache'}).then(r=>{if(!r.ok)throw new Error('font');return r.text()})))).join('');
  const source='https://raw.githubusercontent.com/mofid-academy/mofid-academy.github.io/cc25510bfc93774a62bce734d7793960482fef99/Instructor-Survey/index.html';
  let t=await fetch(source,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('load');return r.text()});
  t=t.replace('https://miladmirsheriii.app.n8n.cloud/webhook/instructor-survey','https://miladmirsh.app.n8n.cloud/webhook/instructor-survey');
@@ -25,6 +26,8 @@
  t=t.replace(/<div class="note">نام سازمانی پیش‌فرض روی[\s\S]*?<\/div>/,'');
  t=t.replace('data-v="${n}">${fa(n)}</button>','data-v="${n}">${n}</button>');
  const extra=`<style id="survey-final-overrides">
+ @font-face{font-family:"Pinar-VF";src:url("data:font/woff2;base64,${pinarData}") format("woff2");font-style:normal;font-weight:300 900;font-display:swap}
+ body,input,select,textarea,button{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-synthesis:none}
  body{background:radial-gradient(circle at 15% 10%,rgba(63,193,190,.20),transparent 27%),radial-gradient(circle at 85% 85%,rgba(63,193,190,.13),transparent 30%),linear-gradient(145deg,#eaf6f2 0%,#f8fcfb 48%,#fff 100%)!important}
  .top,.layout{position:relative;z-index:2}.logo{width:62px!important;height:62px!important;border-radius:15px!important}.logo img{object-fit:cover!important}.brand span{letter-spacing:.14em!important}
  .survey-beam{position:fixed;z-index:0;pointer-events:none;top:-25vh;left:-45vw;width:34vw;height:150vh;transform:rotate(18deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.08) 18%,rgba(255,255,255,.75) 49%,rgba(151,244,240,.22) 63%,transparent);filter:blur(7px);opacity:.42;animation:surveyLight 8.5s cubic-bezier(.45,0,.2,1) infinite}.survey-beam.b2{width:18vw;animation-duration:12s;animation-delay:-5s;opacity:.22}@keyframes surveyLight{0%{transform:translateX(0) rotate(18deg)}55%,100%{transform:translateX(190vw) rotate(18deg)}}
