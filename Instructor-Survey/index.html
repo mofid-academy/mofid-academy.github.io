@@ -18,7 +18,7 @@
  t=t.replace('<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">','<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&family=Vazirmatn:wght@400;500;700&display=swap" rel="stylesheet">');
  t=t.replace('--font:"Vazirmatn",Tahoma,sans-serif','--font:"Pinar-VF",Tahoma,sans-serif');
  t=t.replace('<div class="brand"><b>آکادمی مفید | نظرسنجی مدرس</b><span>آکادمی نوزدهم</span></div>','<div class="brand"><b>آکادمی مفید | نظرسنجی مدرس</b><span>MOFID ACADEMY</span></div>');
- t=t.replace('organizational_name:"M.mirsheri"','organizational_name:"m.mirsheri"');
+ t=t.replace('organizational_name:"M.mirsheri"','organizational_name:""');
  t=t.replace('storageKey:"mofid-survey-v3"','storageKey:"mofid-survey-v13"');
  t=t.replace('<input class="org" id="organizational_name"','<input id="organizational_name"');
  t=t.replace('input.org{direction:ltr;text-align:left;font-family:Arial,sans-serif;font-weight:600}','');
@@ -26,6 +26,7 @@
  t=t.replace(/<div class="note">نام سازمانی پیش‌فرض روی[\s\S]*?<\/div>/,'');
  t=t.replace('data-v="${n}">${fa(n)}</button>','data-v="${n}">${n}</button>');
  t=t.replace('storageKey:"mofid-survey-v13"','storageKey:"mofid-survey-v14"');
+ t=t.replace('storageKey:"mofid-survey-v14"','storageKey:"mofid-survey-v15"');
  t=t.replace('team_name:"آکادمی نوزدهم"','team_name:"دوره‌های آموزشی مرکز تماس"');
  t=t.replace('<input id="organizational_name" value="${esc(state.organizational_name)}" placeholder="M.mirsheri">','<input id="organizational_name" value="${esc(state.organizational_name)}" placeholder="m.mirsheri">');
  t=t.replace('<select id="team_name"><option value="آکادمی نوزدهم" ${state.team_name==="آکادمی نوزدهم"?"selected":""}>آکادمی نوزدهم</option></select>','<select id="team_name"><option value="دوره‌های آموزشی مرکز تماس" ${state.team_name==="دوره‌های آموزشی مرکز تماس"?"selected":""}>دوره‌های آموزشی مرکز تماس</option></select>');
