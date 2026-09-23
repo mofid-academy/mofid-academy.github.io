@@ -1,7 +1,7 @@
 /* Academy Admin -> n8n question-sheet synchronization v12. */
 (function(){
 "use strict";
-const EXAM_SAVE_URL="https://miladmirsh.app.n8n.cloud/webhook/exam-save";
+const EXAM_SAVE_URL="https://miladmirsheriseyed.app.n8n.cloud/webhook/exam-save";
 const VERSION="12";
 window.__ACADEMY_EXAM_SAVE_SYNC_VERSION__=VERSION;
 let questionsDirty=false;
