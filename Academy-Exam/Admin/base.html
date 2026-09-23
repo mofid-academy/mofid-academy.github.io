@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data: blob:; connect-src https://api.github.com https://mofid-academy.github.io https://miladmirsh.app.n8n.cloud; frame-src 'self' blob: about:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data: blob:; connect-src https://api.github.com https://mofid-academy.github.io https://miladmirsheriseyed.app.n8n.cloud; frame-src 'self' blob: about:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <title>مدیریت فرم و سؤال‌ها | Academy Studio 2</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap">
 <style>
@@ -6925,7 +6925,7 @@ function questionControls(root){
    if(!f)throw Error("آدرس دریافت سؤال در این فایل پیدا نشد.");
    const u=new URL(model.values[f.id]);
    if(u.protocol!=="https:"||u.username||u.password)throw Error("آدرس دریافت سؤال باید HTTPS و بدون نام کاربری یا رمز باشد.");
-   if(!["https://miladmirsh.app.n8n.cloud","https://mofid-academy.github.io"].includes(u.origin)){
+   if(!["https://miladmirsheriseyed.app.n8n.cloud","https://mofid-academy.github.io"].includes(u.origin)){
     throw Error("این دامنه در فهرست امن پنل نیست. خروجی JSON سؤال‌ها را با دکمهٔ «ورود JSON» باز کن.");
    }
    load.disabled=true;load.textContent="در حال دریافت…";
