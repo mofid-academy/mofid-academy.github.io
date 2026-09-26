@@ -52,6 +52,42 @@ const style=document.createElement("style");
 style.textContent=`.academy-time-hero{background:linear-gradient(145deg,#e8f7f1,#f8fcfa);border:1px solid #cbe8de;border-radius:14px;padding:14px;margin-bottom:18px}.academy-time-hero b{display:block;color:#0b6f5d;font-size:13px}.academy-time-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.academy-time-field{margin-bottom:14px}.academy-time-field label{display:block;font-weight:600;font-size:12px;margin-bottom:6px}.academy-time-field small{display:block;color:#728783;font-size:10px;line-height:1.8;margin-top:5px}.academy-time-field input{width:100%}.academy-time-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.academy-time-actions button{flex:1}.academy-time-summary{padding:12px;border:1px solid #dce9e5;background:#fbfdfc;border-radius:12px;font-size:11px;line-height:2;margin-top:12px}.academy-time-summary b{color:#087f75}@media(max-width:640px){.academy-time-grid{grid-template-columns:1fr}}`;
 document.head.append(style);
 
+
+async function saveTimingToGitHub(target,t){
+ const apiUrl="https://api.github.com/repos/mofid-academy/mofid-academy.github.io/contents/Academy-Exam/timing.json";
+ const headers={Accept:"application/vnd.github+json",Authorization:"Bearer "+t};
+ const matches=value=>value&&value.updatedAt===target.updatedAt&&value.enabled===target.enabled&&value.durationMinutes===target.durationMinutes&&value.openAt===target.openAt&&value.lastStartAt===target.lastStartAt&&value.timeEndpoint===target.timeEndpoint;
+ function decode(meta){try{return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(meta.content.replace(/\s/g,'')),c=>c.charCodeAt(0))));}catch{return null;}}
+ async function request(url,options={}){
+  const response=await fetch(url,{...options,headers:{...headers,...options.headers},credentials:"omit",referrerPolicy:"no-referrer",cache:"no-store",signal:AbortSignal.timeout(15000)});
+  if(!response.ok){
+   const error=new Error(response.status===401?"توکن GitHub معتبر نیست یا منقضی شده؛ از «اتصال ادمین» دوباره متصل شوید.":response.status===403?"GitHub اجازه ذخیره نداد؛ دسترسی Contents: Read and write و محدودیت درخواست‌ها را بررسی کنید.":response.status===404?"فایل زمان‌بندی یا دسترسی توکن به مخزن پیدا نشد.":"ذخیره زمان‌بندی در GitHub ناموفق بود ("+response.status+").");
+   error.httpStatus=response.status;throw error;
+  }
+  return response.json();
+ }
+ const bytes=new TextEncoder().encode(JSON.stringify(target,null,2)+"\n");
+ let binary="";for(const byte of bytes)binary+=String.fromCharCode(byte);
+ let lastError;
+ for(let attempt=0;attempt<3;attempt++){
+  if(attempt)await new Promise(resolve=>setTimeout(resolve,700*attempt));
+  try{
+   // Re-read before every write: a lost response may follow a successful commit.
+   const meta=await request(apiUrl+"?ref=main&live="+Date.now());
+   if(matches(decode(meta)))return;
+   await request(apiUrl,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:"Academy Studio: update exam timing",content:btoa(binary),sha:meta.sha,branch:"main"})});
+   return;
+  }catch(error){
+   lastError=error;
+   if(error.httpStatus&&![408,409,429,500,502,503,504].includes(error.httpStatus))throw error;
+   // Public reading can confirm a commit even if the API response was lost.
+   try{if(matches(await readLiveTiming()))return;}catch{}
+  }
+ }
+ if(lastError&&lastError.httpStatus)throw lastError;
+ throw Error("ارتباط با GitHub برقرار نشد و ذخیره تأیید نشد. ساعت‌های واردشده حفظ شده‌اند؛ اتصال اینترنت یا VPN را بررسی کنید و دوباره ذخیره را بزنید.");
+}
+
 function install(){
  const rail=document.querySelector(".rail"),fields=document.getElementById("fields"),studio=document.querySelector(".studio");
  if(!rail||!fields||!studio){setTimeout(install,80);return;}
@@ -91,18 +127,8 @@ function install(){
    const saveButton=root.querySelector("#tm-save");saveButton.disabled=true;
    msg.textContent="در حال ذخیره و بررسی تنظیمات زنده…";
    try{
-    const apiUrl="https://api.github.com/repos/mofid-academy/mofid-academy.github.io/contents/Academy-Exam/timing.json";
-    const headers={Accept:"application/vnd.github+json",Authorization:"Bearer "+t,"Content-Type":"application/json","X-GitHub-Api-Version":"2022-11-28"};
-    const cur=await fetch(apiUrl+"?ref=main",{headers,cache:"no-store"});
-    if(cur.status===401){msg.textContent="اتصال GitHub معتبر نیست (401). از بالای صفحه «اتصال ادمین» را باز کن، کلید را پاک کن و دوباره با همان Fine-grained token متصل شو.";setStatus("اتصال GitHub منقضی یا نامعتبر است؛ دوباره متصل شو.","error");return;}
-    if(!cur.ok)throw Error("GitHub "+cur.status);const meta=await cur.json();
     const target={...cfg,version:1,timeZone:"Asia/Tehran",updatedAt:new Date().toISOString()};
-    const text=JSON.stringify(target,null,2)+"\n";
-    const bytes=new TextEncoder().encode(text);let binary="";for(const byte of bytes)binary+=String.fromCharCode(byte);
-    const put=await fetch(apiUrl,{method:"PUT",headers,body:JSON.stringify({message:"Academy Studio: update exam timing",content:btoa(binary),sha:meta.sha,branch:"main"})});
-    if(put.status===401){msg.textContent="اتصال GitHub معتبر نیست (401). دوباره از «اتصال ادمین» وصل شو و بعد ذخیره را بزن.";setStatus("اتصال GitHub منقضی یا نامعتبر است؛ دوباره متصل شو.","error");return;}
-    if(!put.ok)throw Error("GitHub "+put.status);
-    const committed=await put.json();
+    await saveTimingToGitHub(target,t);
     let verified=false;
     // Verify the exact version at the same source used by participants.
     for(let attempt=0;attempt<4;attempt++){
