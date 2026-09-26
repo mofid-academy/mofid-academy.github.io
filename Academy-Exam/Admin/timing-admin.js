@@ -1,6 +1,17 @@
 /* Academy timing controls for the admin studio. */
 (function(){
 "use strict";
+async function readLiveTiming(){
+ const url='https://raw.githubusercontent.com/mofid-academy/mofid-academy.github.io/main/Academy-Exam/timing.json';
+ const r=await fetch(url+'?live='+Date.now()+'-'+Math.random().toString(36).slice(2),{cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(10000)});
+ if(!r.ok)throw Error('خواندن زمان‌بندی تازه ناموفق بود؛ دوباره تلاش کنید.');
+ const c=await r.json();
+ if(typeof c.enabled!=='boolean'||!Number.isFinite(Number(c.durationMinutes))||Number(c.durationMinutes)<1||Number(c.durationMinutes)>480)throw Error('تنظیمات زمان‌بندی معتبر نیست.');
+ for(const k of ['openAt','lastStartAt'])if(c[k]&&(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(c[k])||!Number.isFinite(Date.parse(c[k]+':00+03:30'))))throw Error('تاریخ زمان‌بندی معتبر نیست.');
+ const epoch=Date.parse(r.headers.get('Date')||'');
+ return {...c,durationMinutes:Number(c.durationMinutes),serverEpoch:Number.isFinite(epoch)?epoch:Date.now()};
+}
+
 const initial={version:1,enabled:true,openAt:"",lastStartAt:"",durationMinutes:15,timeZone:"Asia/Tehran",timeEndpoint:"",...(window.__ACADEMY_TIMING__||{})};
 let cfg={...initial},previewRefreshTimer=0;
 
@@ -77,21 +88,35 @@ function install(){
    sync();if(cfg.openAt&&cfg.lastStartAt&&cfg.lastStartAt<cfg.openAt){msg.textContent="آخرین زمان شروع نمی‌تواند قبل از زمان باز شدن باشد.";return;}
    if(cfg.timeEndpoint){try{const u=new URL(cfg.timeEndpoint);if(u.protocol!=="https:")throw 0;}catch{msg.textContent="آدرس سرویس زمان باید HTTPS باشد.";return;}}
    const t=adminToken();if(!t){msg.textContent="ابتدا از دکمه «اتصال ادمین» بالای صفحه به GitHub متصل شو.";return;}
-   msg.textContent="در حال ذخیره…";
+   const saveButton=root.querySelector("#tm-save");saveButton.disabled=true;
+   msg.textContent="در حال ذخیره و بررسی تنظیمات زنده…";
    try{
     const apiUrl="https://api.github.com/repos/mofid-academy/mofid-academy.github.io/contents/Academy-Exam/timing.json";
     const headers={Accept:"application/vnd.github+json",Authorization:"Bearer "+t,"Content-Type":"application/json","X-GitHub-Api-Version":"2022-11-28"};
     const cur=await fetch(apiUrl+"?ref=main",{headers,cache:"no-store"});
     if(cur.status===401){msg.textContent="اتصال GitHub معتبر نیست (401). از بالای صفحه «اتصال ادمین» را باز کن، کلید را پاک کن و دوباره با همان Fine-grained token متصل شو.";setStatus("اتصال GitHub منقضی یا نامعتبر است؛ دوباره متصل شو.","error");return;}
     if(!cur.ok)throw Error("GitHub "+cur.status);const meta=await cur.json();
-    const text=JSON.stringify({...cfg,version:1,timeZone:"Asia/Tehran"},null,2)+"\n";
+    const target={...cfg,version:1,timeZone:"Asia/Tehran",updatedAt:new Date().toISOString()};
+    const text=JSON.stringify(target,null,2)+"\n";
     const bytes=new TextEncoder().encode(text);let binary="";for(const byte of bytes)binary+=String.fromCharCode(byte);
     const put=await fetch(apiUrl,{method:"PUT",headers,body:JSON.stringify({message:"Academy Studio: update exam timing",content:btoa(binary),sha:meta.sha,branch:"main"})});
     if(put.status===401){msg.textContent="اتصال GitHub معتبر نیست (401). دوباره از «اتصال ادمین» وصل شو و بعد ذخیره را بزن.";setStatus("اتصال GitHub منقضی یا نامعتبر است؛ دوباره متصل شو.","error");return;}
     if(!put.ok)throw Error("GitHub "+put.status);
-    window.__ACADEMY_TIMING__={...cfg,version:1,timeZone:"Asia/Tehran"};
-    msg.textContent="زمان‌بندی ذخیره شد. فرم اصلی همین تنظیمات را می‌خواند.";setStatus("زمان‌بندی آزمون با موفقیت ذخیره شد.","success");previewRefreshSoon();
-   }catch(e){msg.textContent="ذخیره ناموفق: "+String(e.message||e);}
+    const committed=await put.json();
+    let verified=false;
+    // Verify the exact version at the same source used by participants.
+    for(let attempt=0;attempt<4;attempt++){
+     if(attempt)await new Promise(resolve=>setTimeout(resolve,1200));
+     try{const fresh=await readLiveTiming();verified=fresh.updatedAt===target.updatedAt&&fresh.enabled===target.enabled&&fresh.durationMinutes===target.durationMinutes&&fresh.openAt===target.openAt&&fresh.lastStartAt===target.lastStartAt;if(verified)break;}catch{}
+    }
+    cfg={...target};window.__ACADEMY_TIMING__={...target};
+    try{localStorage.setItem('academy-timing-live',target.updatedAt);const c=new BroadcastChannel('academy-timing-live');c.postMessage({revision:target.updatedAt});c.close();}catch{}
+    if(verified){msg.textContent='ذخیره و خواندن نسخه جدید تأیید شد؛ صفحات منتظر حداکثر در بررسی بعدی (۱۰ ثانیه) به‌روز می‌شوند. مهلت افراد شروع‌کرده ثابت می‌ماند.';setStatus('زمان‌بندی زنده به‌روز شد.','success');}
+    else{msg.textContent='در GitHub ذخیره شد، اما خواندن نسخه تازه هنوز تأیید نشده است. انتشار Pages لازم نیست؛ کمی بعد سایت را دوباره بررسی کنید.';setStatus('ذخیره انجام شد؛ تأیید دسترسی به نسخه تازه در انتظار است.','warning');}
+    previewRefreshSoon();
+   }catch(e){msg.textContent='ذخیره یا تأیید ناموفق: '+String(e.message||e);}
+   finally{saveButton.disabled=false;}
+
   };
  }
  btn.onclick=()=>{document.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("active",x===btn));studio.classList.remove("questions-mode");draw();};
@@ -99,3 +124,4 @@ function install(){
 patchPreview();
 install();
 })();
+
