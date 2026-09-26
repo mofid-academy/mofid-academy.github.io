@@ -1,21 +1,28 @@
 <!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمون آکادمی مفید</title></head><body><p style="font-family:Tahoma;text-align:center;margin-top:12vh">در حال آماده‌سازی آزمون…</p><script>
 (async()=>{
+async function readLiveTiming(){
+ const url='https://raw.githubusercontent.com/mofid-academy/mofid-academy.github.io/main/Academy-Exam/timing.json';
+ const r=await fetch(url+'?live='+Date.now()+'-'+Math.random().toString(36).slice(2),{cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(10000)});
+ if(!r.ok)throw Error('خواندن زمان‌بندی تازه ناموفق بود؛ دوباره تلاش کنید.');
+ const c=await r.json();
+ if(typeof c.enabled!=='boolean'||!Number.isFinite(Number(c.durationMinutes))||Number(c.durationMinutes)<1||Number(c.durationMinutes)>480)throw Error('تنظیمات زمان‌بندی معتبر نیست.');
+ for(const k of ['openAt','lastStartAt'])if(c[k]&&(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(c[k])||!Number.isFinite(Date.parse(c[k]+':00+03:30'))))throw Error('تاریخ زمان‌بندی معتبر نیست.');
+ const epoch=Date.parse(r.headers.get('Date')||'');
+ return {...c,durationMinutes:Number(c.durationMinutes),serverEpoch:Number.isFinite(epoch)?epoch:Date.now()};
+}
+
   const [baseR,tR]=await Promise.all([
     fetch('base.html?v='+Date.now(),{cache:'no-store'}),
-    fetch('timing.json?v='+Date.now(),{cache:'no-store'})
+    readLiveTiming()
   ]);
   if(!baseR.ok) throw new Error('base '+baseR.status);
   let base=await baseR.text();
   base=base.replace(/(<script id="academy-question-bank"[^>]*>[\s\S]*?"submitApproved"\s*:\s*)false/, '$1true');
   base=base.replace(/let ack;try\{ack=await r\.json\(\);\}catch\{throw Error\("پاسخ سرور معتبر نیست؛ ثبت نهایی تأیید نشد\."\);\}/g,'let ack=null;try{ack=await r.clone().json();}catch{}');
   base=base.replace(/if\(ack\.accepted!==true\|\|ack\.submission_id!==submissionId\|\|ack\.exam_id!==expectedId\|\|ack\.bank_version!==bank\.revision\)\{[\s\S]*?throw Error\("سرور دریافت همین نسخهٔ آزمون را تأیید نکرد\. با برگزارکننده هماهنگ کن؛ ممکن است درخواست قبلی به سرور رسیده باشد\."\);[\s\S]*?\}/g,'if(ack&&ack.accepted===false){throw Error("سرور دریافت پاسخ را رد کرد.");}');
-  let cfg={version:1,enabled:true,openAt:'',lastStartAt:'',durationMinutes:15,timeZone:'Asia/Tehran',timeEndpoint:''};
-  if(tR.ok){
-    try{cfg={...cfg,...await tR.json()}}catch(e){}
-    const hm=Date.parse(tR.headers.get('Date')||'');
-    if(Number.isFinite(hm)) cfg.serverEpoch=hm;
-  }
-
+  const cfg=tR;
+  const liveReader=readLiveTiming;
+  window.__ACADEMY_READ_TIMING__=liveReader;
   const css=`<style id="academy-exam-timer-style">
   .exam-timer{display:none;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:99px;padding:7px 13px;box-shadow:0 6px 18px rgba(11,110,106,.08);font-size:.78rem;color:var(--ink-2);white-space:nowrap}
   .exam-timer.show{display:flex}.exam-timer b{font:700 1rem/1.2 ui-monospace,Consolas,monospace;color:var(--teal-800);direction:ltr}
@@ -31,9 +38,9 @@
 ;(()=>{
 const cfg=${JSON.stringify(cfg).replace(/</g,'\\u003c')};
 cfg.durationMinutes=Math.max(1,Math.min(480,Number(cfg.durationMinutes)||15));
-const timingEnabled=cfg.enabled!==false;
-const serverOffset=Number.isFinite(cfg.serverEpoch)?cfg.serverEpoch-Date.now():0;
-let attempt=null,timerId=0,gateId=0,expired=false;
+let timingEnabled=cfg.enabled!==false;
+let serverOffset=Number.isFinite(cfg.serverEpoch)?cfg.serverEpoch-Date.now():0;
+let attempt=null,timerId=0,gateId=0,expired=false,finished=false,startedUntimed=false,starting=false,refreshing=null,timingError='',lastCheck=Date.now();
 const oldIntro=intro,oldGo=go,oldReview=review,oldSend=send,oldDone=done;
 
 function parseTehran(v){
@@ -50,7 +57,7 @@ function storageKey(){const id=exam&&(exam.examId||exam.formId||exam.examTitle)|
 function readAttempt(){try{const x=JSON.parse(localStorage.getItem(storageKey())||'null');return x&&x.v===4&&x.deadline?x:null;}catch(e){return null;}}
 function persist(){if(!attempt)return;attempt.name=name;attempt.answers=answers;attempt.step=step;attempt.lastSeen=Math.max(attempt.lastSeen||0,rawNow());try{localStorage.setItem(storageKey(),JSON.stringify(attempt));}catch(e){}}
 function clearAttempt(){try{localStorage.removeItem(storageKey());}catch(e){}attempt=null;}
-function gate(){const n=now(),o=parseTehran(cfg.openAt),l=parseTehran(cfg.lastStartAt);if(!timingEnabled)return{ok:true};if(o&&n<o)return{ok:false,type:'early',at:o};if(l&&n>l&&!attempt)return{ok:false,type:'late',at:l};return{ok:true};}
+function gate(){if(timingError)return{ok:false,type:'unavailable'};const n=now(),o=parseTehran(cfg.openAt),l=parseTehran(cfg.lastStartAt);if(!timingEnabled)return{ok:true};if(o&&n<o)return{ok:false,type:'early',at:o};if(l&&n>l&&!attempt)return{ok:false,type:'late',at:l};return{ok:true};}
 function badgeTick(){
   if(!attempt)return;
   const e=document.getElementById('examTimer'),v=document.getElementById('examTimerValue');
@@ -63,20 +70,21 @@ function badgeTick(){
 function ticker(){clearInterval(timerId);badgeTick();timerId=setInterval(badgeTick,1000);}
 function gateUI(){
   clearInterval(gateId);document.getElementById('academyGate')?.remove();
-  if(!timingEnabled)return;
+  if(!timingEnabled&&!timingError){const b=document.getElementById('go');if(b){b.disabled=false;b.textContent='شروع آزمون ←';}return;}
   const s=gate(),b=document.getElementById('go');
   if(s.ok){if(b){b.disabled=false;b.textContent='شروع آزمون ←';}return;}
   const d=document.createElement('div');d.id='academyGate';d.className='note exam-gate'+(s.type==='late'?' closed':'');
-  if(s.type==='early') d.innerHTML='<div><strong>آزمون هنوز باز نشده است</strong><span>زمان باز شدن: '+fmt(s.at)+' (تهران)</span><br><span>زمان باقی‌مانده: <b class="exam-gate-count" id="gateCountdown"></b></span></div>';
+  if(s.type==='unavailable'){d.textContent=timingError+' — در حال بررسی دوباره؛ پاسخ‌ها محفوظ هستند.';}
+  else if(s.type==='early') d.innerHTML='<div><strong>آزمون هنوز باز نشده است</strong><span>زمان باز شدن: '+fmt(s.at)+' (تهران)</span><br><span>زمان باقی‌مانده: <b class="exam-gate-count" id="gateCountdown"></b></span></div>';
   else d.innerHTML='<div><strong>مهلت شروع آزمون به پایان رسیده است</strong><span>آخرین زمان مجاز برای شروع: '+fmt(s.at)+' (تهران)</span></div>';
   document.querySelector('#view .fade')?.append(d);
-  if(b){b.disabled=true;b.textContent=s.type==='early'?'آزمون هنوز باز نشده':'مهلت شروع پایان یافته';}
+  if(b){b.disabled=true;b.textContent=s.type==='unavailable'?'زمان‌بندی در دسترس نیست':s.type==='early'?'آزمون هنوز باز نشده':'مهلت شروع پایان یافته';}
   if(s.type==='early') gateId=setInterval(()=>{const x=document.getElementById('gateCountdown');if(x)x.textContent=cd(s.at-now());if(now()>=s.at){clearInterval(gateId);oldIntro();gateUI();}},1000);
 }
 
 intro=function(){
-  if(!timingEnabled){oldIntro();return;}
   attempt=readAttempt();
+  if(!attempt&&!timingEnabled){oldIntro();gateUI();return;}
   if(attempt){
     name=attempt.name||'';answers=attempt.answers||{};
     if(now()>=attempt.deadline){oldIntro();setTimeout(expire,0);return;}
@@ -87,7 +95,21 @@ intro=function(){
   oldIntro();gateUI();
 };
 
-go=function(i){
+async function refreshTiming(){
+ if(attempt||startedUntimed||finished)return true;
+ if(refreshing)return refreshing;
+ refreshing=(async()=>{try{
+  const fresh=await window.__ACADEMY_READ_TIMING__();
+  // A save during an in-flight read must never reset a started attempt.
+  if(!attempt&&!startedUntimed&&!finished){Object.assign(cfg,fresh);timingEnabled=cfg.enabled!==false;serverOffset=cfg.serverEpoch-Date.now();timingError='';lastCheck=Date.now();const f=document.getElementById('fM');if(f)f.textContent=timingEnabled?cfg.durationMinutes+' دقیقه':'بدون محدودیت';gateUI();}
+  return true;
+ }catch(e){if(!attempt&&!startedUntimed&&!finished){timingError=String(e.message||e);gateUI();}return false;}finally{refreshing=null;}})();
+ return refreshing;
+}
+setInterval(()=>{if(!document.hidden&&!attempt&&!startedUntimed&&!finished)refreshTiming();},10000);
+go=async function(i){
+ if(!attempt&&!startedUntimed){if(starting)return;starting=true;const ok=await refreshTiming();starting=false;if(!ok)return;if(!timingEnabled)startedUntimed=true;}
+
   if(timingEnabled&&!attempt){
     const g=gate();
     if(!g.ok){oldIntro();gateUI();return;}
@@ -107,7 +129,7 @@ review=function(){
 };
 
 send=async function(){if(attempt)persist();return await oldSend();};
-done=function(){clearInterval(timerId);clearInterval(gateId);clearAttempt();oldDone();const e=document.getElementById('examTimer');if(e)e.classList.remove('show','warn5','warn1');if(expired){const h=document.querySelector('#view h1');if(h)h.textContent='زمان آزمون پایان یافت و پاسخ‌های شما ثبت شد';}};
+done=function(){finished=true;clearInterval(timerId);clearInterval(gateId);clearAttempt();oldDone();const e=document.getElementById('examTimer');if(e)e.classList.remove('show','warn5','warn1');if(expired){const h=document.querySelector('#view h1');if(h)h.textContent='زمان آزمون پایان یافت و پاسخ‌های شما ثبت شد';}};
 
 async function expire(){
   if(!attempt||attempt.expiring)return;
@@ -116,7 +138,9 @@ async function expire(){
   sending=false;await oldSend();
 }
 
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&attempt)badgeTick();});
+try{const channel=new BroadcastChannel('academy-timing-live');channel.onmessage=()=>{if(!attempt&&!startedUntimed&&!finished)refreshTiming();};}catch{}
+window.addEventListener('storage',e=>{if(e.key==='academy-timing-live'&&!attempt&&!startedUntimed&&!finished)refreshTiming();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(attempt)badgeTick();else if(Date.now()-lastCheck>2000)refreshTiming();}});
 })();
 `;
 
@@ -127,6 +151,6 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&attempt)b
   const i=html.lastIndexOf(marker);
   if(i<0) throw new Error('boot marker not found');
   html=html.slice(0,i)+runtime+html.slice(i);
-  document.open();document.write(html);document.close();
+  document.open();window.__ACADEMY_READ_TIMING__=liveReader;document.write(html);document.close();
 })().catch(e=>{document.body.innerHTML='<div style="font-family:Tahoma;text-align:center;margin:12vh auto;max-width:650px"><h2>آزمون در دسترس نیست</h2><p>'+String(e.message||e)+'</p></div>';console.error(e);});
 </script></body></html>
