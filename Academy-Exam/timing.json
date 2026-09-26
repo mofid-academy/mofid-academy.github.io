@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "enabled": true,
+  "enabled": false,
   "openAt": "2026-09-20T16:35",
-  "lastStartAt": "2026-09-20T18:00",
+  "lastStartAt": "2026-09-27T18:00",
   "durationMinutes": 30,
   "timeZone": "Asia/Tehran",
   "timeEndpoint": ""
