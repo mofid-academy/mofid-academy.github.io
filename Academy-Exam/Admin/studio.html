@@ -9,13 +9,25 @@
 <body><div class="loading">در حال بارگذاری پنل مدیریت…</div>
 <script>
 (async()=>{
+async function readLiveTiming(){
+ const url='https://raw.githubusercontent.com/mofid-academy/mofid-academy.github.io/main/Academy-Exam/timing.json';
+ const r=await fetch(url+'?live='+Date.now()+'-'+Math.random().toString(36).slice(2),{cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(10000)});
+ if(!r.ok)throw Error('خواندن زمان‌بندی تازه ناموفق بود؛ دوباره تلاش کنید.');
+ const c=await r.json();
+ if(typeof c.enabled!=='boolean'||!Number.isFinite(Number(c.durationMinutes))||Number(c.durationMinutes)<1||Number(c.durationMinutes)>480)throw Error('تنظیمات زمان‌بندی معتبر نیست.');
+ for(const k of ['openAt','lastStartAt'])if(c[k]&&(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(c[k])||!Number.isFinite(Date.parse(c[k]+':00+03:30'))))throw Error('تاریخ زمان‌بندی معتبر نیست.');
+ const epoch=Date.parse(r.headers.get('Date')||'');
+ return {...c,durationMinutes:Number(c.durationMinutes),serverEpoch:Number.isFinite(epoch)?epoch:Date.now()};
+}
+
   const [baseRes,timeRes]=await Promise.all([
     fetch('base.html?v='+Date.now(),{cache:'no-store'}),
-    fetch('../timing.json?v='+Date.now(),{cache:'no-store'})
+    readLiveTiming()
   ]);
   if(!baseRes.ok)throw Error('base '+baseRes.status);
   let html=await baseRes.text();
   html=html
+    .replace("connect-src https://api.github.com", "connect-src https://raw.githubusercontent.com https://api.github.com")
     .replace("script-src 'unsafe-inline';","script-src 'unsafe-inline' 'self';")
     .replace('PATH="Academy-Exam/index.html"','PATH="Academy-Exam/base.html"')
     .replace('LIVE="https://mofid-academy.github.io/Academy-Exam/index.html"','LIVE="https://mofid-academy.github.io/Academy-Exam/base.html"');
@@ -25,11 +37,10 @@
     html=html.replace(modelLine,modelLine+'\nwindow.__ACADEMY_GET_QUESTION_BANK__=function(){return model&&model.questionBank?model.questionBank:null;};\nwindow.__ACADEMY_GET_ADMIN_TOKEN__=function(){return token||"";};');
   }
 
-  let timing={version:1,enabled:true,openAt:'',lastStartAt:'',durationMinutes:15,timeZone:'Asia/Tehran',timeEndpoint:''};
-  if(timeRes.ok){try{timing={...timing,...await timeRes.json()}}catch{}}
+  const timing=timeRes;
   const closeScript='</scr'+'ipt>';
   const timingState='<scr'+'ipt>window.__ACADEMY_TIMING__='+JSON.stringify(timing).replace(/</g,'\\u003c')+closeScript;
-  const extensions='<scr'+'ipt src="timing-admin.js?v=5">'+closeScript+'<scr'+'ipt src="exam-save-sync.js?v=13">'+closeScript+'<scr'+'ipt src="answer-key-ui.js?v=2">'+closeScript+'<scr'+'ipt src="file-import-ui.js?v=3">'+closeScript;
+  const extensions='<scr'+'ipt src="timing-admin.js?v=7">'+closeScript+'<scr'+'ipt src="exam-save-sync.js?v=13">'+closeScript+'<scr'+'ipt src="answer-key-ui.js?v=2">'+closeScript+'<scr'+'ipt src="file-import-ui.js?v=3">'+closeScript;
   html=html.replace('<body>','<body>'+timingState);
   html=html.replace('</body>',extensions+'</body>');
   document.open();document.write(html);document.close();
@@ -37,3 +48,4 @@
 </script>
 </body>
 </html>
+
