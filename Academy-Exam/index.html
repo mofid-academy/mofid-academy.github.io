@@ -31,6 +31,59 @@ async function readLiveTiming(){
   @keyframes timerPulse{50%{box-shadow:0 0 0 5px rgba(224,86,76,.10)}}
   .exam-gate{margin-top:16px}.exam-gate strong{display:block;color:var(--teal-800);margin-bottom:3px}.exam-gate.closed{background:#fff0ee;border-color:#f6d5d1;color:#8f3e37}.exam-gate.closed strong{color:#a43d34}.exam-gate-count{font:700 1rem/1.5 ui-monospace,Consolas,monospace;direction:ltr;display:inline-block}
   @media(max-width:880px){.top{flex-wrap:wrap}.exam-timer{order:4;margin-inline-start:auto}.pill{margin-inline-start:0}}
+  </style>
+  <style id="academy-motion-effects">
+  /* Decorative effects only; honor the visitor's reduced-motion preference. */
+  @media (prefers-reduced-motion: no-preference){
+    #view > .fade{animation:academySceneIn .42s cubic-bezier(.22,1,.36,1)}
+    #view > .slideL{animation:academyNextIn .46s cubic-bezier(.22,1,.36,1)}
+    #view > .slideR{animation:academyPreviousIn .46s cubic-bezier(.22,1,.36,1)}
+    #view .opts .opt:not([aria-pressed="true"]){
+      animation-name:academyOptionIn;
+      animation-duration:.32s;
+      animation-timing-function:cubic-bezier(.22,1,.36,1);
+      animation-fill-mode:backwards;
+    }
+    .side::after{
+      content:"";position:absolute;top:-15%;bottom:-15%;left:-55%;width:38%;
+      pointer-events:none;z-index:0;opacity:0;
+      background:linear-gradient(110deg,transparent,rgba(255,255,255,.14),transparent);
+      animation:academyLightPass 1.5s ease-out .45s both;
+    }
+    button.b.p{position:relative;overflow:hidden;isolation:isolate}
+    button.b.p::after{
+      content:"";position:absolute;top:-100%;bottom:-100%;left:-55%;width:38%;
+      pointer-events:none;opacity:0;
+      background:linear-gradient(110deg,transparent,rgba(255,255,255,.24),transparent);
+    }
+    button.b.p:not(:disabled):focus-visible::after{
+      animation:academyLightPass .75s ease-out both;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) and (hover:hover) and (pointer:fine){
+    button.b.p:not(:disabled):hover::after{animation:academyLightPass .75s ease-out both}
+  }
+  @keyframes academySceneIn{
+    from{opacity:0;transform:translate3d(0,10px,0)}
+    to{opacity:1;transform:none}
+  }
+  @keyframes academyNextIn{
+    from{opacity:0;transform:translate3d(26px,0,0)}
+    to{opacity:1;transform:none}
+  }
+  @keyframes academyPreviousIn{
+    from{opacity:0;transform:translate3d(-26px,0,0)}
+    to{opacity:1;transform:none}
+  }
+  @keyframes academyOptionIn{
+    from{opacity:0;transform:translate3d(0,8px,0)}
+    to{opacity:1;transform:none}
+  }
+  @keyframes academyLightPass{
+    0%{opacity:0;transform:translateX(-120%) skewX(-16deg)}
+    20%,70%{opacity:1}
+    100%{opacity:0;transform:translateX(500%) skewX(-16deg)}
+  }
   </style>`;
   const badge='<div class="exam-timer" id="examTimer" aria-live="polite"><span>زمان باقی‌مانده</span><b id="examTimerValue">--:--</b></div>';
 
