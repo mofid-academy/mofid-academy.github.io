@@ -197,7 +197,8 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(attemp
 })();
 `;
 
-  let html=base.replace('</head>',css+'</head>');
+  const networkPolicy='<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; base-uri \'self\'; object-src \'none\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\' https://fonts.googleapis.com; font-src \'self\' data: https://fonts.gstatic.com; img-src \'self\' data:; connect-src \'self\' https://raw.githubusercontent.com https://miladmirsheriseyed.app.n8n.cloud; form-action \'self\'">';
+  let html=base.replace('<head>','<head>'+networkPolicy).replace('</head>',css+'</head>');
   html=html.replace('<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>','<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>'+badge);
   html=html.replace('$("fM").textContent = toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3));','$("fM").textContent = '+(cfg.enabled!==false?'toFa('+Number(cfg.durationMinutes||15)+') + " دقیقه"':'toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3))')+';');
   const marker='\nboot();';
