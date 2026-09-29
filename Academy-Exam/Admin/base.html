@@ -7154,6 +7154,14 @@ $("reload").onclick=()=>loadLatest(false);$("undo").onclick=()=>{const s=undoSta
 $("loginBtn").onclick=()=>$("auth").showModal();$("authClose").onclick=()=>$("auth").close();$("auth").addEventListener("close",()=>{$("token").value="";});
 $("tokenLink").href="https://github.com/settings/personal-access-tokens/new?name=Academy-Exam-Admin&target_name=mofid-academy&expires_in=30&contents=write";
 $("logout").onclick=()=>{token="";login="";$("token").value="";$("authMessage").textContent="کلید از حافظه پاک شد.";state();};
+function connectionMessage(e){
+ const message=String(e?.message||"");
+ if(e?.name==="TypeError"||/failed to fetch|networkerror|load failed/i.test(message))
+  return "مرورگر نتوانست به API گیت‌هاب (api.github.com) وصل شود؛ هنوز اعتبار توکن تأیید نشده است. کلید پاک شده و تغییری در سایت ذخیره نشده. برای حذف اتصال مستقیم و خطای شبکه، باید ذخیره‌سازی را از طریق یک وب‌هوک امن n8n انجام دهیم و کلید GitHub را فقط در Credentialهای n8n نگه داریم.";
+ if(e?.name==="TimeoutError"||e?.name==="AbortError")
+  return "پاسخ API گیت‌هاب به‌موقع نرسید؛ اتصال شبکه را بررسی کن. کلید پاک شده و تغییری ذخیره نشده.";
+ return message||"اتصال به GitHub تأیید نشد.";
+}
 $("connect").onclick=async()=>{
  const t=$("token").value.trim();if(!t.startsWith("github_pat_")){$("authMessage").textContent="یک Fine-grained token با پیشوند github_pat_ وارد کن.";return;}
  $("connect").disabled=true;$("authMessage").textContent="در حال بررسی هویت و مخزن…";token=t;$("token").value="";
@@ -7161,7 +7169,7 @@ $("connect").onclick=async()=>{
   const user=await(await api("/user")).json(),repo=await(await api("/repos/"+REPO)).json();
   if(repo.full_name?.toLowerCase()!==REPO.toLowerCase()||repo.permissions?.push===false)throw Error("این حساب مجوز نوشتن در مخزن آزمون را ندارد.");
   login=user.login;$("auth").close();status("هویت "+login+" تأیید شد. مجوز نوشتن کلید هنگام انتشار توسط GitHub بررسی می‌شود.");state();
- }catch(e){token="";login="";$("authMessage").textContent=e.message;state();}
+ }catch(e){token="";login="";$("authMessage").textContent=connectionMessage(e);state();}
  finally{$("connect").disabled=false;}
 };
 $("publish").onclick=()=>{try{model.validate(current());AcademyQuestions.checkPublication(model.questionBank);$("confirmPublish").showModal();}catch(e){fail(e);}};$("confirmNo").onclick=()=>$("confirmPublish").close();
