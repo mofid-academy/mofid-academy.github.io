@@ -1,8 +1,8 @@
-/* Academy Admin -> n8n question-sheet synchronization v12. */
+/* Academy Admin -> n8n question-sheet synchronization v14. */
 (function(){
 "use strict";
 const EXAM_SAVE_URL="https://miladmirsheriseyed.app.n8n.cloud/webhook/exam-save";
-const VERSION="12";
+const VERSION="14";
 window.__ACADEMY_EXAM_SAVE_SYNC_VERSION__=VERSION;
 let questionsDirty=false;
 
@@ -19,7 +19,7 @@ function hasQuestionChanges(){return questionsDirty===true||window.__ACADEMY_QUE
 function patchQuestionsApi(){
   try{
     if(!window.AcademyQuestions)return false;
-    if(window.AcademyQuestions.__examSaveV12)return true;
+    if(window.AcademyQuestions.__examSaveV14)return true;
     const originalFromInput=window.AcademyQuestions.fromInput;
     const originalTouch=window.AcademyQuestions.touch;
     window.AcademyQuestions.fromInput=function(raw){
@@ -52,7 +52,7 @@ function patchQuestionsApi(){
         return result;
       };
     }
-    window.AcademyQuestions.__examSaveV11=true;
+    window.AcademyQuestions.__examSaveV14=true;
     return true;
   }catch{return false;}
 }
@@ -112,8 +112,25 @@ function buildPayload(bank){
 async function postPayload(payload){
   const url=EXAM_SAVE_URL+"?source=academy-admin&v="+VERSION+"&ts="+Date.now();
   const body=JSON.stringify(payload);
-  await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=UTF-8"},body,credentials:"omit",cache:"no-store"});
-  return payload;
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),60000);
+  try{
+    let response;
+    try{
+      response=await fetch(url,{method:"POST",mode:"cors",headers:{"Content-Type":"text/plain;charset=UTF-8"},body,credentials:"omit",cache:"no-store",signal:controller.signal});
+    }catch(error){
+      throw new Error("تأیید ذخیره از سرور دریافت نشد. ممکن است داده ثبت شده باشد؛ قبل از ارسال مجدد، اجرای n8n و شیت را بررسی کنید.");
+    }
+    let result;
+    try{result=await response.json();}catch{throw new Error("پاسخ سرور قابل بررسی نیست؛ موفقیت ذخیره تأیید نشد.");}
+    if(!response.ok||result?.ok!==true){
+      const safe=typeof result?.message==="string"&&result.message.length<=500?result.message:"ذخیره توسط سرور تأیید نشد.";
+      throw new Error(safe);
+    }
+    if(String(result.examId)!==String(payload.examId)||Number(result.saved)!==payload.questions.length)
+      throw new Error("تأیید سرور با شناسه آزمون یا تعداد سؤال‌های ارسالی مطابقت ندارد.");
+    return payload;
+  }finally{clearTimeout(timeout);}
 }
 async function sendCurrent(){return postPayload(buildPayload(snapshotBank()));}
 
@@ -146,13 +163,13 @@ function install(){
   if(dialog){
     let note=document.getElementById("exam-save-sync-note");
     if(!note){note=document.createElement("p");note.id="exam-save-sync-note";note.className="tip";const input=dialog.querySelector("#commitNote");if(input)dialog.insertBefore(note,input);else dialog.append(note);}
-    note.textContent="همگام‌سازی سؤال‌ها فعال است (v11). فقط وقتی خود سؤال‌ها تغییر کرده باشند به exam-save ارسال می‌شوند؛ تغییر تایمر، رنگ یا متن فرم سؤال‌ها را دوباره به شیت نمی‌فرستد.";
+    note.textContent="همگام‌سازی سؤال‌ها فعال است (v14). فقط وقتی خود سؤال‌ها تغییر کرده باشند به exam-save ارسال می‌شوند؛ تغییر تایمر، رنگ یا متن فرم سؤال‌ها را دوباره به شیت نمی‌فرستد.";
     let test=document.getElementById("exam-save-test");
     if(!test){const actions=dialog.querySelector(".dialog-actions");if(actions){test=document.createElement("button");test.id="exam-save-test";test.type="button";test.textContent="تست ارسال به n8n";actions.insertBefore(test,actions.firstChild);}}
     if(test)test.onclick=async()=>{
       if(!hasQuestionChanges()){setStatus("سؤال‌ها تغییری نکرده‌اند؛ برای جلوگیری از ثبت تکراری، چیزی به n8n ارسال نشد.","success");return;}
       test.disabled=true;const old=test.textContent;test.textContent="در حال ارسال تست…";
-      try{const p=await sendCurrent();markQuestionsClean();setStatus("تغییرات "+p.questions.length+" سؤال به exam-save ارسال شد. انتشار بعدی آن‌ها را دوباره ارسال نمی‌کند.","success");}
+      try{const p=await sendCurrent();markQuestionsClean();setStatus("ذخیرهٔ "+p.questions.length+" سؤال در شیت تأیید شد. انتشار بعدی آن‌ها را دوباره ارسال نمی‌کند.","success");}
       catch(e){setStatus("تست n8n ناموفق بود: "+String(e.message||e),"error");}
       finally{test.disabled=false;test.textContent=old;}
     };
@@ -170,12 +187,12 @@ function install(){
       const payload=await sendCurrent();
       markQuestionsClean();
       const liveBank=currentQuestionBank();if(liveBank){liveBank.mode="remote";liveBank.submitApproved=false;}
-      setStatus("سؤال‌های تغییرکرده به n8n ارسال شدند؛ انتشار فرم ادامه پیدا می‌کند.","success");
+      setStatus("ذخیرهٔ سؤال‌ها در شیت تأیید شد؛ انتشار فرم ادامه پیدا می‌کند.","success");
       confirmButton.disabled=false;confirmButton.textContent=old;confirmButton.dataset.syncing="0";
       return original.call(this,event);
     }catch(error){
       confirmButton.disabled=false;confirmButton.textContent=old;confirmButton.dataset.syncing="0";
-      setStatus("انتشار متوقف شد؛ ارسال به n8n انجام نشد: "+String(error&&error.message||error),"error");
+      setStatus("انتشار متوقف شد؛ ذخیرهٔ کامل تأیید نشد: "+String(error&&error.message||error),"error");
     }
   };
 }
