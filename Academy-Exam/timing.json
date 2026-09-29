@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "enabled": true,
+  "enabled": false,
   "openAt": "2026-09-27T08:00",
   "lastStartAt": "2026-09-27T12:00",
   "durationMinutes": 50,
   "timeZone": "Asia/Tehran",
   "timeEndpoint": "",
-  "serverEpoch": 1790429962208,
-  "updatedAt": "2026-09-27T04:42:39.263Z"
+  "serverEpoch": 1790687037131,
+  "updatedAt": "2026-09-29T13:19:13.513Z"
 }
