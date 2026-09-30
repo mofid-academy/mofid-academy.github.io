@@ -6794,7 +6794,7 @@ history:"نسخه‌های قبلی در GitHub باقی می‌مانند. با
 };
 function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 function status(s,kind=""){$("status").textContent=s;$("status").className="status "+kind;}
-function fail(e){status(e.message||String(e),"error");}
+function fail(e){const m=String(e?.message||e);status(/failed to fetch|networkerror|load failed/i.test(m)?"پاسخ اتصال دریافت نشد. تغییرات فعلی حفظ شده‌اند؛ دوباره تلاش کنید.":m,"error");}
 function decode64(s){return new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\s/g,"")),c=>c.charCodeAt(0)));}
 function encode64(s){const b=new TextEncoder().encode(s);let raw="";for(let i=0;i<b.length;i+=8192)raw+=String.fromCharCode(...b.subarray(i,i+8192));return btoa(raw);}
 async function api(path,opt={}){
@@ -6811,6 +6811,19 @@ async function readFile(ref=BRANCH){
  const path=ENDPOINT+"?ref="+encodeURIComponent(ref),d=await(await api(path)).json();
  const source=d.encoding==="base64"?decode64(d.content):await(await api(path,{headers:{Accept:"application/vnd.github.raw+json"}})).text();
  return {source,sha:d.sha};
+}
+async function readPublishedFile(){
+ const r=await fetch(LIVE+"?studio_load="+Date.now(),{cache:"no-store",credentials:"omit",redirect:"error",referrerPolicy:"no-referrer",signal:AbortSignal.timeout(15000)});
+ if(!r.ok)throw Error("دریافت نسخه منتشرشده سایت ناموفق بود: "+r.status);
+ const bytes=new Uint8Array(await r.arrayBuffer());
+ const source=new TextDecoder().decode(bytes);
+ // Git blob identity of the exact deployed bytes; the API rechecks it before PUT.
+ const header=new TextEncoder().encode("blob "+bytes.length+"\0");
+ const input=new Uint8Array(header.length+bytes.length);input.set(header);input.set(bytes,header.length);
+ const digest=await crypto.subtle.digest("SHA-1",input);
+ const sha=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
+ const check=new AcademyModel(source);check.validate(source);
+ return {source,sha};
 }
 function download(s,name,type="text/html;charset=utf-8"){const url=URL.createObjectURL(new Blob([s],{type})),a=el("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),2500);}
 function current(){if(!model)throw Error("ابتدا فرم را بارگذاری کن.");return model.build();}
@@ -6836,10 +6849,10 @@ function setSource(s,remember=true){
 }
 async function loadLatest(initial=false){
  if(!initial&&dirty()&&!confirm("تغییرهای منتشرنشده کنار گذاشته شود؟ پیش از ادامه می‌توانی آن‌ها را دانلود کنی."))return;
- status("در حال خواندن آخرین نسخه از GitHub…");
- try{const d=await readFile();loadedSHA=d.sha;publishedSource=d.source;undoStack=[];setSource(d.source,false);status("آخرین نسخه آماده است. تغییرها تا انتشار فقط در پیش‌نمایش هستند.");}
+ status("در حال دریافت نسخه منتشرشده سایت…");
+ try{const d=await readPublishedFile();setSource(d.source,false);loadedSHA=d.sha;publishedSource=d.source;undoStack=[];state();status("نسخه منتشرشده سایت دریافت شد. تغییرها تا انتشار فقط در پیش‌نمایش هستند.");}
  catch(e){
-  if(!model){try{publishedSource=decode64(OFFLINE);setSource(publishedSource,false);status("GitHub در دسترس نبود؛ نسخه مرجع برای ویرایش آفلاین باز شد. انتشار تا دریافت نسخه سایت غیرفعال است.","error");}catch{fail(e);}}
+  if(!model){try{publishedSource=decode64(OFFLINE);setSource(publishedSource,false);status("نسخه سایت دریافت نشد؛ نمونه آفلاین باز شد. برای انتشار، ابتدا «دریافت نسخه سایت» را بزن.","error");}catch{fail(e);}}
   else fail(e);
  }
 }
