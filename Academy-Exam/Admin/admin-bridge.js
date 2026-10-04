@@ -22,7 +22,12 @@
    if(data?.bridge!=='academy-admin-v1'||!Number.isInteger(data.status)||data.status<200||data.status>599||!["json","text"].includes(data.format))throw Error('نسخه یا ساختار پاسخ سرور مدیریت معتبر نیست.');
    if(data.status>=400){
      const messages={400:'درخواست مدیریت معتبر نیست.',401:'Credential گیت‌هاب در n8n نامعتبر یا منقضی است.',403:'دسترسی Credential گیت‌هاب کافی نیست یا محدودیت درخواست فعال شده است.',404:'فایل یا دسترسی مخزن در n8n پیدا نشد.',409:'نسخه فایل تغییر کرده است؛ پیش‌نویس را نگه دارید و نسخه سایت را دوباره دریافت کنید.',422:'ذخیره توسط GitHub پذیرفته نشد؛ مجوز و قوانین مخزن را بررسی کنید.',502:'اتصال n8n به GitHub تایید نشد؛ ذخیره ممکن است انجام شده باشد. قبل از تکرار بررسی کنید.'};
-     const error=Error(messages[data.status]||'ذخیره توسط سرور مدیریت تایید نشد.');error.httpStatus=data.status;throw error;
+     let message=messages[data.status]||'ذخیره توسط سرور مدیریت تایید نشد.';
+     if(data.status===400&&data.body?.source==='github')message='گیت‌هاب درخواست انتشار را نپذیرفت؛ ذخیره انجام نشد.';
+     if(data.body?.code==='GITHUB_BODY_FORMAT')message='بدنه انتشار در n8n با قالب درست ارسال نشده است؛ تنظیم ارسال ورک‌فلوی مدیریت باید اصلاح شود.';
+     if(data.status===400&&data.body?.source==='validation')message='اطلاعات درخواست انتشار کامل یا معتبر نیست.';
+     if(typeof data.body?.code==='string'&&/^[A-Z_0-9]{1,64}$/.test(data.body.code))message+=' کد: '+data.body.code;
+     const error=Error(message);error.httpStatus=data.status;throw error;
    }
    return new Response(data.format==='text'?data.body:JSON.stringify(data.body),{status:data.status,headers:{'Content-Type':data.format==='text'?'text/plain;charset=UTF-8':'application/json'}});
  }
