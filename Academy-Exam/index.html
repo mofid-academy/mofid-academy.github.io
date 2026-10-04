@@ -1,5 +1,40 @@
 <!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمون آکادمی مفید</title></head><body><p style="font-family:Tahoma;text-align:center;margin-top:12vh">در حال آماده‌سازی آزمون…</p><script>
 (async()=>{
+function patchSubmissionRuntime(html) {
+ return html.replace(/(<script id="academy-question-runtime"[^>]*>)([\s\S]*?)(<\/script>)/,(_,start,code,end)=>{
+  if(code.includes('academy-pending-submission-v4:'))return start+code+end;
+  code=code.replace('const qs=copy(bank.questions);let submissionId="",submitted=false;',`const qs=copy(bank.questions);let submissionId="",submitted=false;
+ let pendingPayload=null;
+ const pendingKey="academy-pending-submission-v4:"+expectedId;
+ try {
+  const prior=JSON.parse(sessionStorage.getItem(pendingKey)||"null");
+  if(prior?.exam_id===expectedId&&prior.bank_version===bank.revision&&Array.isArray(prior.fields)&&prior.submission_id){
+   pendingPayload=prior;submissionId=prior.submission_id;
+   const savedName=prior.fields.find(f=>f.id==="name");if(savedName)name=String(savedName.answer||"");
+   for(const f of prior.fields){const i=qs.findIndex(q=>q.id===f.question_id);if(i>=0)answers[i+1]=String(f.answer||"");}
+  }
+ }catch{}`);
+  code=code.replace('const payload={','const payload=pendingPayload||{');
+  code=code.replace('const j=missing();if(j>=0){oldGo(j);decorate();notice("پاسخ سؤال الزامی کامل نشده است.");return;}',
+   'const j=missing();if(j>=0&&!window.__ACADEMY_EXPIRED__){oldGo(j);decorate();notice("پاسخ سؤال الزامی کامل نشده است.");return;}');
+  code=code.replace('bank_id:bank.bankId,bank_version:bank.revision,submission_id:submissionId,',
+   'bank_id:bank.bankId,bank_version:bank.revision,original_exam_id:bank.originalExamId||"",question_count:qs.length,submission_id:submissionId,');
+  code=code.replace('type:q.type==="mcq"?"radio":"textarea",answer:values[i],position:i+2',
+   'type:q.type==="mcq"?"radio":"textarea",options:q.type==="mcq"?q.options:[],answer:values[i],position:i+2');
+  code=code.replace('sending=true;',`pendingPayload=payload;
+  try{sessionStorage.setItem(pendingKey,JSON.stringify(payload));}catch{}
+  sending=true;`);
+  code=code.replace('if(ack.accepted!==true||ack.submission_id!==submissionId||ack.exam_id!==expectedId||ack.bank_version!==bank.revision){',
+   'if(ack?.accepted!==true||ack.stored!==true||ack.submission_id!==submissionId||ack.exam_id!==expectedId||ack.bank_version!==bank.revision){');
+  code=code.replace('throw Error("سرور دریافت همین نسخهٔ آزمون را تأیید نکرد. با برگزارکننده هماهنگ کن؛ ممکن است درخواست قبلی به سرور رسیده باشد.");',
+   'throw Error(ack?.accepted===false&&typeof ack.message==="string"?ack.message:"سرور ذخیرهٔ همین پاسخ را تأیید نکرد؛ با همان شناسه دوباره تلاش کنید.");');
+  code=code.replace('submitted=true;done();',
+   'submitted=true;try{sessionStorage.removeItem(pendingKey);}catch{}pendingPayload=null;done();');
+  return start+code+end;
+ });
+}
+
+
 async function readLiveTiming(){
  const url='https://raw.githubusercontent.com/mofid-academy/mofid-academy.github.io/main/Academy-Exam/timing.json';
  const r=await fetch(url+'?live='+Date.now()+'-'+Math.random().toString(36).slice(2),{cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(10000)});
@@ -18,8 +53,7 @@ async function readLiveTiming(){
   if(!baseR.ok) throw new Error('base '+baseR.status);
   let base=await baseR.text();
   base=base.replace(/(<script id="academy-question-bank"[^>]*>[\s\S]*?"submitApproved"\s*:\s*)false/, '$1true');
-  base=base.replace(/let ack;try\{ack=await r\.json\(\);\}catch\{throw Error\("پاسخ سرور معتبر نیست؛ ثبت نهایی تأیید نشد\."\);\}/g,'let ack=null;try{ack=await r.clone().json();}catch{}');
-  base=base.replace(/if\(ack\.accepted!==true\|\|ack\.submission_id!==submissionId\|\|ack\.exam_id!==expectedId\|\|ack\.bank_version!==bank\.revision\)\{[\s\S]*?throw Error\("سرور دریافت همین نسخهٔ آزمون را تأیید نکرد\. با برگزارکننده هماهنگ کن؛ ممکن است درخواست قبلی به سرور رسیده باشد\."\);[\s\S]*?\}/g,'if(ack&&ack.accepted===false){throw Error("سرور دریافت پاسخ را رد کرد.");}');
+  base=patchSubmissionRuntime(base);
   const cfg=tR;
   const liveReader=readLiveTiming;
   window.__ACADEMY_READ_TIMING__=liveReader;
@@ -188,7 +222,7 @@ async function expire(){
   if(!attempt||attempt.expiring)return;
   attempt.expiring=true;expired=true;persist();clearInterval(timerId);
   paint('<div class="center"><div class="spin"></div><p class="eyebrow"><i></i>زمان آزمون پایان یافت</p><h1>در حال ثبت خودکار پاسخ‌ها…</h1><p class="sub">پاسخ‌هایی که تا این لحظه وارد کرده‌اید ارسال می‌شوند.</p></div>','');
-  sending=false;await oldSend();
+  sending=false;window.__ACADEMY_EXPIRED__=true;await send();
 }
 
 try{const channel=new BroadcastChannel('academy-timing-live');channel.onmessage=()=>{if(!attempt&&!startedUntimed&&!finished)refreshTiming();};}catch{}
@@ -208,3 +242,4 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(attemp
   document.open();window.__ACADEMY_READ_TIMING__=liveReader;document.write(html);document.close();
 })().catch(e=>{document.body.innerHTML='<div style="font-family:Tahoma;text-align:center;margin:12vh auto;max-width:650px"><h2>آزمون در دسترس نیست</h2><p>'+String(e.message||e)+'</p></div>';console.error(e);});
 </script></body></html>
+
