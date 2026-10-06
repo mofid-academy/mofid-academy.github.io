@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>مدیریت فرم و سؤال‌ها | Academy Studio</title>
+<title>مدیریت آزمون، آرشیو و نتایج | آکادمی مفید</title>
 <style>html,body{height:100%;margin:0;background:#f6f9f8;font-family:Tahoma,sans-serif}.loading{display:grid;place-items:center;height:100%;color:#315b55}</style>
 </head>
 <body><div class="loading">در حال بارگذاری پنل مدیریت…</div>
@@ -44,13 +44,15 @@ async function readLiveTiming(url='https://raw.githubusercontent.com/mofid-acade
 
   const modelLine='let token="",login="",model=null,loadedSHA="",publishedSource="",active="questions",undoStack=[],timer=0,publishing=false,checking=0;';
   if(html.includes(modelLine)){
-    html=html.replace(modelLine,modelLine+'\nwindow.__ACADEMY_GET_QUESTION_BANK__=function(){return model&&model.questionBank?model.questionBank:null;};\nwindow.__ACADEMY_GET_ADMIN_TOKEN__=function(){return token||"";};');
+    html=html.replace(modelLine,modelLine+'\nwindow.__ACADEMY_GET_QUESTION_BANK__=function(){return model&&model.questionBank?model.questionBank:null;};\nwindow.__ACADEMY_GET_ADMIN_TOKEN__=function(){return token||"";};\n'+"window.__ACADEMY_ADMIN__={\n  bank:()=>model?JSON.parse(JSON.stringify(model.questionBank)):null,\n  sha:()=>loadedSHA,\n  token:()=>token||'',\n  status:(message,type)=>status(message,type),\n  busy:value=>{publishing=!!value;state();},\n  session:(key,label='مدیر')=>{token=key;login=key?label:'';state();},\n  sourceForBank:bank=>{\n    if(!model)throw Error('ابتدا نسخهٔ سایت را دریافت کنید.');\n    const prior=model.questionBank;\n    try{\n      model.questionBank=JSON.parse(JSON.stringify({...bank,mode:'managed',submitApproved:true}));\n      const doc=new DOMParser().parseFromString(model.build(),'text/html');\n      doc.getElementById('academy-publication')?.remove();\n      const source='\u003c!DOCTYPE html>\\n'+doc.documentElement.outerHTML+'\\n';model.validate(source);return source;\n    }finally{model.questionBank=prior;}\n  },\n  load:(source,bank)=>{setSource(source);model.questionBank=JSON.parse(JSON.stringify(bank));selectedQuestionId=bank.questions[0]?.id||'';changed();render();preview();},\n  questions:bank=>{if(model){model.questionBank=JSON.parse(JSON.stringify(bank));changed();render();preview();}},\n  clearPrivate:()=>{if(model){for(const q of model.questionBank.questions){delete q.correct_answer;delete q.correct_option_index;delete q.sample_answer;}render();}},\n  confirm:()=>{if(!token)throw Error('ابتدا به ادمین متصل شوید.');if(!loadedSHA)throw Error('ابتدا نسخهٔ سایت را دریافت کنید.');if(!model?.questionBank.questions.length)throw Error('بانک سؤال خالی است.');$('confirmPublish').showModal();},\n  read:()=>readFile(),\n  write:async(source,sha,message)=>{\n    model.validate(source);\n    return (await api(ENDPOINT,{method:'PUT',body:JSON.stringify({message,content:encode64(source),sha,branch:BRANCH})})).json();\n  },\n  published:(source,sha,bank)=>{loadedSHA=sha;publishedSource=source;undoStack=[];setSource(source,false);model.questionBank=JSON.parse(JSON.stringify(bank));try{localStorage.removeItem(DRAFT);}catch{}state();},\n  checkLive:source=>checkLive(source)\n};\n");
   }
 
   const timing=timeRes;
   const closeScript='</scr'+'ipt>';
   const timingState='<scr'+'ipt>window.__ACADEMY_TIMING__='+JSON.stringify(timing).replace(/</g,'\\u003c')+closeScript;
-  const extensions='<scr'+'ipt src="timing-admin.js?v=8">'+closeScript+'<scr'+'ipt src="exam-save-sync.js?v=14">'+closeScript+'<scr'+'ipt src="answer-key-ui.js?v=2">'+closeScript+'<scr'+'ipt src="file-import-ui.js?v=3">'+closeScript;
+  html=html.replace('optionDrafts=new Map();changed();render();','optionDrafts=new Map();changed();render();window.__ACADEMY_ON_BANK_ADOPTED__?.(JSON.parse(JSON.stringify(s)));');
+  html=html.replace('بانک و فرم روی GitHub عمومی هستند. پاسخ صحیح، کلید دسترسی و معیار تصحیح محرمانه را در این پنل یا متن سؤال وارد نکن.','فایل عمومی فرم فقط شامل سؤال‌هاست. کلیدهای انتخاب‌شده هنگام ذخیره در آرشیو خصوصی سرور نگه داشته می‌شوند.');
+  const extensions='<scr'+'ipt src="timing-admin.js?v=8">'+closeScript+'<scr'+'ipt src="exam-save-sync.js?v=14">'+closeScript+'<scr'+'ipt src="answer-key-ui.js?v=2">'+closeScript+'<scr'+'ipt src="file-import-ui.js?v=3">'+closeScript+'<scr'+'ipt src="xlsx-export.js?v=5">'+closeScript+'<scr'+'ipt src="archive-admin.js?v=5">'+closeScript;
   html=html.replace('<body>','<body>'+timingState);
   html=html.replace('</body>',extensions+'</body>');
   document.open();document.write(html);document.close();
@@ -58,5 +60,6 @@ async function readLiveTiming(url='https://raw.githubusercontent.com/mofid-acade
 </script>
 </body>
 </html>
+
 
 

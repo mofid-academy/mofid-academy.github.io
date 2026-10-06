@@ -2,7 +2,7 @@
 (async()=>{
 function patchSubmissionRuntime(html) {
  return html.replace(/(<script id="academy-question-runtime"[^>]*>)([\s\S]*?)(<\/script>)/,(_,start,code,end)=>{
-  if(code.includes('academy-pending-submission-v4:'))return start+code+end;
+  if(code.includes('academy-pending-submission-v4:')||code.includes('academy-pending-submission-v5:'))return start+code+end;
   code=code.replace('const qs=copy(bank.questions);let submissionId="",submitted=false;',`const qs=copy(bank.questions);let submissionId="",submitted=false;
  let pendingPayload=null;
  const pendingKey="academy-pending-submission-v4:"+expectedId;
@@ -35,6 +35,23 @@ function patchSubmissionRuntime(html) {
 }
 
 
+function patchArchiveRuntime(html) {
+ const metadata=html.match(/<script\b[^>]*\bid=["']academy-publication["'][^>]*>([\s\S]*?)<\/script>/i);
+ if(!metadata)return html;
+ const publication=JSON.parse(metadata[1]);
+ if(publication.schema!==5||!/^run_[A-Za-z0-9_-]{16,100}$/.test(publication.run_id||''))throw Error('شناسهٔ انتشار آزمون معتبر نیست.');
+ return html.replace(/(<script id="academy-question-runtime"[^>]*>)([\s\S]*?)(<\/script>)/,(_,start,code,end)=>{
+  if(code.includes('academy-pending-submission-v5:'))return start+code+end;
+  if(!code.includes('academy-pending-submission-v4:'))throw Error('مسیر دریافت پاسخ با نسخهٔ آرشیو هماهنگ نیست.');
+  code=code.replace('const pendingKey="academy-pending-submission-v4:"+expectedId;', 'const pendingKey="academy-pending-submission-v5:'+publication.run_id+'::"+expectedId;');
+  code=code.replace('event_type:"submission",schema_version:2,question_bank_source:"academy-studio",', 'event_type:"submission",schema_version:2,question_bank_source:"academy-studio",run_id:'+JSON.stringify(publication.run_id)+',');
+  code=code.replace('fetch(CONFIG.submitUrl,','fetch("https://miladmirsheriseyed.app.n8n.cloud/webhook/academy-submit-v5",');
+  code=code.replace('"Content-Type":"application/json"','"Content-Type":"text/plain;charset=UTF-8"');
+  code=code.replace('ack?.accepted!==true||ack.stored!==true||','ack?.run_id!=='+JSON.stringify(publication.run_id)+'||ack?.accepted!==true||ack.stored!==true||');
+  return start+code+end;
+ });
+}
+
 async function readLiveTiming(){
  const url='https://raw.githubusercontent.com/mofid-academy/mofid-academy.github.io/main/Academy-Exam/timing.json';
  const r=await fetch(url+'?live='+Date.now()+'-'+Math.random().toString(36).slice(2),{cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(10000)});
@@ -53,7 +70,7 @@ async function readLiveTiming(){
   if(!baseR.ok) throw new Error('base '+baseR.status);
   let base=await baseR.text();
   base=base.replace(/(<script id="academy-question-bank"[^>]*>[\s\S]*?"submitApproved"\s*:\s*)false/, '$1true');
-  base=patchSubmissionRuntime(base);
+  base=patchArchiveRuntime(patchSubmissionRuntime(base));
   const cfg=tR;
   const liveReader=readLiveTiming;
   window.__ACADEMY_READ_TIMING__=liveReader;
@@ -140,7 +157,7 @@ function rawNow(){return Date.now()+serverOffset;}
 function now(){return attempt&&attempt.lastSeen?Math.max(rawNow(),attempt.lastSeen):rawNow();}
 function fmt(ms){try{return new Intl.DateTimeFormat('fa-IR',{timeZone:'Asia/Tehran',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(ms));}catch(e){return new Date(ms).toLocaleString('fa-IR');}}
 function cd(ms){const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),x=s%60;return(h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');}
-function storageKey(){const id=exam&&(exam.examId||exam.formId||exam.examTitle)||location.pathname;return 'academy-attempt-v4::'+String(id).replace(/[^a-zA-Z0-9_\\-آ-ی]/g,'_').slice(0,160);}
+function storageKey(){let run='';try{run=JSON.parse(document.getElementById('academy-publication')?.textContent||'{}').run_id||'';}catch{}const id=run||(exam&&(exam.examId||exam.formId||exam.examTitle)||location.pathname);return 'academy-attempt-v4::'+String(id).replace(/[^a-zA-Z0-9_\\-آ-ی]/g,'_').slice(0,160);}
 function readAttempt(){try{const x=JSON.parse(localStorage.getItem(storageKey())||'null');return x&&x.v===4&&x.deadline?x:null;}catch(e){return null;}}
 function persist(){if(!attempt)return;attempt.name=name;attempt.answers=answers;attempt.step=step;attempt.lastSeen=Math.max(attempt.lastSeen||0,rawNow());try{localStorage.setItem(storageKey(),JSON.stringify(attempt));}catch(e){}}
 function clearAttempt(){try{localStorage.removeItem(storageKey());}catch(e){}attempt=null;}
@@ -242,4 +259,5 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(attemp
   document.open();window.__ACADEMY_READ_TIMING__=liveReader;document.write(html);document.close();
 })().catch(e=>{document.body.innerHTML='<div style="font-family:Tahoma;text-align:center;margin:12vh auto;max-width:650px"><h2>آزمون در دسترس نیست</h2><p>'+String(e.message||e)+'</p></div>';console.error(e);});
 </script></body></html>
+
 
