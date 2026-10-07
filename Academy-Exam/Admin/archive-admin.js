@@ -1,7 +1,7 @@
 /* Academy archive/results UI. Private data is fetched with Header Auth and kept in memory. */
 (function(){
   'use strict';
-  const ENDPOINT='https://miladmirsheriseyed.app.n8n.cloud/webhook/academy-archive-v5';
+  const ENDPOINT='https://miladmmirsheri.app.n8n.cloud/webhook/academy-archive-v5';
   const protocol='academy-private-v5',controllers=new Set();
   let ready=false,healthPromise=null,view='',archives=[],runs=[],results=[],selectedRun='',resultEpoch=0,busy=false,publishAttempt=null,panel,archiveBtn,resultBtn,dialog;
   const api=()=>window.__ACADEMY_ADMIN__;
@@ -165,3 +165,4 @@
   }
   install();
 })();
+

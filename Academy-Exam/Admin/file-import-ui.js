@@ -1,8 +1,8 @@
 /* Academy Admin file question importer v2 - every file creates a separate exam */
 (function(){
 "use strict";
-const IMPORT_URL="https://miladmirsheriseyed.app.n8n.cloud/webhook/exam-import-file";
-const QUESTIONS_URL="https://miladmirsheriseyed.app.n8n.cloud/webhook/exam-questions";
+const IMPORT_URL="https://miladmmirsheri.app.n8n.cloud/webhook/exam-import-file";
+const QUESTIONS_URL="https://miladmmirsheri.app.n8n.cloud/webhook/exam-questions";
 const MAX_FILE_BYTES=10*1024*1024;
 
 function setStatus(message,type){
@@ -133,3 +133,4 @@ observer.observe(document.documentElement,{subtree:true,childList:true});
 document.addEventListener("click",()=>setTimeout(install,0),true);
 setTimeout(install,300);
 })();
+
