@@ -151,12 +151,10 @@
     document.getElementById('confirmYes').onclick=publish;
     const connect=document.getElementById('connect'),originalConnect=connect.onclick;
     connect.onclick=async()=>{
-      const t=document.getElementById('token').value.trim(),msg=document.getElementById('authMessage');
-      if(!/^[\x21-\x7e]{16,128}$/.test(t)||/^(github_pat_|ghp_)/.test(t)){msg.textContent='رمز مخصوص ادمین را وارد کنید.';return;}
-      connect.disabled=true;msg.textContent='در حال بررسی ورود خصوصی…';ready=false;healthPromise=null;api().session(t);
-      try{await health();document.getElementById('auth').close();say('ورود مدیریت تأیید شد؛ آرشیو و نتایج خصوصی آماده است.','success');}
-      catch(e){ready=false;api().session('');if(e.code==='NOT_INSTALLED'){document.getElementById('token').value=t;await originalConnect();}else msg.textContent=e.message;}
-      finally{connect.disabled=false;}
+      if(connect.disabled)return;
+      ready=false;healthPromise=null;
+      // Restore the existing bridge login; private operations keep their own Header Auth.
+      await originalConnect();
     };
     document.getElementById('logout').addEventListener('click',purge);window.addEventListener('pagehide',purge);
     const originalAdopt=window.__ACADEMY_ON_BANK_ADOPTED__;

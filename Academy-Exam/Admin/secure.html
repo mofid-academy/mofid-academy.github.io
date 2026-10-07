@@ -52,7 +52,7 @@ async function readLiveTiming(url='https://raw.githubusercontent.com/mofid-acade
   const timingState='<scr'+'ipt>window.__ACADEMY_TIMING__='+JSON.stringify(timing).replace(/</g,'\\u003c')+closeScript;
   html=html.replace('optionDrafts=new Map();changed();render();','optionDrafts=new Map();changed();render();window.__ACADEMY_ON_BANK_ADOPTED__?.(JSON.parse(JSON.stringify(s)));');
   html=html.replace('بانک و فرم روی GitHub عمومی هستند. پاسخ صحیح، کلید دسترسی و معیار تصحیح محرمانه را در این پنل یا متن سؤال وارد نکن.','فایل عمومی فرم فقط شامل سؤال‌هاست. کلیدهای انتخاب‌شده هنگام ذخیره در آرشیو خصوصی سرور نگه داشته می‌شوند.');
-  const extensions='<scr'+'ipt src="timing-admin.js?v=8">'+closeScript+'<scr'+'ipt src="exam-save-sync.js?v=14m20261007">'+closeScript+'<scr'+'ipt src="answer-key-ui.js?v=2">'+closeScript+'<scr'+'ipt src="file-import-ui.js?v=3m20261007">'+closeScript+'<scr'+'ipt src="xlsx-export.js?v=5">'+closeScript+'<scr'+'ipt src="archive-admin.js?v=5m20261007">'+closeScript;
+  const extensions='<scr'+'ipt src="timing-admin.js?v=8">'+closeScript+'<scr'+'ipt src="exam-save-sync.js?v=14m20261007">'+closeScript+'<scr'+'ipt src="answer-key-ui.js?v=2">'+closeScript+'<scr'+'ipt src="file-import-ui.js?v=3m20261007">'+closeScript+'<scr'+'ipt src="xlsx-export.js?v=5">'+closeScript+'<scr'+'ipt src="archive-admin.js?v=5m20261007-login3">'+closeScript;
   html=html.replace('<body>','<body>'+timingState);
   html=html.replace('</body>',extensions+'</body>');
   document.open();document.write(html);document.close();
