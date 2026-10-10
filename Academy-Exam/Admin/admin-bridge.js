@@ -2,7 +2,7 @@
 (function(){
  'use strict';
  const nativeFetch=window.fetch.bind(window);
- const endpoint='https://miladmmirsheri.app.n8n.cloud/webhook/academy-admin-api';
+ const endpoint='https://miladmirsheriam.app.n8n.cloud/webhook/academy-admin-api';
  async function bridgeFetch(input,options={}){
    const url=new URL(typeof input==='string'?input:input.url,location.href);
    if(url.origin!=='https://api.github.com')return nativeFetch(input,options);

@@ -45,7 +45,7 @@ function patchArchiveRuntime(html) {
   if(!code.includes('academy-pending-submission-v4:'))throw Error('مسیر دریافت پاسخ با نسخهٔ آرشیو هماهنگ نیست.');
   code=code.replace('const pendingKey="academy-pending-submission-v4:"+expectedId;', 'const pendingKey="academy-pending-submission-v5:'+publication.run_id+'::"+expectedId;');
   code=code.replace('event_type:"submission",schema_version:2,question_bank_source:"academy-studio",', 'event_type:"submission",schema_version:2,question_bank_source:"academy-studio",run_id:'+JSON.stringify(publication.run_id)+',');
-  code=code.replace('fetch(CONFIG.submitUrl,','fetch("https://miladmmirsheri.app.n8n.cloud/webhook/academy-submit-v5",');
+  code=code.replace('fetch(CONFIG.submitUrl,','fetch("https://miladmirsheriam.app.n8n.cloud/webhook/academy-submit-v5",');
   code=code.replace('"Content-Type":"application/json"','"Content-Type":"text/plain;charset=UTF-8"');
   code=code.replace('ack?.accepted!==true||ack.stored!==true||','ack?.run_id!=='+JSON.stringify(publication.run_id)+'||ack?.accepted!==true||ack.stored!==true||');
   return start+code+end;
@@ -69,7 +69,7 @@ async function readLiveTiming(){
   ]);
   if(!baseR.ok) throw new Error('base '+baseR.status);
   let base=await baseR.text();
-  base=base.split("https://miladmirsheriseyed.app.n8n.cloud").join("https://miladmmirsheri.app.n8n.cloud").split("https://miladmirsheriii.app.n8n.cloud").join("https://miladmmirsheri.app.n8n.cloud");
+  base=base.split("https://miladmirsheriseyed.app.n8n.cloud").join("https://miladmirsheriam.app.n8n.cloud").split("https://miladmirsheriii.app.n8n.cloud").join("https://miladmirsheriam.app.n8n.cloud").split("https://miladmmirsheri.app.n8n.cloud").join("https://miladmirsheriam.app.n8n.cloud");
   base=base.replace(/(<script id="academy-question-bank"[^>]*>[\s\S]*?"submitApproved"\s*:\s*)false/, '$1true');
   base=patchArchiveRuntime(patchSubmissionRuntime(base));
   const cfg=tR;
@@ -249,7 +249,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(attemp
 })();
 `;
 
-  const networkPolicy='<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; base-uri \'self\'; object-src \'none\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\' https://fonts.googleapis.com; font-src \'self\' data: https://fonts.gstatic.com; img-src \'self\' data:; connect-src \'self\' https://raw.githubusercontent.com https://miladmmirsheri.app.n8n.cloud; form-action \'self\'">';
+  const networkPolicy='<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; base-uri \'self\'; object-src \'none\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\' https://fonts.googleapis.com; font-src \'self\' data: https://fonts.gstatic.com; img-src \'self\' data:; connect-src \'self\' https://raw.githubusercontent.com https://miladmirsheriam.app.n8n.cloud; form-action \'self\'">';
   let html=base.replace('<head>','<head>'+networkPolicy).replace('</head>',css+'</head>');
   html=html.replace('<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>','<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>'+badge);
   html=html.replace('$("fM").textContent = toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3));','$("fM").textContent = '+(cfg.enabled!==false?'toFa('+Number(cfg.durationMinutes||15)+') + " دقیقه"':'toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3))')+';');
