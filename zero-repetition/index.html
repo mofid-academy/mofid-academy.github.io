@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#102c32">
+  <meta name="description" content="Zero repetition | شناسایی سه فعالیت تکراری در کارگزاری مفید">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Zero repetition | Mofid Academy</title>
+  <style>:root{--preview-building:url('brand/building.jpg')}
+/* Diagonal composition inspired by the user-supplied TemplateMo 550 Diagoona. */
+@font-face{font-family:Pinar;src:url('brand/Pinar-VF.woff') format('woff');font-weight:100 900;font-display:swap}
+:root{--teal:#00AF9D;--teal-dark:#00796e;--red:#F32735;--ink:#17353b;--muted:#63797c;--border:#dce8e6;--soft:#f3f8f7;--danger:#bd1c2a;--radius:25px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{min-height:100%;scroll-behavior:smooth}
+body{margin:0;min-height:100vh;background:#122f35;color:var(--ink);font-family:Pinar,Tahoma,sans-serif;font-size:14px;line-height:1.85}
+body:has(dialog[open]){overflow:hidden}
+button,input,textarea,select{font:inherit}
+button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer}
+button:disabled{cursor:wait;opacity:.6}
+:focus-visible{outline:3px solid var(--teal);outline-offset:4px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 4px #00af9d14}
+.skip-link{position:fixed;top:-80px;right:20px;padding:10px 18px;background:#fff;z-index:100}
+.skip-link:focus{top:15px}
+.scene{position:fixed;inset:0;background:linear-gradient(90deg,rgba(8,33,37,.14) 0%,rgba(8,33,37,.25) 37%,rgba(8,33,37,.9) 68%,#112e34 100%),var(--preview-building) left center/cover no-repeat;z-index:-3}
+.scene:after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(7,33,37,.9),transparent 70%)}
+.diagonal{position:fixed;inset:0 0 0 42%;z-index:-2;background:linear-gradient(135deg,rgba(15,41,47,.73),rgba(12,34,39,.95));clip-path:polygon(18% 0,100% 0,100% 100%,0 100%);border-top:3px solid #00af9d44}
+.site-wrap{max-width:1600px;min-height:100vh;display:flex;flex-direction:column;margin:auto;padding:28px 64px 20px}
+.site-header{display:flex;align-items:center;justify-content:space-between;gap:25px;color:white;min-height:95px}
+.brand{display:flex;align-items:center;gap:17px;flex-shrink:0}
+.logo-box{width:86px;height:86px;background:#fff;border-radius:19px;display:grid;place-items:center;box-shadow:0 8px 25px #0002;overflow:hidden}
+.logo-box img{width:100%;height:100%;object-fit:contain}
+.brand-name{display:block;font-size:20px;font-weight:700;letter-spacing:-.5px}
+.brand-sub{display:block;font-size:12px;color:#c3d7d4;margin-top:2px}
+.header-nav{display:flex;gap:17px;align-items:center;flex-wrap:wrap;font-size:12px}
+.nav-button{border:0;background:transparent;color:#e3eeec;padding:9px 0;display:flex;gap:7px;align-items:center;white-space:nowrap}
+.nav-button:hover{color:#6ce2d5}
+.question-mark{display:inline-grid;place-items:center;border:1px solid #abc3bf77;width:20px;height:20px;border-radius:50%;line-height:1}
+.header-email{font-family:Pinar,Tahoma,sans-serif;opacity:.75;font-size:11px;max-width:210px;overflow:hidden;text-overflow:ellipsis}
+.layout{display:grid;grid-template-columns:minmax(390px,1fr) minmax(320px,1fr);gap:80px;align-items:center;flex:1;padding:48px 0 56px}
+.workspace{grid-column:1;grid-row:1;width:100%;max-width:540px;justify-self:start}
+.story{grid-column:2;grid-row:1;color:white;align-self:stretch;display:flex;flex-direction:column;justify-content:center;position:relative;min-height:630px;padding:60px 15px 50px 0}
+.story-content{margin-top:50px}
+.eyebrow{display:flex;align-items:center;gap:10px;font-size:11px;color:#d3e9e3;letter-spacing:.2px}
+.small-line{height:2px;width:25px;background:var(--teal);flex-shrink:0}
+.story h1{font-size:clamp(30px,3.4vw,54px);font-weight:800;line-height:1.7;margin:22px 0 19px;letter-spacing:-1.7px;text-shadow:0 3px 30px #0004}
+.story h1 em{font-style:normal;color:#87f0d7}
+.story p{max-width:375px;font-size:14px;color:#e1ece8;line-height:2.2;margin:0}
+.story-note{display:flex;align-items:center;gap:18px;border-top:1px solid #ffffff38;margin-top:42px;padding-top:25px;max-width:370px}
+.note-number{font-size:44px;font-weight:800;line-height:1.3;color:white}
+.story-note strong{display:block;font-weight:600;font-size:13px}
+.story-note div span{display:block;color:#c3d7d2;font-size:10px;margin-top:4px}
+.story-bottom{display:flex;align-items:center;gap:10px;font-size:11px;position:absolute;bottom:8px;right:14px;color:#d3e5e0}
+.tiny-square{width:7px;height:7px;background:var(--red);display:inline-block}
+.divider-dot{opacity:.4;margin:0 4px}
+.card{background:rgba(255,255,255,.97);border:1px solid #ffffff7a;border-radius:var(--radius);box-shadow:0 24px 80px #001c2461;backdrop-filter:blur(18px)}
+.login-card{padding:35px 39px 28px;position:relative;overflow:hidden}
+.login-card:before{content:'';position:absolute;top:0;right:36px;width:44px;height:4px;background:var(--red);border-radius:0 0 4px 4px}
+.card-kicker{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--muted)}
+.status-dot{display:inline-block;width:6px;height:6px;background:var(--teal);border-radius:50%}
+.login-card h2{font-size:27px;font-weight:800;line-height:1.8;letter-spacing:-1px;margin:21px 0 8px}
+.text-teal{color:var(--teal-dark)}
+.card-intro{color:var(--muted);font-size:12px;margin:0 0 25px}
+.field{display:flex;flex-direction:column;gap:7px;margin-bottom:20px;min-width:0;position:relative}
+.field>span:first-child{font-size:12px;font-weight:600;color:#324f54}
+.field input,.field textarea,.field select,.filter-input,.filter-select{border:1px solid var(--border);border-radius:11px;background:#fff;min-height:49px;padding:11px 14px;width:100%;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+.field input::placeholder,.field textarea::placeholder{color:#95a6a6;font-weight:400;font-size:12px}
+.field input[dir=ltr]{text-align:left;font-family:Pinar,Tahoma,sans-serif;letter-spacing:.15px}
+.field small{font-size:10px;color:#819392;font-weight:400;line-height:1.7}
+.field textarea{min-height:125px;resize:vertical;line-height:2;font-size:13px}
+.field textarea.small-area{min-height:85px}
+.password-wrap{display:flex;position:relative}
+.password-wrap input{padding-left:66px;direction:ltr;text-align:left}
+.password-toggle{position:absolute;left:8px;top:8px;border:0;background:var(--soft);color:var(--muted);padding:5px 9px;border-radius:7px;font-size:10px;z-index:1}
+.button{border:1px solid transparent;border-radius:11px;min-height:46px;padding:11px 21px;display:inline-flex;align-items:center;justify-content:center;gap:12px;font-size:12px;font-weight:600;transition:background .15s,transform .15s;text-align:center}
+.button:hover{transform:translateY(-1px)}
+.button:active{transform:translateY(0)}
+.primary{background:var(--teal);color:#042f2b;box-shadow:0 6px 20px #00af9d24}
+.primary:hover{background:#00bfaa}
+.secondary{border-color:var(--border);color:#476467;background:white}
+.secondary:hover{background:#f0f7f5}
+.quiet{background:transparent;color:var(--muted);padding-inline:8px}
+.danger-button{color:var(--danger);border-color:#f2ccd0;background:#fff5f6}
+.full{width:100%}
+.login-foot{display:flex;gap:10px;align-items:flex-start;border-top:1px solid #e0e8e5;margin-top:25px;padding-top:18px;color:#7d9191}
+.login-foot svg{flex-shrink:0;margin-top:4px;color:#7d9993}
+.login-foot p{font-size:10px;line-height:1.9;margin:0}
+.site-footer{display:flex;justify-content:space-between;gap:20px;color:#bad0cc;font-size:10px;opacity:.85;padding-top:8px}
+.error-box{padding:11px 14px;border-radius:10px;background:#fff0f1;border:1px solid #ffd1d5;color:var(--danger);font-size:12px;margin-bottom:16px}
+.soft-note{font-size:11px;background:#eef6f3;border:1px solid #dcece7;border-radius:11px;color:#57766e;padding:13px 15px;line-height:2}
+.is-app .layout{grid-template-columns:minmax(540px,1.65fr) minmax(270px,1fr);gap:45px;padding-top:38px;align-items:start}
+.is-app .workspace{max-width:800px}
+.is-app .story{padding-right:5px;min-height:630px}
+.is-app .story h1{font-size:39px}
+.is-app .story-note{gap:12px}
+.is-app .story-note div span{font-size:9px}
+.form-card{overflow:hidden;padding:30px 32px 22px}
+.form-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding-bottom:22px}
+.form-heading h2{margin:3px 0 0;font-size:21px;letter-spacing:-.7px}
+.muted{color:var(--muted)}
+.text-small{font-size:11px}
+.status-pill{font-size:10px;background:#eaf5f1;color:#477b68;border:1px solid #cfe8dc;border-radius:50px;padding:4px 11px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.status-pill.submitted{color:#00786c;background:#e4f8f3;border-color:#b4e4d7}
+.status-pill.pending{background:#fff7e8;border-color:#f0dfb9;color:#8a6d27}
+.status-pill.failed{background:#fff0f1;border-color:#f5c4ca;color:#b52e3e}
+.stepper{display:flex;justify-content:space-between;gap:4px;margin:0 0 29px;padding:0;list-style:none;position:relative}
+.stepper:before{content:'';position:absolute;top:15px;height:1px;background:#e0e9e6;right:8%;left:8%;z-index:0}
+.stepper li{flex:1;position:relative;text-align:center}
+.step-button{border:0;background:transparent;padding:0 3px;color:#8b9a99;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:10px;width:100%}
+.step-button:disabled{cursor:default;opacity:1}
+.step-number{display:grid;place-items:center;background:#f4f7f6;border:1px solid #e0e9e6;width:31px;height:31px;border-radius:50%;font-size:11px;z-index:1}
+.stepper .current .step-number{background:var(--teal);color:#003b32;border-color:var(--teal);box-shadow:0 0 0 5px #00af9d0c}
+.stepper .current .step-button{color:var(--teal-dark);font-weight:700}
+.stepper .complete .step-number{background:#e8f7f0;border-color:#c4e7d8;color:var(--teal-dark)}
+.form-section-title{margin:0 0 5px;font-size:18px;font-weight:700;letter-spacing:-.4px}
+.section-description{font-size:11px;color:var(--muted);margin:0 0 24px;line-height:2}
+.fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 17px}
+.fields-grid .full-row{grid-column:1/-1}
+.number-group{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.number-group input{text-align:center;font-variant-numeric:tabular-nums}
+.input-unit{display:flex;position:relative}
+.input-unit input{padding-left:55px}
+.unit{position:absolute;left:13px;top:12px;color:#8a9d98;font-size:11px;pointer-events:none}
+.optional{font-size:10px;font-weight:400!important;color:#95a4a0!important}
+.tool-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:1px}
+.tool-chip{border:1px solid #e0e9e5;background:#f7faf9;color:#7c9690;font-size:10px;border-radius:6px;padding:3px 9px}
+.tool-chip:hover{border-color:#7ed4c5;color:#00796b}
+.form-actions{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #e3ebe8;margin-top:10px;padding-top:20px;gap:10px;flex-wrap:wrap}
+.form-actions-group{display:flex;gap:8px;align-items:center}
+.save-indicator{font-size:10px;color:#77938a;margin-top:15px;min-height:19px;display:flex;align-items:center;gap:7px}
+.save-indicator:before{content:'';width:5px;height:5px;background:#91b6a8;border-radius:50%}
+.profile-summary{display:grid;grid-template-columns:1fr 1fr;gap:9px 18px;border:1px solid var(--border);background:var(--soft);padding:17px;border-radius:13px;font-size:12px;margin:20px 0}
+.profile-summary dt{color:#8a9c96;font-size:10px}
+.profile-summary dd{margin:0;overflow-wrap:anywhere}
+.review-task{border:1px solid #e0eae5;border-radius:13px;padding:18px;margin:12px 0;background:#fff}
+.review-task-top{display:flex;gap:11px;align-items:center;margin-bottom:9px}
+.task-bullet{display:grid;place-items:center;background:#e9f6f1;color:#008374;border-radius:8px;width:31px;height:31px;font-size:13px;flex-shrink:0;font-weight:700}
+.review-task h3{font-size:13px;line-height:1.8;margin:0}
+.review-task p{font-size:11px;color:#647e75;white-space:pre-wrap;overflow-wrap:anywhere;margin:7px 0;line-height:2}
+.task-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+.task-meta span{background:#f3f7f5;color:#648276;border-radius:5px;padding:3px 8px;font-size:10px}
+.estimate{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;background:#edf7f1;border:1px solid #d0e9da;border-radius:12px;margin:18px 0;color:#3e6a56}
+.estimate strong{font-size:23px;color:#167b57}
+.estimate small{display:block;color:#7c9b88;font-size:9px}
+.check-label{display:flex;align-items:flex-start;gap:8px;margin:19px 0;font-size:11px;color:#5e776d}
+.check-label input{accent-color:var(--teal);margin-top:5px;width:15px;height:15px}
+.receipt-heading{text-align:center;padding:15px 0 24px}
+.receipt-icon{width:62px;height:62px;display:grid;place-items:center;margin:5px auto 15px;background:#e9f8f0;border-radius:50%;font-size:27px;color:var(--teal-dark)}
+.receipt-heading h2{font-size:23px;margin:9px 0}
+.receipt-heading p{font-size:12px;color:var(--muted);margin:7px 0}
+.receipt-kicker{justify-content:center}
+.tracking{display:inline-flex;gap:10px;align-items:center;background:#f1f6f3;border:1px dashed #bbd9cd;border-radius:10px;padding:8px 16px;margin-top:13px;font-size:11px;color:#5b776a}
+.tracking b{font-family:monospace;font-weight:500;font-size:14px;letter-spacing:1px;color:#2d6352}
+.toast{position:fixed;bottom:25px;left:50%;transform:translateX(-50%);background:#163f34;color:#fff;border:1px solid #ffffff25;border-radius:11px;padding:12px 22px;font-size:12px;box-shadow:0 10px 30px #0003;z-index:100;max-width:calc(100vw - 30px)}
+.toast.error-toast{background:#86333c}
+.dialog{width:min(540px,calc(100vw - 30px));max-height:90vh;overflow:auto;border:0;border-radius:22px;padding:29px;color:var(--ink);font:inherit;line-height:2;background:#fff;box-shadow:0 30px 90px #0004}
+.dialog::backdrop{background:#061e27b3;backdrop-filter:blur(8px)}
+.wide-dialog{width:min(820px,calc(100vw - 30px))}
+.dialog h2{font-size:22px;margin:10px 0 15px;letter-spacing:-.5px}
+.dialog p{font-size:12px;color:var(--muted)}
+.dialog-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.eyebrow-dark{font-size:11px;color:var(--teal-dark)}
+.icon-button{background:#f2f6f3;color:#637e72;border:0;border-radius:8px;min-width:32px;height:32px;font-size:24px;line-height:1;display:grid;place-items:center}
+.guide-list{font-size:12px;color:#587567;padding-right:22px;line-height:2.4}
+.is-admin .layout{display:block;padding-top:30px}
+.is-admin .story{display:none}
+.is-admin .workspace{max-width:none}
+.admin-card{padding:29px 32px;min-height:580px}
+.admin-title-row{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:25px;flex-wrap:wrap}
+.admin-title-row h2{font-size:24px;margin:0;letter-spacing:-.8px}
+.admin-title-row p{margin:5px 0 0;color:var(--muted);font-size:11px}
+.admin-buttons{display:flex;gap:8px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:20px 0 25px}
+.stat{border:1px solid #deebe5;background:#fafcfb;border-radius:13px;padding:17px 20px;position:relative}
+.stat:first-child{background:#edf8f3;border-color:#cbe7dc}
+.stat-label{font-size:10px;color:#789187;display:block}
+.stat-value{font-size:28px;font-weight:700;color:#244f41;display:block;line-height:1.8}
+.stat-unit{font-size:10px;font-weight:400;margin-right:5px;color:#799589}
+.filters{display:flex;gap:10px;margin-bottom:19px;align-items:center;flex-wrap:wrap}
+.filter-input{flex:1;min-width:200px;font-size:12px;min-height:43px}
+.filter-select{width:auto;font-size:11px;min-height:43px;min-width:145px}
+.table-scroll{overflow:auto;border:1px solid #e2ebe6;border-radius:12px}
+.responses-table{border-collapse:collapse;width:100%;text-align:right;font-size:11px;white-space:nowrap}
+.responses-table th{background:#f3f7f4;color:#7d9288;font-size:10px;font-weight:500;padding:13px 15px;border-bottom:1px solid #e2ebe6}
+.responses-table td{padding:15px;border-bottom:1px solid #edf2ee;vertical-align:middle}
+.responses-table tr:last-child td{border-bottom:0}
+.person-cell b{font-size:12px;color:#315443;display:block;font-weight:600}
+.person-cell small{font-size:10px;color:#92a499;display:block;text-align:right;margin-top:3px}
+.table-button{padding:5px 10px;border:1px solid #dae9e0;border-radius:7px;background:#f4faf6;color:#43785d;font-size:10px}
+.table-button:hover{background:#e8f5ec}
+.table-foot{display:flex;justify-content:space-between;gap:15px;margin-top:14px;font-size:10px;color:#8b9f92;flex-wrap:wrap}
+.empty-state{text-align:center;padding:58px 20px;color:#82988c;font-size:12px}
+.empty-state strong{display:block;font-size:18px;color:#4d735d;margin-bottom:8px}
+.integration-note{display:flex;align-items:center;justify-content:space-between;gap:15px;font-size:11px;background:#f5f8f6;border:1px solid #e0e8e2;border-radius:11px;padding:13px 15px;margin-top:22px;color:#789080}
+.integration-note.not-configured{background:#fff9ed;border-color:#f1e5cb;color:#8b784b}
+.integration-note .button{min-height:32px;font-size:10px;padding:5px 12px}
+.account-list{max-height:230px;overflow:auto;margin-top:20px;font-size:11px}
+.account-row{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:12px 2px;border-top:1px solid #e5ede6}
+.account-row small{display:block;color:#879c8d}
+.account-row .table-button{flex-shrink:0}
+.no-script{position:fixed;inset:auto 15px 15px;background:#fff;padding:20px;z-index:100;border-radius:10px}
+.preview-banner{background:#f6fff9;color:#28543b;position:relative;z-index:10;padding:10px 20px;display:flex;gap:16px;align-items:center;justify-content:center;font-size:11px;border-bottom:1px solid #cfe3d5;flex-wrap:wrap}
+.preview-banner button{font:inherit;color:#007567;border:1px solid #c6dfd0;background:white;padding:5px 12px;border-radius:7px}
+.preview-banner strong{font-weight:600}
+@media(min-width:1700px){.scene{background-position:left center;background-size:100% auto}}
+@media(max-width:1250px){.site-wrap{padding-inline:38px}.layout{gap:45px}.story h1{font-size:42px}.is-app .layout{gap:32px;grid-template-columns:minmax(470px,1.6fr) minmax(250px,1fr)}.form-card{padding-inline:26px}.header-email{display:none}.is-app .story h1{font-size:33px}}
+@media(max-width:1030px){.site-wrap{padding-inline:25px}.layout{gap:28px;grid-template-columns:minmax(350px,1.1fr) minmax(260px,1fr)}.login-card{padding:30px 27px}.story h1{font-size:35px}.story p{font-size:12px}.story{padding-right:0}.eyebrow{font-size:9px}.story-note{margin-top:30px}.is-app .layout{display:block;max-width:780px;margin:0 auto;width:100%}.is-app .story{display:none}.is-app .workspace{max-width:none}.brand-name{font-size:18px}.header-nav{gap:13px}.stats{gap:10px}.stat{padding:15px}.is-admin .layout{max-width:none}}
+@media(max-width:760px){.site-wrap{padding:18px 18px 20px}.site-header{min-height:70px;gap:12px}.logo-box{width:65px;height:65px;border-radius:14px}.brand{gap:11px}.brand-name{font-size:17px}.brand-sub{font-size:10px}.header-nav{gap:8px;font-size:10px}.nav-button{font-size:10px}.nav-button .question-mark{display:none}.layout{display:flex;flex-direction:column;gap:25px;padding:28px 0 35px}.story{order:0;min-height:0;align-self:stretch;padding:0 7px}.story-content{margin-top:0}.story h1{font-size:32px;line-height:1.65;margin:12px 0 6px}.story h1 br{display:none}.story h1 em{margin-right:7px}.story p{font-size:11px;max-width:480px;line-height:2}.story .eyebrow{font-size:9px}.story-note,.story-bottom{display:none}.workspace{order:1;max-width:580px;justify-self:auto}.scene{background:linear-gradient(0deg,rgba(10,38,40,.96) 18%,rgba(10,38,40,.8) 55%,rgba(10,38,40,.57)),var(--preview-building) 35% top/cover no-repeat}.diagonal{inset:0;background:linear-gradient(135deg,#0a342b22,#0a342b55);clip-path:polygon(70% 0,100% 0,100% 100%,0 100%)}.login-card{padding:28px 27px 23px;border-radius:22px}.login-card h2{font-size:26px;margin-top:17px}.card-intro{font-size:11px}.site-footer{font-size:9px}.is-app .layout{padding:25px 0}.is-app .header-nav{gap:12px}.is-app .brand-name{font-size:15px}.is-app .brand-sub{font-size:9px}.is-app .logo-box{width:54px;height:54px;border-radius:12px}.is-app .brand{gap:9px}.form-card{padding:24px 23px 19px;border-radius:20px}.form-heading h2{font-size:20px}.form-heading{padding-bottom:20px}.stepper{margin-bottom:25px}.form-section-title{font-size:17px}.fields-grid{gap:0 12px}.admin-card{padding:22px 18px;border-radius:18px}.admin-title-row h2{font-size:22px}.stats{grid-template-columns:1fr 1fr;gap:9px}.stat{padding:12px 15px}.stat-value{font-size:24px}.admin-buttons .button{font-size:10px;min-height:36px;padding:7px 12px}.filters{gap:8px}.filter-input{flex-basis:100%}.filter-select{flex:1;min-width:100px}.integration-note{align-items:flex-start}.table-foot{font-size:9px}.dialog{padding:23px}.is-admin .brand-text{display:none}.header-email{display:none}.is-admin .header-nav{gap:13px}}
+@media(max-width:440px){.site-wrap{padding-inline:13px}.site-header{gap:8px}.header-nav{gap:6px}.brand-name{font-size:15px}.brand-sub{font-size:9px}.logo-box{width:58px;height:58px}.story h1{font-size:27px;letter-spacing:-1px}.story h1 br{display:block}.story h1 em{margin-right:0}.login-card{padding-inline:23px}.login-card h2{font-size:24px}.form-card{padding-inline:18px}.fields-grid{grid-template-columns:1fr}.fields-grid .full-row{grid-column:auto}.number-group{grid-template-columns:1fr 1fr}.step-button{font-size:9px}.stepper{gap:0}.form-actions{gap:10px}.form-actions .button{font-size:10px;padding:10px 13px;gap:8px}.form-actions-group{gap:5px}.form-heading h2{font-size:18px}.profile-summary{gap:10px;font-size:11px}.site-footer span:last-child{display:none}.receipt-heading h2{font-size:21px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
+</style>
+  <script>window.TEKRAR_PREVIEW=true;</script>
+</head>
+<body>
+  <a class="skip-link" href="#main">رفتن به محتوای اصلی</a>
+  <div class="scene" aria-hidden="true"></div>
+  <div class="diagonal" aria-hidden="true"></div>
+  <div class="site-wrap">
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="صفحه نخست طرح تکرار صفر">
+        <span class="logo-box"><img src="brand/logo.webp" width="92" height="92" alt="لوگوی مفید آکادمی"></span>
+        <span class="brand-text"><span class="brand-name">مفید آکادمی</span><span class="brand-sub">Zero repetition</span></span>
+      </a>
+      <nav class="header-nav" aria-label="منوی اصلی">
+        <button class="nav-button" id="help-button" type="button"><span class="question-mark">؟</span> راهنمای ثبت</button>
+        <button class="nav-button" id="my-form-button" type="button" hidden>پرسشنامه من</button>
+        <button class="nav-button" id="admin-button" type="button" hidden>مدیریت پاسخ‌ها</button>
+        <span id="header-email" class="header-email" dir="ltr"></span>
+        <button class="nav-button" id="logout-button" type="button" hidden>خروج <span aria-hidden="true">↗</span></button>
+      </nav>
+    </header>
+    <main id="main" class="layout">
+      <aside class="story" aria-label="درباره طرح">
+        <div class="story-content">
+          <span class="eyebrow"><span class="small-line"></span> ایده‌های بزرگ، از کارهای کوچک شروع می‌شوند</span>
+          <h1>کار تکراری کمتر.<br><em>فرصت بیشتر.</em></h1>
+          <p>سه کاری را که بارها انجام می‌دهید، با ما در میان بگذارید؛ نخستین گام برای ساده‌تر شدن روز کاری شما.</p>
+          <div class="story-note"><span class="note-number">۰</span><div><strong>به سمت تکرار صفر</strong><span>از شناخت فرایندها تا ساخت فرصت‌های اتوماسیون</span></div></div>
+        </div>
+        <div class="story-bottom"><span class="tiny-square"></span> کارگزاری مفید <span class="divider-dot">/</span> آکادمی</div>
+      </aside>
+      <section class="workspace" aria-live="polite" aria-label="پرسشنامه" id="workspace">
+        <div class="card login-card" id="login-card">
+          <div class="card-kicker"><span class="status-dot"></span> طرح شناسایی فعالیت‌های تکراری</div>
+          <h2>زمان شما،<br><span class="text-teal">ارزشمندتر از تکرار است.</span></h2>
+          <p class="card-intro">برای ثبت فعالیت‌های خود، با حساب سازمانی وارد شوید.</p>
+          <form id="login-form">
+            <label class="field"><span>ایمیل سازمانی</span><input type="email" name="email" id="login-email" dir="ltr" placeholder="name@emofid.com" autocomplete="username" maxlength="254" required><small>فقط حساب‌های دامنه emofid.com امکان ورود دارند.</small></label>
+            <label class="field"><span>رمز عبور</span><span class="password-wrap"><input type="password" name="password" id="login-password" autocomplete="current-password" maxlength="1024" required><button id="toggle-password" type="button" class="password-toggle" aria-label="نمایش رمز عبور" aria-pressed="false">نمایش</button></span></label>
+            <div id="login-error" class="error-box" role="alert" hidden></div>
+            <button type="submit" class="button primary full" id="login-submit">ورود به پرسشنامه <span aria-hidden="true">←</span></button>
+          </form>
+          <div class="login-foot"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 4 6v6c0 4 5 8 8 9 3-1 8-5 8-9V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg><p>حساب شما توسط مسئول طرح ایجاد می‌شود.<br>پاسخ‌ها برای شما و مدیران مجاز طرح قابل مشاهده است.</p></div>
+        </div>
+        <div id="app-content" hidden></div>
+      </section>
+    </main>
+    <footer class="site-footer"><span>Zero repetition · مفید آکادمی</span><span>یک گام ساده، برای روز کاری بهتر.</span></footer>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <dialog id="help-dialog" class="dialog">
+    <div class="dialog-head"><span class="eyebrow-dark">راهنمای ثبت</span><button type="button" class="icon-button" data-close-dialog aria-label="بستن">×</button></div>
+    <h2>سه فعالیت، با جزئیات کاربردی</h2>
+    <p>کاری را انتخاب کنید که مرتب انجام می‌دهید؛ مانند جمع‌آوری اطلاعات، تهیه گزارش یا جابه‌جایی داده بین ابزارها.</p>
+    <ol class="guide-list"><li>عنوان و مراحل فعلی انجام هر کار را بنویسید.</li><li>تعداد تکرار، زمان هر بار و ابزارهای مورد استفاده را مشخص کنید.</li><li>سه فعالیت را بازبینی کنید و ثبت نهایی را بزنید.</li></ol>
+    <p class="soft-note">برای ادامه در زمان دیگر، «ذخیره پیش‌نویس» را انتخاب کنید. از اطلاعات واقعی مشتریان، رمزها و شماره حساب در مثال‌ها استفاده نکنید.</p>
+    <button class="button primary" type="button" data-close-dialog>متوجه شدم</button>
+  </dialog>
+  <dialog id="detail-dialog" class="dialog wide-dialog"><div id="detail-content"></div></dialog>
+  <dialog id="accounts-dialog" class="dialog wide-dialog"><div id="accounts-content"></div></dialog>
+  <noscript><div class="no-script">برای استفاده از پرسشنامه، جاوااسکریپت مرورگر را فعال کنید.</div></noscript>
+<script>'use strict';
+(() => {
+  const $ = (s, root = document) => root.querySelector(s);
+  const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fa = v => Number(v || 0).toLocaleString('fa-IR', {maximumFractionDigits: 1});
+  const freq = {daily:'روزانه', weekly:'هفتگی', monthly:'ماهانه'};
+  const months = {daily:22, weekly:4.33, monthly:1};
+  const ordinals = ['اول', 'دوم', 'سوم'];
+  const labels = ['مشخصات', 'کار اول', 'کار دوم', 'کار سوم', 'بازبینی'];
+  const blankTask = () => ({title:'', steps:'', count:'', frequency:'daily', minutes:'', tools:'', human_decision:''});
+  const blankSurvey = () => ({full_name:'', department:'', job_title:'', employee_code:'', tasks:[blankTask(),blankTask(),blankTask()], revision:0, status:'draft'});
+  const state = {user:null, survey:blankSurvey(), step:0, dirty:false, busy:false, responses:[], accounts:[], isAdmin:false};
+  const preview = window.TEKRAR_PREVIEW === true;
+  let previewSurvey = null;
+  let toastTimer;
+  let previewAccounts = [{id:1,email:'sample1@example.com',full_name:'همکار نمونه اول',department:'پشتیبانی',is_active:true}];
+
+  function hours(tasks) {
+    return Math.round(tasks.reduce((sum,t) => sum + (+t.count || 0) * (+t.minutes || 0) * (months[t.frequency] || 0) / 60, 0) * 10) / 10;
+  }
+  function toast(message, bad = false) {
+    clearTimeout(toastTimer);
+    $('#toast').textContent = message;
+    $('#toast').classList.toggle('error-toast', bad);
+    $('#toast').hidden = false;
+    toastTimer = setTimeout(() => { $('#toast').hidden = true; }, 4500);
+  }
+  function errorBox(message, id='form-error') {
+    const target = document.getElementById(id);
+    if (target) { target.textContent=message; target.hidden=!message; if(message) target.scrollIntoView({block:'nearest',behavior:'smooth'}); }
+    else if(message) toast(message,true);
+  }
+  function csrf() { return document.cookie.split('; ').find(s => s.startsWith('csrftoken='))?.split('=')[1] || ''; }
+  async function request(path, method='GET', data) {
+    if (preview) return previewRequest(path,method,data);
+    const res = await fetch(path, {method, credentials:'same-origin', cache:'no-store',
+      headers:{Accept:'application/json', ...(method !== 'GET' ? {'Content-Type':'application/json', 'X-CSRFToken':csrf()} : {})},
+      ...(data === undefined ? {} : {body:JSON.stringify(data)})});
+    const type = res.headers.get('Content-Type') || '';
+    const result = type.includes('application/json') ? await res.json() : {message:res.status===403?'نشست یا مجوز درخواست معتبر نیست؛ صفحه را تازه کنید.':'پاسخ سرور دریافت نشد. دوباره تلاش کنید.'};
+    if(!res.ok) { const e = new Error(result.message || 'درخواست انجام نشد.'); e.status = res.status; throw e; }
+    return result;
+  }
+  function previewResponses() {
+    return [
+      {id:'10000000-0000-4000-a000-000000000001',full_name:'همکار نمونه اول',email:'sample1@example.com',department:'پشتیبانی',job_title:'کارشناس',employee_code:'نمونه',status:'submitted',sync_state:'done',revision:2,submitted_at:new Date().toISOString(),tasks:[
+        {title:'تجمیع گزارش تماس‌ها',steps:'دریافت گزارش روزانه، یکسان‌سازی ستون‌ها و ادغام در یک فایل.',count:1,frequency:'daily',minutes:25,tools:'Excel، سامانه داخلی',human_decision:'بررسی موارد دارای مغایرت'},
+        {title:'دسته‌بندی درخواست‌های ایمیلی',steps:'خواندن درخواست و تعیین دسته مناسب برای پیگیری.',count:15,frequency:'daily',minutes:3,tools:'ایمیل',human_decision:'درخواست‌های نامشخص'},
+        {title:'به‌روزرسانی گزارش هفتگی',steps:'جمع‌آوری اعداد و تکمیل جدول گزارش هفتگی.',count:1,frequency:'weekly',minutes:45,tools:'Excel',human_decision:''}]},
+      {id:'10000000-0000-4000-a000-000000000002',full_name:'همکار نمونه دوم',email:'sample2@example.com',department:'منابع انسانی',job_title:'کارشناس',employee_code:'نمونه',status:'submitted',sync_state:'pending',revision:1,submitted_at:new Date().toISOString(),tasks:[
+        {title:'تطبیق لیست حضور',steps:'دریافت لیست و تطبیق نام‌ها.',count:1,frequency:'weekly',minutes:40,tools:'Excel',human_decision:''},
+        {title:'ثبت درخواست‌ها',steps:'انتقال اطلاعات درخواست به جدول واحد.',count:8,frequency:'daily',minutes:4,tools:'ایمیل، Excel',human_decision:'تأیید مسئول واحد'},
+        {title:'تهیه فایل گزارش ماهانه',steps:'تجمیع جدول‌ها و مرتب‌سازی اطلاعات.',count:1,frequency:'monthly',minutes:90,tools:'Excel',human_decision:''}]},
+      {id:'10000000-0000-4000-a000-000000000003',full_name:'همکار نمونه سوم',email:'sample3@example.com',department:'عملیات',job_title:'کارشناس',employee_code:'نمونه',status:'draft',sync_state:'none',revision:1,tasks:[{...blankTask(),title:'تطبیق فایل‌ها'},blankTask(),blankTask()]}
+    ].map(s => ({...s,monthly_hours:hours(s.tasks),updated_at:new Date().toISOString()}));
+  }
+  async function previewRequest(path,method,data) {
+    if(path==='/api/session') return {ok:true,user:null};
+    if(path==='/api/login') return {ok:true,user:{email:'sample1@example.com',full_name:'همکار نمونه',department:'پشتیبانی',is_admin:true,must_change_password:false}};
+    if(path==='/api/logout') return {ok:true};
+    if(path==='/api/survey' && method==='GET') return {ok:true,survey:previewSurvey};
+    if(path==='/api/survey') {
+      previewSurvey = {...structuredClone(data),id:previewSurvey?.id || '10000000-0000-4000-a000-000000000099',revision:data.revision+1,status:data.action==='submit'?'submitted':'draft',updated_at:new Date().toISOString(),submitted_at:data.action==='submit'?new Date().toISOString():null};
+      return {ok:true,survey:previewSurvey};
+    }
+    if(path==='/api/admin/responses') return {ok:true,responses:previewResponses(),registered_users:3,sheets_configured:false};
+    if(path.startsWith('/api/admin/response/')) return {ok:true,survey:previewResponses().find(s=>s.id===path.split('/').pop())};
+    if(path==='/api/admin/accounts' && method==='GET') return {ok:true,accounts:previewAccounts};
+    if(path==='/api/admin/accounts') {previewAccounts.push({id:previewAccounts.length+1,...data});return {ok:true};}
+    return {ok:true,user:state.user,count:0};
+  }
+
+  function updateHeader() {
+    const logged = !!state.user;
+    $('#login-card').hidden=logged;
+    $('#app-content').hidden=!logged;
+    $('#logout-button').hidden=!logged;
+    $('#my-form-button').hidden=!logged || state.user.must_change_password;
+    $('#admin-button').hidden=!logged || !state.user.is_admin || state.user.must_change_password;
+    $('#header-email').textContent=state.user?.email || '';
+    document.body.classList.toggle('is-app',logged);
+    document.body.classList.toggle('is-admin',state.isAdmin && logged);
+  }
+  async function afterLogin(user) {
+    state.user=user;state.isAdmin=false;updateHeader();
+    if(user.must_change_password) return renderPassword();
+    await loadMine();
+  }
+  async function loadMine() {
+    state.isAdmin=false;updateHeader();
+    $('#app-content').innerHTML='<div class="card form-card"><p class="muted">در حال دریافت پاسخ شما…</p></div>';
+    try {
+      const data=await request('/api/survey');
+      state.survey=data.survey || {...blankSurvey(),full_name:state.user.full_name || '',department:state.user.department || ''};
+      state.dirty=false;state.step=0;renderForm();
+    } catch(e) {$('#app-content').innerHTML='<div class="card form-card"><p class="muted">دریافت اطلاعات انجام نشد.</p><button type="button" id="retry-mine" class="button secondary">تلاش دوباره</button></div>';$('#retry-mine').onclick=loadMine;toast(e.message,true);}
+  }
+  function renderPassword() {
+    $('#app-content').innerHTML=`<div class="card form-card"><div class="card-kicker"><span class="status-dot"></span> نخستین ورود</div><h2 class="form-section-title">رمز اختصاصی خود را تعیین کنید</h2><p class="section-description">رمز موقت را با یک رمز حداقل ۱۲ نویسه‌ای جایگزین کنید.</p><form id="password-form"><label class="field"><span>رمز موقت فعلی</span><input type="password" name="current_password" autocomplete="current-password" required maxlength="1024"></label><label class="field"><span>رمز جدید</span><input type="password" name="new_password" autocomplete="new-password" required minlength="12" maxlength="1024"></label><label class="field"><span>تکرار رمز جدید</span><input type="password" name="repeat" autocomplete="new-password" required minlength="12" maxlength="1024"></label><div id="form-error" class="error-box" role="alert" hidden></div><button type="submit" class="button primary full">ذخیره رمز و ادامه ←</button></form></div>`;
+    $('#password-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.currentTarget);if(f.get('new_password')!==f.get('repeat')) return errorBox('تکرار رمز با رمز جدید یکسان نیست.');const button=$('button[type=submit]',e.currentTarget);button.disabled=true;try{const data=await request('/api/password','POST',{current_password:f.get('current_password'),new_password:f.get('new_password')});await afterLogin(data.user);toast('رمز اختصاصی شما ثبت شد.');}catch(ex){errorBox(ex.message);button.disabled=false;}};
+  }
+  function stepper() {
+    return `<ol class="stepper" aria-label="مراحل پرسشنامه">${labels.map((label,i)=>`<li class="${i===state.step?'current':i<state.step?'complete':''}"><button type="button" class="step-button" data-step="${i}" ${i>state.step?'disabled':''} ${i===state.step?'aria-current="step"':''}><span class="step-number">${i<state.step?'✓':fa(i+1)}</span><span>${label}</span></button></li>`).join('')}</ol>`;
+  }
+  function field(label,key,value,{required=false,max=120,placeholder='',type='text',extra=''}={}) {
+    return `<label class="field"><span>${label}${required?'': ' <span class="optional">(اختیاری)</span>'}</span><input type="${type}" data-field="${key}" value="${esc(value)}" ${required?'required':''} maxlength="${max}" placeholder="${esc(placeholder)}" ${extra}></label>`;
+  }
+  function information() {
+    const s=state.survey;
+    return `<h3 class="form-section-title">ابتدا کمی از خودتان بگویید</h3><p class="section-description">این اطلاعات کمک می‌کند فعالیت‌ها را به واحد مربوط پیوند دهیم.</p><div class="fields-grid">${field('نام و نام خانوادگی','full_name',s.full_name,{required:true,max:120,placeholder:'نام و نام خانوادگی شما',extra:'autocomplete="name"'})}${field('واحد سازمانی','department',s.department,{required:true,max:100,placeholder:'مثلاً پشتیبانی'})}${field('سمت شغلی','job_title',s.job_title,{max:100,placeholder:'مثلاً کارشناس'})}${field('کد پرسنلی','employee_code',s.employee_code,{max:32,placeholder:'کد پرسنلی شما'})}</div><div class="soft-note">پرسشنامه برای حساب <bdi>${esc(state.user.email)}</bdi> ثبت می‌شود.</div>`;
+  }
+  function taskForm(index) {
+    const t=state.survey.tasks[index];
+    return `<h3 class="form-section-title">کار تکراری ${ordinals[index]}</h3><p class="section-description">کاری را توصیف کنید که در روزها یا هفته‌های کاری بارها انجام می‌دهید.</p>
+      ${field('عنوان فعالیت','title',t.title,{required:true,max:160,placeholder:'مثلاً تجمیع گزارش‌های روزانه'})}
+      <label class="field"><span>این کار را الان چگونه انجام می‌دهید؟</span><textarea data-field="steps" maxlength="4000" required placeholder="از دریافت اطلاعات تا پایان کار، مراحل فعلی را کوتاه و روشن بنویسید.">${esc(t.steps)}</textarea></label>
+      <div class="fields-grid"><div class="field"><label for="task-count">تعداد دفعات انجام</label><div class="number-group"><input id="task-count" data-field="count" type="number" inputmode="numeric" min="1" max="100000" step="1" value="${esc(t.count)}" required aria-label="تعداد دفعات"><select data-field="frequency" aria-label="دوره تکرار">${Object.entries(freq).map(([key,label])=>`<option value="${key}" ${t.frequency===key?'selected':''}>${label}</option>`).join('')}</select></div></div>
+      <label class="field"><span>زمان تقریبی هر بار انجام</span><span class="input-unit"><input data-field="minutes" type="number" inputmode="decimal" min="0.01" max="100000" step="0.01" value="${esc(t.minutes)}" placeholder="مثلاً ۲۰" required><span class="unit">دقیقه</span></span></label></div>
+      <label class="field"><span>از چه ابزارهایی استفاده می‌کنید؟</span><input data-field="tools" maxlength="500" value="${esc(t.tools)}" placeholder="نام نرم‌افزارها یا سامانه‌های مورد استفاده" required><span class="tool-chips"><button class="tool-chip" type="button" data-tool="Excel">Excel +</button><button class="tool-chip" type="button" data-tool="ایمیل">ایمیل +</button><button class="tool-chip" type="button" data-tool="سامانه داخلی">سامانه داخلی +</button><button class="tool-chip" type="button" data-tool="Google Sheets">Google Sheets +</button></span></label>
+      <label class="field"><span>کدام مرحله به تصمیم یا تأیید انسان نیاز دارد؟ <span class="optional">(اختیاری)</span></span><textarea class="small-area" data-field="human_decision" maxlength="1000" placeholder="اگر مرحله‌ای نیاز به بررسی یا تأیید دارد، اینجا بنویسید.">${esc(t.human_decision)}</textarea></label>`;
+  }
+  function summary(s) {
+    return `<dl class="profile-summary"><div><dt>نام و نام خانوادگی</dt><dd>${esc(s.full_name)}</dd></div><div><dt>واحد سازمانی</dt><dd>${esc(s.department)}</dd></div><div><dt>سمت</dt><dd>${esc(s.job_title || '—')}</dd></div><div><dt>کد پرسنلی</dt><dd>${esc(s.employee_code || '—')}</dd></div></dl>${s.tasks.map((t,i)=>`<article class="review-task"><div class="review-task-top"><span class="task-bullet">${fa(i+1)}</span><h3>${esc(t.title || 'عنوان وارد نشده')}</h3></div><p>${esc(t.steps || 'مراحل هنوز وارد نشده است.')}</p><div class="task-meta"><span>${fa(t.count)} بار ${freq[t.frequency]||''}</span><span>${fa(t.minutes)} دقیقه در هر بار</span><span>${esc(t.tools || 'ابزار مشخص نشده')}</span></div>${t.human_decision?`<p>تصمیم یا تأیید انسانی: ${esc(t.human_decision)}</p>`:''}</article>`).join('')}<div class="estimate"><div><span class="text-small">برآورد زمان این فعالیت‌ها در ماه</span><small>با فرض ۲۲ روز کاری و ۴٫۳۳ هفته در ماه</small></div><div><strong>${fa(hours(s.tasks))}</strong> <span class="text-small">ساعت</span></div></div>`;
+  }
+  function review() {
+    return `<h3 class="form-section-title">یک نگاه آخر به پاسخ‌ها</h3><p class="section-description">پس از ثبت نهایی، پاسخ‌ها برای بررسی در اختیار مدیران طرح قرار می‌گیرد.</p>${summary(state.survey)}<label class="check-label"><input type="checkbox" id="confirm-survey" required><span>مشخصات و سه فعالیت خود را بررسی کرده‌ام و ثبت نهایی را تأیید می‌کنم.</span></label>`;
+  }
+  function capture() {
+    const target=state.step===0?state.survey:state.survey.tasks[state.step-1];
+    if(state.step<4) $$('[data-field]',$('#app-content')).forEach(el=>{target[el.dataset.field]=el.value;});
+  }
+  function renderForm() {
+    if(state.survey.status==='submitted') return renderReceipt();
+    document.body.classList.remove('is-admin');
+    $('#app-content').innerHTML=`<div class="card form-card"><div class="form-heading"><div><div class="card-kicker"><span class="status-dot"></span> پرسشنامه شناسایی فعالیت‌ها</div><h2>سه کار تا یک تغییر</h2></div><span class="status-pill">پیش‌نویس</span></div>${stepper()}<form id="survey-form">${state.step===0?information():state.step<4?taskForm(state.step-1):review()}<div id="form-error" class="error-box" role="alert" hidden></div><div class="form-actions"><button type="button" class="button quiet" id="save-draft">ذخیره پیش‌نویس</button><div class="form-actions-group">${state.step>0?'<button type="button" class="button secondary" id="previous-step">مرحله قبل</button>':''}<button type="submit" class="button primary" id="next-step">${state.step===4?'ثبت نهایی پاسخ‌ها':'ذخیره و ادامه'} <span aria-hidden="true">←</span></button></div></div><div class="save-indicator" id="save-indicator">${state.survey.updated_at?'آخرین ذخیره: '+new Date(state.survey.updated_at).toLocaleString('fa-IR'):'پاسخ‌های شما پس از ذخیره در حساب‌تان نگهداری می‌شود.'}</div></form></div>`;
+    $('#survey-form').oninput=()=>{state.dirty=true;$('#save-indicator').textContent='تغییرات جدید هنوز ذخیره نشده است.';};
+    $('#survey-form').onsubmit=async e=>{e.preventDefault();capture();if(state.step===4){if(!$('#confirm-survey').checked)return;return save('submit');}const saved=await save('draft',false);if(saved){state.step++;renderForm();focusStep();}};
+    $('#save-draft').onclick=()=>save('draft');
+    $('#previous-step')?.addEventListener('click',()=>{capture();state.step--;renderForm();focusStep();});
+    $$('[data-step]').forEach(button=>button.onclick=()=>{capture();state.step=+button.dataset.step;renderForm();focusStep();});
+    $$('[data-tool]').forEach(button=>button.onclick=()=>{const input=$('[data-field="tools"]');const values=input.value.split(/[،,]/).map(v=>v.trim()).filter(Boolean);if(!values.includes(button.dataset.tool)){values.push(button.dataset.tool);input.value=values.join('، ');input.dispatchEvent(new Event('input',{bubbles:true}));}});
+  }
+  function focusStep() {
+    $('.form-section-title')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    const heading=$('.form-section-title'); if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true});}
+  }
+  async function save(action,notify=true) {
+    if(state.busy)return false;
+    capture();state.busy=true;
+    $$('.form-actions button').forEach(b=>b.disabled=true);
+    errorBox('');
+    try{
+      const data=await request('/api/survey','POST',{...state.survey,action});
+      state.survey=data.survey;state.dirty=false;
+      if(action==='submit') renderReceipt();
+      else {const indicator=$('#save-indicator');if(indicator)indicator.textContent='ذخیره شد · '+new Date().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'});if(notify)toast(preview?'پیش‌نمایش: تغییرات فقط تا زمان باز بودن صفحه باقی می‌ماند.':'پیش‌نویس در حساب شما ذخیره شد.');}
+      return true;
+    }catch(e){errorBox(e.message);return false;}
+    finally{state.busy=false;$$('.form-actions button').forEach(b=>b.disabled=false);}
+  }
+  function renderReceipt() {
+    const s=state.survey;
+    $('#app-content').innerHTML=`<div class="card form-card"><div class="receipt-heading"><div class="receipt-icon" aria-hidden="true">✓</div><div class="card-kicker receipt-kicker">${preview?'ثبت نمایشی':'ثبت نهایی در سامانه'}</div><h2>سه فعالیت شما ثبت شد.</h2><p>سپاس که برای بهتر شدن فرایندهای کاری همراه شدید.</p><div class="tracking">کد پیگیری <b dir="ltr">${esc(s.id?.replaceAll('-','').slice(0,12).toUpperCase() || '')}</b></div></div>${summary(s)}<div class="soft-note">پاسخ‌ها در حساب شما قابل مشاهده است. برای اصلاح پاسخ ثبت‌شده، از مسئول طرح بخواهید ویرایش را باز کند.</div></div>`;
+  }
+  function pill(status) {
+    const map={submitted:['submitted','ثبت نهایی'],draft:['','پیش‌نویس'],done:['submitted','منتقل شد'],pending:['pending','در صف'],processing:['pending','در حال انتقال'],failed:['failed','خطای انتقال'],none:['','—'],superseded:['','نسخه پیشین']};
+    const info=map[status] || map.none;
+    return `<span class="status-pill ${info[0]}">${info[1]}</span>`;
+  }
+  async function loadAdmin() {
+    if(!state.user?.is_admin)return;
+    if(state.dirty&&!confirm('تغییرات ذخیره نشده است. بدون ذخیره به مدیریت بروید؟'))return;
+    state.isAdmin=true;updateHeader();
+    $('#app-content').innerHTML='<div class="card admin-card"><p class="muted">در حال دریافت پاسخ‌ها…</p></div>';
+    try{
+      const data=await request('/api/admin/responses');state.responses=data.responses;
+      renderAdmin(data);
+    }catch(e){$('#app-content').innerHTML='<div class="card admin-card"><p>دریافت پاسخ‌ها انجام نشد.</p><button class="button secondary" id="retry-admin" type="button">تلاش دوباره</button></div>';$('#retry-admin').onclick=loadAdmin;toast(e.message,true);}
+  }
+  function renderAdmin(data) {
+    const submitted=state.responses.filter(s=>s.status==='submitted');
+    const departments=[...new Set(state.responses.map(s=>s.department).filter(Boolean))].sort();
+    $('#app-content').innerHTML=`<div class="card admin-card"><div class="admin-title-row"><div><div class="card-kicker"><span class="status-dot"></span> پنل مدیریت طرح</div><h2>فرصت‌ها از همین‌جا شروع می‌شوند.</h2><p>${preview?'تمام اطلاعات این پنل نمونه و نمایشی است.':'پاسخ‌های همکاران، در یک نمای منظم و قابل جست‌وجو.'}</p></div><div class="admin-buttons"><button class="button secondary" type="button" id="accounts-button">مدیریت حساب‌ها</button><button class="button primary" type="button" id="export-button">دریافت CSV ↓</button></div></div><div class="stats"><div class="stat"><span class="stat-label">پاسخ ثبت نهایی</span><span class="stat-value">${fa(submitted.length)}<span class="stat-unit">نفر</span></span></div><div class="stat"><span class="stat-label">فعالیت ثبت‌شده</span><span class="stat-value">${fa(submitted.length*3)}<span class="stat-unit">فعالیت</span></span></div><div class="stat"><span class="stat-label">حساب‌های شرکت‌کننده</span><span class="stat-value">${fa(data.registered_users)}<span class="stat-unit">نفر</span></span></div><div class="stat"><span class="stat-label">زمان فعالیت‌های ثبت‌شده در ماه</span><span class="stat-value">${fa(submitted.reduce((sum,s)=>sum+hours(s.tasks),0))}<span class="stat-unit">ساعت</span></span></div></div><div class="filters"><input class="filter-input" id="response-search" placeholder="جست‌وجوی نام، ایمیل یا عنوان فعالیت…" aria-label="جست‌وجو"><select class="filter-select" id="department-filter" aria-label="واحد"><option value="">همه واحدها</option>${departments.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('')}</select><select class="filter-select" id="status-filter" aria-label="وضعیت پاسخ"><option value="">همه وضعیت‌ها</option><option value="submitted">ثبت نهایی</option><option value="draft">پیش‌نویس</option></select></div><div class="table-scroll"><table class="responses-table"><thead><tr><th>نام و ایمیل سازمانی</th><th>واحد</th><th>فعالیت‌ها</th><th>زمان ماهانه</th><th>وضعیت پاسخ</th><th>انتقال به شیت</th><th>جزئیات</th></tr></thead><tbody id="response-rows"></tbody></table><div class="empty-state" id="empty-state" hidden><strong>هنوز پاسخی در این نما نیست.</strong>با تغییر فیلترها یا دریافت پاسخ‌های جدید، موارد اینجا نمایش داده می‌شود.</div></div><div class="table-foot"><span id="table-count"></span><span>زمان ماهانه، برآورد فعالیت‌هاست؛ معادل صرفه‌جویی قطعی نیست.</span></div><div class="integration-note ${data.sheets_configured?'':'not-configured'}"><span>${data.sheets_configured?'اتصال شیت تنظیم شده است. وضعیت انتقال هر پاسخ در جدول مشخص است.':'اتصال شیت هنوز تنظیم نشده است؛ پاسخ‌ها در پایگاه‌داده سایت نگهداری می‌شوند.'}</span><button type="button" class="button secondary" id="retry-sync-button">تلاش مجدد انتقال‌های ناموفق</button></div></div>`;
+    $('#response-search').oninput=renderRows;
+    $('#department-filter').onchange=renderRows;
+    $('#status-filter').onchange=renderRows;
+    $('#accounts-button').onclick=loadAccounts;
+    $('#export-button').onclick=exportCsv;
+    $('#retry-sync-button').onclick=async()=>{try{const r=await request('/api/admin/retry-sync','POST',{});toast(`${fa(r.count)} انتقال دوباره در صف قرار گرفت.`);await loadAdmin();}catch(e){toast(e.message,true);}};
+    renderRows();
+  }
+  function renderRows() {
+    const q=$('#response-search').value.trim().toLowerCase(),dept=$('#department-filter').value,status=$('#status-filter').value;
+    const matches=state.responses.filter(s=>(!dept||s.department===dept)&&(!status||s.status===status)&&(!q||[s.full_name,s.email,...s.tasks.map(t=>t.title)].join(' ').toLowerCase().includes(q)));
+    $('#response-rows').innerHTML=matches.map(s=>`<tr><td class="person-cell"><b>${esc(s.full_name || 'نام وارد نشده')}</b><small dir="ltr">${esc(s.email)}</small></td><td>${esc(s.department || '—')}</td><td>${fa(s.tasks.filter(t=>t.title).length)} فعالیت</td><td>${fa(hours(s.tasks))} ساعت</td><td>${pill(s.status)}</td><td>${pill(s.sync_state)}</td><td><button type="button" class="table-button" data-detail="${esc(s.id)}">مشاهده ←</button></td></tr>`).join('');
+    $('#empty-state').hidden=matches.length>0;$('#table-count').textContent=`نمایش ${fa(matches.length)} پاسخ از ${fa(state.responses.length)}`;
+    $$('[data-detail]').forEach(b=>b.onclick=()=>showDetail(b.dataset.detail));
+  }
+  async function showDetail(id) {
+    let s;
+    try {s=(await request('/api/admin/response/'+encodeURIComponent(id))).survey;}
+    catch(e){toast(e.message,true);return;}
+    if(!s)return;
+    $('#detail-content').innerHTML=`<div class="dialog-head"><span class="eyebrow-dark">جزئیات پاسخ</span><button class="icon-button" type="button" data-close-dialog aria-label="بستن">×</button></div><h2>${esc(s.full_name || s.email)}</h2><p dir="ltr">${esc(s.email)}</p>${summary(s)}<div class="form-actions"><span>${pill(s.status)}</span>${s.status==='submitted'?'<button type="button" class="button secondary" id="reopen-button">بازکردن ویرایش برای فرد</button>':''}</div>`;
+    bindDialogClose($('#detail-dialog'));
+    $('#reopen-button')?.addEventListener('click',async()=>{if(!confirm('ویرایش این پاسخ برای صاحب حساب باز شود؟'))return;try{await request('/api/admin/reopen','POST',{id});$('#detail-dialog').close();await loadAdmin();toast(preview?'این عملیات در پیش‌نمایش نمایشی است.':'ویرایش پاسخ باز شد.');}catch(e){toast(e.message,true);}});
+    if(!$('#detail-dialog').open)$('#detail-dialog').showModal();
+  }
+  async function exportCsv() {
+    try{
+      let blob;
+      if(preview){const rows=[['نام','ایمیل','واحد','وضعیت'],...state.responses.map(s=>[s.full_name,s.email,s.department,s.status])];blob=new Blob(['\ufeff'+rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});}
+      else{const res=await fetch('/api/admin/export',{credentials:'same-origin',cache:'no-store'});if(!res.ok)throw new Error('دریافت فایل انجام نشد.');blob=await res.blob();}
+      const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=preview?'نمونه-نمایشی.csv':'tekrar-zero-responses.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);
+    }catch(e){toast(e.message,true);}
+  }
+  async function loadAccounts() {
+    try{
+      const data=await request('/api/admin/accounts');state.accounts=data.accounts;
+      $('#accounts-content').innerHTML=`<div class="dialog-head"><span class="eyebrow-dark">حساب‌های سازمانی</span><button class="icon-button" type="button" data-close-dialog aria-label="بستن">×</button></div><h2>ایجاد دسترسی برای همکاران</h2><p>حساب‌های جدید با رمز موقت وارد می‌شوند و در نخستین ورود رمز خود را تغییر می‌دهند.</p><form id="create-account-form"><div class="fields-grid"><label class="field"><span>نام و نام خانوادگی</span><input name="full_name" maxlength="120" required></label><label class="field"><span>واحد</span><input name="department" maxlength="100" required></label><label class="field"><span>ایمیل سازمانی</span><input name="email" type="email" dir="ltr" placeholder="name@emofid.com" maxlength="254" required></label><label class="field"><span>رمز موقت</span><input name="password" type="password" autocomplete="new-password" minlength="12" maxlength="1024" required></label></div><div id="account-error" class="error-box" role="alert" hidden></div><button class="button primary" type="submit">ایجاد حساب</button></form><div class="account-list" id="account-list"></div>`;
+      renderAccounts();bindDialogClose($('#accounts-dialog'));if(!$('#accounts-dialog').open)$('#accounts-dialog').showModal();
+      $('#create-account-form').onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget));if(!/^[^@\s]+@emofid\.com$/i.test(data.email))return errorBox('ایمیل سازمانی معتبر وارد کنید.','account-error');const button=$('button[type=submit]',e.currentTarget);button.disabled=true;try{await request('/api/admin/accounts','POST',data);await loadAccounts();toast(preview?'حساب فقط در پیش‌نمایش اضافه شد.':'حساب ایجاد شد؛ رمز موقت را از مسیر داخلی امن به همکار تحویل دهید.');}catch(ex){errorBox(ex.message,'account-error');button.disabled=false;}};
+    }catch(e){toast(e.message,true);}
+  }
+  function renderAccounts() {
+    $('#account-list').innerHTML=state.accounts.length?state.accounts.map(a=>`<div class="account-row"><div><strong>${esc(a.full_name)}</strong><small><bdi>${esc(a.email)}</bdi> · ${esc(a.department)}</small></div><button type="button" class="table-button" data-reset="${a.id}">تعیین رمز موقت</button></div>`).join(''):'<p>هنوز حساب شرکت‌کننده ایجاد نشده است.</p>';
+    $$('[data-reset]').forEach(b=>b.onclick=()=>renderReset(+b.dataset.reset));
+  }
+  function renderReset(id) {
+    const a=state.accounts.find(a=>a.id===id);if(!a)return;
+    $('#accounts-content').innerHTML=`<div class="dialog-head"><span class="eyebrow-dark">رمز موقت جدید</span><button class="icon-button" type="button" data-close-dialog aria-label="بستن">×</button></div><h2>${esc(a.full_name)}</h2><p dir="ltr">${esc(a.email)}</p><form id="reset-password-form"><label class="field"><span>رمز موقت جدید</span><input type="password" name="password" autocomplete="new-password" minlength="12" maxlength="1024" required></label><div class="error-box" id="account-error" role="alert" hidden></div><button class="button primary" type="submit">ذخیره رمز موقت</button></form>`;
+    bindDialogClose($('#accounts-dialog'));
+    $('#reset-password-form').onsubmit=async e=>{e.preventDefault();try{await request('/api/admin/account-password','POST',{id,password:new FormData(e.currentTarget).get('password')});await loadAccounts();toast('رمز موقت جدید تعیین شد.');}catch(ex){errorBox(ex.message,'account-error');}};
+  }
+  function bindDialogClose(dialog) {$$('[data-close-dialog]',dialog).forEach(b=>b.onclick=()=>dialog.close());}
+  $$('dialog').forEach(dialog=>{bindDialogClose(dialog);dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});});
+  $('#help-button').onclick=()=>$('#help-dialog').showModal();
+  $('#my-form-button').onclick=()=>{if(!state.dirty||confirm('تغییرات ذخیره نشده است. پاسخ ذخیره‌شده دوباره دریافت شود؟'))loadMine();};
+  $('#admin-button').onclick=loadAdmin;
+  $('#logout-button').onclick=async()=>{if(state.dirty&&!confirm('تغییرات ذخیره نشده است. از حساب خارج شوید؟'))return;try{await request('/api/logout','POST',{});state.user=null;state.isAdmin=false;state.dirty=false;state.survey=blankSurvey();$('#app-content').innerHTML='';$('#login-form').reset();updateHeader();}catch(e){toast(e.message,true);}};
+  $('#toggle-password').onclick=()=>{const input=$('#login-password'),show=input.type==='password';input.type=show?'text':'password';$('#toggle-password').textContent=show?'پنهان':'نمایش';$('#toggle-password').setAttribute('aria-pressed',String(show));$('#toggle-password').setAttribute('aria-label',show?'پنهان کردن رمز عبور':'نمایش رمز عبور');};
+  $('#login-form').onsubmit=async e=>{e.preventDefault();errorBox('','login-error');const email=$('#login-email').value.trim().toLowerCase();if(!/^[^@\s]+@emofid\.com$/.test(email))return errorBox('ایمیل سازمانی با دامنه emofid.com وارد کنید.','login-error');$('#login-submit').disabled=true;try{const data=await request('/api/login','POST',{email,password:$('#login-password').value});$('#login-password').value='';await afterLogin(data.user);}catch(ex){errorBox(ex.message,'login-error');}finally{$('#login-submit').disabled=false;}};
+  window.addEventListener('beforeunload',e=>{if(state.dirty){e.preventDefault();e.returnValue='';}});
+  if(preview){
+    const banner=document.createElement('div');banner.className='preview-banner';banner.innerHTML='<strong>پیش‌نمایش طراحی</strong><span>داده‌ها نمونه‌اند؛ ذخیره واقعی و اتصال شیت در این فایل فعال نیست.</span><button type="button" id="preview-login">صفحه ورود</button><button type="button" id="preview-form">مشاهده فرم</button><button type="button" id="preview-admin">پنل مدیریت</button>';document.body.prepend(banner);
+    const demoUser={email:'sample1@example.com',full_name:'همکار نمونه',department:'پشتیبانی',is_admin:true,must_change_password:false};
+    $('#preview-form').onclick=()=>afterLogin(demoUser);
+    $('#preview-admin').onclick=async()=>{state.user=demoUser;state.dirty=false;updateHeader();await loadAdmin();};
+    $('#preview-login').onclick=()=>{state.user=null;state.isAdmin=false;state.dirty=false;updateHeader();};
+    $('#login-submit').textContent='ورود نمایشی ←';$('#login-email').required=false;$('#login-password').required=false;
+    $('#login-form').onsubmit=async e=>{e.preventDefault();await afterLogin(demoUser);};
+  } else {
+    request('/api/session').then(data=>{if(data.user)return afterLogin(data.user);}).catch(()=>errorBox('ارتباط با سامانه برقرار نشد؛ صفحه را تازه کنید.','login-error'));
+  }
+})();
+</script></body>
+</html>
