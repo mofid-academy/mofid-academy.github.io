@@ -7,7 +7,7 @@
   <meta name="description" content="Zero repetition | شناسایی سه فعالیت تکراری در کارگزاری مفید">
   <meta name="robots" content="noindex,nofollow">
   <title>Zero repetition | Mofid Academy</title>
-  <style>:root{--preview-building:url('brand/building.jpg?v=leafy-20261014')}
+  <style>:root{--scene-leafy:url('brand/building.jpg?v=leafy-20261014');--scene-autumn:url('brand/building-autumn.jpg?v=20261014')}
 /* Diagonal composition inspired by the user-supplied TemplateMo 550 Diagoona. */
 @font-face{font-family:Pinar;src:url('brand/Pinar-VF.woff') format('woff');font-weight:100 900;font-display:swap}
 :root{--teal:#00AF9D;--teal-dark:#00796e;--red:#F32735;--ink:#17353b;--muted:#63797c;--border:#dce8e6;--soft:#f3f8f7;--danger:#bd1c2a;--radius:25px}
@@ -25,8 +25,13 @@ button:disabled{cursor:wait;opacity:.6}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 4px #00af9d14}
 .skip-link{position:fixed;top:-80px;right:20px;padding:10px 18px;background:#fff;z-index:100}
 .skip-link:focus{top:15px}
-.scene{position:fixed;inset:0;z-index:-3;background-color:#112e34;background-image:linear-gradient(270deg,rgba(8,33,37,.46) 0%,rgba(8,33,37,.54) 38%,rgba(8,33,37,.94) 68%,#112e34 100%),var(--preview-building);background-position:center,right center;background-size:cover,auto 100%;background-repeat:no-repeat}
-.scene:after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(7,33,37,.9),transparent 70%)}
+.scene{position:fixed;inset:0;z-index:-3;background:#112e34;overflow:hidden}
+.scene-photo{position:absolute;inset:0;background-position:right center;background-size:auto 100%;background-repeat:no-repeat;opacity:0;transform:scale(1.025);transition:opacity .7s ease,transform .9s ease}
+.scene-leafy{background-image:var(--scene-leafy)}
+.scene-autumn{background-image:var(--scene-autumn)}
+body[data-scene="leafy"] .scene-leafy,body[data-scene="autumn"] .scene-autumn{opacity:1;transform:scale(1)}
+.scene:before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(270deg,rgba(8,33,37,.46) 0%,rgba(8,33,37,.54) 38%,rgba(8,33,37,.94) 68%,#112e34 100%)}
+.scene:after{content:'';position:absolute;inset:0;z-index:2;background:linear-gradient(0deg,rgba(7,33,37,.9),transparent 70%)}
 .diagonal{position:fixed;inset:0 42% 0 0;z-index:-2;background:linear-gradient(225deg,rgba(15,41,47,.73),rgba(12,34,39,.95));clip-path:polygon(0 0,82% 0,100% 100%,0 100%);border-top:3px solid #00af9d44}
 .site-wrap{max-width:1600px;min-height:100vh;display:flex;flex-direction:column;margin:auto;padding:28px 64px 20px}
 .site-header{display:flex;align-items:center;justify-content:space-between;gap:25px;color:white;min-height:95px}
@@ -56,7 +61,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
 .story-bottom{display:flex;align-items:center;gap:10px;font-size:11px;position:absolute;bottom:8px;right:14px;color:#d3e5e0}
 .tiny-square{width:7px;height:7px;background:var(--red);display:inline-block}
 .divider-dot{opacity:.4;margin:0 4px}
-.card{background:rgba(255,255,255,.97);border:1px solid #ffffff7a;border-radius:var(--radius);box-shadow:0 24px 80px #001c2461;backdrop-filter:blur(18px)}
+.card{background:linear-gradient(145deg,rgba(246,255,253,.86),rgba(222,247,242,.72));border:1px solid #e1fff9c2;border-radius:28px;box-shadow:0 28px 75px #001c2447,inset 0 1px 0 #ffffffd9;backdrop-filter:blur(28px) saturate(125%);-webkit-backdrop-filter:blur(28px) saturate(125%)}
 .login-card{padding:35px 39px 28px;position:relative;overflow:hidden}
 .login-card:before{content:'';position:absolute;top:0;right:36px;width:44px;height:4px;background:var(--red);border-radius:0 0 4px 4px}
 .card-kicker{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--muted)}
@@ -66,7 +71,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
 .card-intro{color:var(--muted);font-size:12px;margin:0 0 25px}
 .field{display:flex;flex-direction:column;gap:7px;margin-bottom:20px;min-width:0;position:relative}
 .field>span:first-child{font-size:12px;font-weight:600;color:#324f54}
-.field input,.field textarea,.field select,.filter-input,.filter-select{border:1px solid var(--border);border-radius:11px;background:#fff;min-height:49px;padding:11px 14px;width:100%;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+.field input,.field textarea,.field select,.filter-input,.filter-select{border:1px solid #c7e4e0;border-radius:16px;background:rgba(255,255,255,.66);min-height:52px;padding:11px 14px;width:100%;color:var(--ink);transition:border-color .15s,box-shadow .15s,background .15s}
 .field input::placeholder,.field textarea::placeholder{color:#95a6a6;font-weight:400;font-size:12px}
 .field input[dir=ltr]{text-align:left;font-family:Pinar,Tahoma,sans-serif;letter-spacing:.15px}
 .field small{font-size:10px;color:#819392;font-weight:400;line-height:1.7}
@@ -75,7 +80,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
 .password-wrap{display:flex;position:relative}
 .password-wrap input{padding-left:66px;direction:ltr;text-align:left}
 .password-toggle{position:absolute;left:8px;top:8px;border:0;background:var(--soft);color:var(--muted);padding:5px 9px;border-radius:7px;font-size:10px;z-index:1}
-.button{border:1px solid transparent;border-radius:11px;min-height:46px;padding:11px 21px;display:inline-flex;align-items:center;justify-content:center;gap:12px;font-size:12px;font-weight:600;transition:background .15s,transform .15s;text-align:center}
+.button{border:1px solid transparent;border-radius:999px;min-height:46px;padding:11px 21px;display:inline-flex;align-items:center;justify-content:center;gap:12px;font-size:12px;font-weight:600;transition:background .15s,transform .15s;text-align:center}
 .button:hover{transform:translateY(-1px)}
 .button:active{transform:translateY(0)}
 .primary{background:var(--teal);color:#042f2b;box-shadow:0 6px 20px #00af9d24}
@@ -90,7 +95,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
 .login-foot p{font-size:10px;line-height:1.9;margin:0}
 .site-footer{display:flex;justify-content:space-between;gap:20px;color:#bad0cc;font-size:10px;opacity:.85;padding-top:8px}
 .error-box{padding:11px 14px;border-radius:10px;background:#fff0f1;border:1px solid #ffd1d5;color:var(--danger);font-size:12px;margin-bottom:16px}
-.soft-note{font-size:11px;background:#eef6f3;border:1px solid #dcece7;border-radius:11px;color:#57766e;padding:13px 15px;line-height:2}
+.soft-note{font-size:11px;background:#e9f8f47a;border:1px solid #cce7dfb3;border-radius:16px;color:#57766e;padding:13px 15px;line-height:2}
 .is-app .layout{grid-template-columns:minmax(270px,1fr) minmax(540px,1.65fr);gap:45px;padding-top:38px;align-items:start}
 .is-app .workspace{max-width:800px}
 .is-app .story{padding-right:5px;min-height:630px}
@@ -98,8 +103,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
 .is-app .story-note{gap:12px}
 .is-app .story-note div span{font-size:9px}
 .form-card{overflow:hidden;padding:30px 32px 22px}
+.question-panel{background:linear-gradient(145deg,#ffffffc9,#f8fffd94);border:1px solid #c8e4dfd9;border-radius:24px;padding:26px;box-shadow:0 12px 35px #00695c0a,inset 0 1px 0 #ffffffb3}
+.form-card.turn-forward{transform-origin:right center;animation:form-turn-forward .48s cubic-bezier(.2,.7,.2,1) both}
+.form-card.turn-back{transform-origin:left center;animation:form-turn-back .48s cubic-bezier(.2,.7,.2,1) both}
+@keyframes form-turn-forward{from{opacity:.4;transform:perspective(1400px) rotateY(-8deg) translateX(14px)}to{opacity:1;transform:perspective(1400px) rotateY(0) translateX(0)}}
+@keyframes form-turn-back{from{opacity:.4;transform:perspective(1400px) rotateY(8deg) translateX(-14px)}to{opacity:1;transform:perspective(1400px) rotateY(0) translateX(0)}}
 .form-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding-bottom:22px}
-.form-heading h2{margin:3px 0 0;font-size:21px;letter-spacing:-.7px}
+.form-heading h2{margin:3px 0 0;font-size:21px;letter-spacing:-.7px;color:#006f65}
 .muted{color:var(--muted)}
 .text-small{font-size:11px}
 .status-pill{font-size:10px;background:#eaf5f1;color:#477b68;border:1px solid #cfe8dc;border-radius:50px;padding:4px 11px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
@@ -207,15 +217,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
 .preview-banner strong{font-weight:600}
 @media(max-width:1250px){.site-wrap{padding-inline:38px}.layout{gap:45px}.story h1{font-size:42px}.is-app .layout{gap:32px;grid-template-columns:minmax(250px,1fr) minmax(470px,1.6fr)}.form-card{padding-inline:26px}.header-email{display:none}.is-app .story h1{font-size:33px}}
 @media(max-width:1030px){.site-wrap{padding-inline:25px}.layout{gap:28px;grid-template-columns:minmax(260px,1fr) minmax(350px,1.1fr)}.login-card{padding:30px 27px}.story h1{font-size:35px}.story p{font-size:12px}.story{padding-right:0}.eyebrow{font-size:9px}.story-note{margin-top:30px}.is-app .layout{display:block;max-width:780px;margin:0 auto;width:100%}.is-app .story{display:none}.is-app .workspace{max-width:none}.brand-name{font-size:18px}.header-nav{gap:13px}.stats{gap:10px}.stat{padding:15px}.is-admin .layout{max-width:none}}
-@media(max-width:760px){.site-wrap{padding:18px 18px 20px}.site-header{min-height:70px;gap:12px}.logo-box{width:65px;height:65px;border-radius:14px}.brand{gap:11px}.brand-name{font-size:17px}.brand-sub{font-size:10px}.header-nav{gap:8px;font-size:10px}.nav-button{font-size:10px}.nav-button .question-mark{display:none}.layout{display:flex;flex-direction:column;gap:25px;padding:28px 0 35px}.story{order:0;min-height:0;align-self:stretch;padding:0 7px}.story-content{margin-top:0}.story h1{font-size:32px;line-height:1.65;margin:12px 0 6px}.story h1 br{display:none}.story h1 em{margin-right:7px}.story p{font-size:11px;max-width:480px;line-height:2}.story .eyebrow{font-size:9px}.story-note,.story-bottom{display:none}.workspace{order:1;max-width:580px;justify-self:auto}.scene{background:linear-gradient(0deg,rgba(10,38,40,.96) 18%,rgba(10,38,40,.8) 55%,rgba(10,38,40,.57)),var(--preview-building) right top/cover no-repeat}.diagonal{inset:0;background:linear-gradient(135deg,#0a342b22,#0a342b55);clip-path:polygon(70% 0,100% 0,100% 100%,0 100%)}.login-card{padding:28px 27px 23px;border-radius:22px}.login-card h2{font-size:26px;margin-top:17px}.card-intro{font-size:11px}.site-footer{font-size:9px}.is-app .layout{padding:25px 0}.is-app .header-nav{gap:12px}.is-app .brand-name{font-size:15px}.is-app .brand-sub{font-size:9px}.is-app .logo-box{width:54px;height:54px;border-radius:12px}.is-app .brand{gap:9px}.form-card{padding:24px 23px 19px;border-radius:20px}.form-heading h2{font-size:20px}.form-heading{padding-bottom:20px}.stepper{margin-bottom:25px}.form-section-title{font-size:17px}.fields-grid{gap:0 12px}.admin-card{padding:22px 18px;border-radius:18px}.admin-title-row h2{font-size:22px}.stats{grid-template-columns:1fr 1fr;gap:9px}.stat{padding:12px 15px}.stat-value{font-size:24px}.admin-buttons .button{font-size:10px;min-height:36px;padding:7px 12px}.filters{gap:8px}.filter-input{flex-basis:100%}.filter-select{flex:1;min-width:100px}.integration-note{align-items:flex-start}.table-foot{font-size:9px}.dialog{padding:23px}.is-admin .brand-text{display:none}.header-email{display:none}.is-admin .header-nav{gap:13px}}
-@media(max-width:440px){.site-wrap{padding-inline:13px}.site-header{gap:8px}.header-nav{gap:6px}.brand-name{font-size:15px}.brand-sub{font-size:9px}.logo-box{width:58px;height:58px}.story h1{font-size:27px;letter-spacing:-1px}.story h1 br{display:block}.story h1 em{margin-right:0}.login-card{padding-inline:23px}.login-card h2{font-size:24px}.form-card{padding-inline:18px}.fields-grid{grid-template-columns:1fr}.fields-grid .full-row{grid-column:auto}.number-group{grid-template-columns:1fr 1fr}.step-button{font-size:9px}.stepper{gap:0}.form-actions{gap:10px}.form-actions .button{font-size:10px;padding:10px 13px;gap:8px}.form-actions-group{gap:5px}.form-heading h2{font-size:18px}.profile-summary{gap:10px;font-size:11px}.site-footer span:last-child{display:none}.receipt-heading h2{font-size:21px}}
+@media(max-width:760px){.question-panel{padding:20px;border-radius:20px}.site-wrap{padding:18px 18px 20px}.site-header{min-height:70px;gap:12px}.logo-box{width:65px;height:65px;border-radius:14px}.brand{gap:11px}.brand-name{font-size:17px}.brand-sub{font-size:10px}.header-nav{gap:8px;font-size:10px}.nav-button{font-size:10px}.nav-button .question-mark{display:none}.layout{display:flex;flex-direction:column;gap:25px;padding:28px 0 35px}.story{order:0;min-height:0;align-self:stretch;padding:0 7px}.story-content{margin-top:0}.story h1{font-size:32px;line-height:1.65;margin:12px 0 6px}.story h1 br{display:none}.story h1 em{margin-right:7px}.story p{font-size:11px;max-width:480px;line-height:2}.story .eyebrow{font-size:9px}.story-note,.story-bottom{display:none}.workspace{order:1;max-width:580px;justify-self:auto}.scene:before{background:linear-gradient(0deg,rgba(10,38,40,.96) 18%,rgba(10,38,40,.8) 55%,rgba(10,38,40,.57))}.scene-photo{background-position:right top;background-size:cover}.diagonal{inset:0;background:linear-gradient(135deg,#0a342b22,#0a342b55);clip-path:polygon(70% 0,100% 0,100% 100%,0 100%)}.login-card{padding:28px 27px 23px;border-radius:22px}.login-card h2{font-size:26px;margin-top:17px}.card-intro{font-size:11px}.site-footer{font-size:9px}.is-app .layout{padding:25px 0}.is-app .header-nav{gap:12px}.is-app .brand-name{font-size:15px}.is-app .brand-sub{font-size:9px}.is-app .logo-box{width:54px;height:54px;border-radius:12px}.is-app .brand{gap:9px}.form-card{padding:24px 23px 19px;border-radius:20px}.form-heading h2{font-size:20px}.form-heading{padding-bottom:20px}.stepper{margin-bottom:25px}.form-section-title{font-size:17px}.fields-grid{gap:0 12px}.admin-card{padding:22px 18px;border-radius:18px}.admin-title-row h2{font-size:22px}.stats{grid-template-columns:1fr 1fr;gap:9px}.stat{padding:12px 15px}.stat-value{font-size:24px}.admin-buttons .button{font-size:10px;min-height:36px;padding:7px 12px}.filters{gap:8px}.filter-input{flex-basis:100%}.filter-select{flex:1;min-width:100px}.integration-note{align-items:flex-start}.table-foot{font-size:9px}.dialog{padding:23px}.is-admin .brand-text{display:none}.header-email{display:none}.is-admin .header-nav{gap:13px}}
+@media(max-width:440px){.question-panel{padding:18px 14px}.site-wrap{padding-inline:13px}.site-header{gap:8px}.header-nav{gap:6px}.brand-name{font-size:15px}.brand-sub{font-size:9px}.logo-box{width:58px;height:58px}.story h1{font-size:27px;letter-spacing:-1px}.story h1 br{display:block}.story h1 em{margin-right:0}.login-card{padding-inline:23px}.login-card h2{font-size:24px}.form-card{padding-inline:18px}.fields-grid{grid-template-columns:1fr}.fields-grid .full-row{grid-column:auto}.number-group{grid-template-columns:1fr 1fr}.step-button{font-size:9px}.stepper{gap:0}.form-actions{gap:10px}.form-actions .button{font-size:10px;padding:10px 13px;gap:8px}.form-actions-group{gap:5px}.form-heading h2{font-size:18px}.profile-summary{gap:10px;font-size:11px}.site-footer span:last-child{display:none}.receipt-heading h2{font-size:21px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
 </style>
   <script>window.TEKRAR_PREVIEW=true;</script>
 </head>
-<body>
+<body data-scene="leafy">
   <a class="skip-link" href="#main">رفتن به محتوای اصلی</a>
-  <div class="scene" aria-hidden="true"></div>
+  <div class="scene" aria-hidden="true"><div class="scene-photo scene-leafy"></div><div class="scene-photo scene-autumn"></div></div>
   <div class="diagonal" aria-hidden="true"></div>
   <div class="site-wrap">
     <header class="site-header">
@@ -282,12 +292,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
   const ordinals = ['اول', 'دوم', 'سوم'];
   const labels = ['مشخصات', 'کار اول', 'کار دوم', 'کار سوم', 'بازبینی'];
   const blankTask = () => ({title:'', steps:'', count:'', frequency:'daily', minutes:'', tools:'', human_decision:''});
-  const blankSurvey = () => ({full_name:'', department:'', job_title:'', employee_code:'', tasks:[blankTask(),blankTask(),blankTask()], revision:0, status:'draft'});
+  const blankSurvey = () => ({full_name:'', department:'', job_title:'', tasks:[blankTask(),blankTask(),blankTask()], revision:0, status:'draft'});
   const state = {user:null, survey:blankSurvey(), step:0, dirty:false, busy:false, responses:[], accounts:[], isAdmin:false};
   const preview = window.TEKRAR_PREVIEW === true;
   let previewSurvey = null;
   let toastTimer;
   let previewAccounts = [{id:1,email:'sample1@example.com',full_name:'همکار نمونه اول',department:'پشتیبانی',is_active:true}];
+
+  function setBackground(step = 0) {
+    document.body.dataset.scene = Math.abs(Number(step) || 0) % 2 === 1 ? 'autumn' : 'leafy';
+  }
 
   function hours(tasks) {
     return Math.round(tasks.reduce((sum,t) => sum + (+t.count || 0) * (+t.minutes || 0) * (months[t.frequency] || 0) / 60, 0) * 10) / 10;
@@ -317,15 +331,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
   }
   function previewResponses() {
     return [
-      {id:'10000000-0000-4000-a000-000000000001',full_name:'همکار نمونه اول',email:'sample1@example.com',department:'پشتیبانی',job_title:'کارشناس',employee_code:'نمونه',status:'submitted',sync_state:'done',revision:2,submitted_at:new Date().toISOString(),tasks:[
+      {id:'10000000-0000-4000-a000-000000000001',full_name:'همکار نمونه اول',email:'sample1@example.com',department:'پشتیبانی',job_title:'کارشناس',status:'submitted',sync_state:'done',revision:2,submitted_at:new Date().toISOString(),tasks:[
         {title:'تجمیع گزارش تماس‌ها',steps:'دریافت گزارش روزانه، یکسان‌سازی ستون‌ها و ادغام در یک فایل.',count:1,frequency:'daily',minutes:25,tools:'Excel، سامانه داخلی',human_decision:'بررسی موارد دارای مغایرت'},
         {title:'دسته‌بندی درخواست‌های ایمیلی',steps:'خواندن درخواست و تعیین دسته مناسب برای پیگیری.',count:15,frequency:'daily',minutes:3,tools:'ایمیل',human_decision:'درخواست‌های نامشخص'},
         {title:'به‌روزرسانی گزارش هفتگی',steps:'جمع‌آوری اعداد و تکمیل جدول گزارش هفتگی.',count:1,frequency:'weekly',minutes:45,tools:'Excel',human_decision:''}]},
-      {id:'10000000-0000-4000-a000-000000000002',full_name:'همکار نمونه دوم',email:'sample2@example.com',department:'منابع انسانی',job_title:'کارشناس',employee_code:'نمونه',status:'submitted',sync_state:'pending',revision:1,submitted_at:new Date().toISOString(),tasks:[
+      {id:'10000000-0000-4000-a000-000000000002',full_name:'همکار نمونه دوم',email:'sample2@example.com',department:'منابع انسانی',job_title:'کارشناس',status:'submitted',sync_state:'pending',revision:1,submitted_at:new Date().toISOString(),tasks:[
         {title:'تطبیق لیست حضور',steps:'دریافت لیست و تطبیق نام‌ها.',count:1,frequency:'weekly',minutes:40,tools:'Excel',human_decision:''},
         {title:'ثبت درخواست‌ها',steps:'انتقال اطلاعات درخواست به جدول واحد.',count:8,frequency:'daily',minutes:4,tools:'ایمیل، Excel',human_decision:'تأیید مسئول واحد'},
         {title:'تهیه فایل گزارش ماهانه',steps:'تجمیع جدول‌ها و مرتب‌سازی اطلاعات.',count:1,frequency:'monthly',minutes:90,tools:'Excel',human_decision:''}]},
-      {id:'10000000-0000-4000-a000-000000000003',full_name:'همکار نمونه سوم',email:'sample3@example.com',department:'عملیات',job_title:'کارشناس',employee_code:'نمونه',status:'draft',sync_state:'none',revision:1,tasks:[{...blankTask(),title:'تطبیق فایل‌ها'},blankTask(),blankTask()]}
+      {id:'10000000-0000-4000-a000-000000000003',full_name:'همکار نمونه سوم',email:'sample3@example.com',department:'عملیات',job_title:'کارشناس',status:'draft',sync_state:'none',revision:1,tasks:[{...blankTask(),title:'تطبیق فایل‌ها'},blankTask(),blankTask()]}
     ].map(s => ({...s,monthly_hours:hours(s.tasks),updated_at:new Date().toISOString()}));
   }
   async function previewRequest(path,method,data) {
@@ -354,6 +368,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
     $('#header-email').textContent=state.user?.email || '';
     document.body.classList.toggle('is-app',logged);
     document.body.classList.toggle('is-admin',state.isAdmin && logged);
+    setBackground(logged ? (state.isAdmin ? 1 : state.step) : 0);
   }
   async function afterLogin(user) {
     state.user=user;state.isAdmin=false;updateHeader();
@@ -381,7 +396,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
   }
   function information() {
     const s=state.survey;
-    return `<h3 class="form-section-title">ابتدا کمی از خودتان بگویید</h3><p class="section-description">این اطلاعات کمک می‌کند فعالیت‌ها را به واحد مربوط پیوند دهیم.</p><div class="fields-grid">${field('نام و نام خانوادگی','full_name',s.full_name,{required:true,max:120,placeholder:'نام و نام خانوادگی شما',extra:'autocomplete="name"'})}${field('واحد سازمانی','department',s.department,{required:true,max:100,placeholder:'مثلاً پشتیبانی'})}${field('سمت شغلی','job_title',s.job_title,{max:100,placeholder:'مثلاً کارشناس'})}${field('کد پرسنلی','employee_code',s.employee_code,{max:32,placeholder:'کد پرسنلی شما'})}</div><div class="soft-note">پرسشنامه برای حساب <bdi>${esc(state.user.email)}</bdi> ثبت می‌شود.</div>`;
+    return `<h3 class="form-section-title">ابتدا کمی از خودتان بگویید</h3><p class="section-description">این اطلاعات کمک می‌کند فعالیت‌ها را به واحد مربوط پیوند دهیم.</p><div class="fields-grid">${field('نام و نام خانوادگی','full_name',s.full_name,{required:true,max:120,placeholder:'نام و نام خانوادگی شما',extra:'autocomplete="name"'})}${field('واحد سازمانی','department',s.department,{required:true,max:100,placeholder:'مثلاً پشتیبانی'})}<div class="full-row">${field('سمت شغلی','job_title',s.job_title,{max:100,placeholder:'مثلاً کارشناس'})}</div></div><div class="soft-note">پرسشنامه برای حساب <bdi>${esc(state.user.email)}</bdi> ثبت می‌شود.</div>`;
   }
   function taskForm(index) {
     const t=state.survey.tasks[index];
@@ -394,7 +409,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
       <label class="field"><span>کدام مرحله به تصمیم یا تأیید انسان نیاز دارد؟ <span class="optional">(اختیاری)</span></span><textarea class="small-area" data-field="human_decision" maxlength="1000" placeholder="اگر مرحله‌ای نیاز به بررسی یا تأیید دارد، اینجا بنویسید.">${esc(t.human_decision)}</textarea></label>`;
   }
   function summary(s) {
-    return `<dl class="profile-summary"><div><dt>نام و نام خانوادگی</dt><dd>${esc(s.full_name)}</dd></div><div><dt>واحد سازمانی</dt><dd>${esc(s.department)}</dd></div><div><dt>سمت</dt><dd>${esc(s.job_title || '—')}</dd></div><div><dt>کد پرسنلی</dt><dd>${esc(s.employee_code || '—')}</dd></div></dl>${s.tasks.map((t,i)=>`<article class="review-task"><div class="review-task-top"><span class="task-bullet">${fa(i+1)}</span><h3>${esc(t.title || 'عنوان وارد نشده')}</h3></div><p>${esc(t.steps || 'مراحل هنوز وارد نشده است.')}</p><div class="task-meta"><span>${fa(t.count)} بار ${freq[t.frequency]||''}</span><span>${fa(t.minutes)} دقیقه در هر بار</span><span>${esc(t.tools || 'ابزار مشخص نشده')}</span></div>${t.human_decision?`<p>تصمیم یا تأیید انسانی: ${esc(t.human_decision)}</p>`:''}</article>`).join('')}<div class="estimate"><div><span class="text-small">برآورد زمان این فعالیت‌ها در ماه</span><small>با فرض ۲۲ روز کاری و ۴٫۳۳ هفته در ماه</small></div><div><strong>${fa(hours(s.tasks))}</strong> <span class="text-small">ساعت</span></div></div>`;
+    return `<dl class="profile-summary"><div><dt>نام و نام خانوادگی</dt><dd>${esc(s.full_name)}</dd></div><div><dt>واحد سازمانی</dt><dd>${esc(s.department)}</dd></div><div><dt>سمت</dt><dd>${esc(s.job_title || '—')}</dd></div></dl>${s.tasks.map((t,i)=>`<article class="review-task"><div class="review-task-top"><span class="task-bullet">${fa(i+1)}</span><h3>${esc(t.title || 'عنوان وارد نشده')}</h3></div><p>${esc(t.steps || 'مراحل هنوز وارد نشده است.')}</p><div class="task-meta"><span>${fa(t.count)} بار ${freq[t.frequency]||''}</span><span>${fa(t.minutes)} دقیقه در هر بار</span><span>${esc(t.tools || 'ابزار مشخص نشده')}</span></div>${t.human_decision?`<p>تصمیم یا تأیید انسانی: ${esc(t.human_decision)}</p>`:''}</article>`).join('')}<div class="estimate"><div><span class="text-small">برآورد زمان این فعالیت‌ها در ماه</span><small>با فرض ۲۲ روز کاری و ۴٫۳۳ هفته در ماه</small></div><div><strong>${fa(hours(s.tasks))}</strong> <span class="text-small">ساعت</span></div></div>`;
   }
   function review() {
     return `<h3 class="form-section-title">یک نگاه آخر به پاسخ‌ها</h3><p class="section-description">پس از ثبت نهایی، پاسخ‌ها برای بررسی در اختیار مدیران طرح قرار می‌گیرد.</p>${summary(state.survey)}<label class="check-label"><input type="checkbox" id="confirm-survey" required><span>مشخصات و سه فعالیت خود را بررسی کرده‌ام و ثبت نهایی را تأیید می‌کنم.</span></label>`;
@@ -403,15 +418,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
     const target=state.step===0?state.survey:state.survey.tasks[state.step-1];
     if(state.step<4) $$('[data-field]',$('#app-content')).forEach(el=>{target[el.dataset.field]=el.value;});
   }
-  function renderForm() {
+  function renderForm(turn = 0) {
+    setBackground(state.step);
     if(state.survey.status==='submitted') return renderReceipt();
     document.body.classList.remove('is-admin');
-    $('#app-content').innerHTML=`<div class="card form-card"><div class="form-heading"><div><div class="card-kicker"><span class="status-dot"></span> پرسشنامه شناسایی فعالیت‌ها</div><h2>سه کار تا یک تغییر</h2></div><span class="status-pill">پیش‌نویس</span></div>${stepper()}<form id="survey-form">${state.step===0?information():state.step<4?taskForm(state.step-1):review()}<div id="form-error" class="error-box" role="alert" hidden></div><div class="form-actions"><button type="button" class="button quiet" id="save-draft">ذخیره پیش‌نویس</button><div class="form-actions-group">${state.step>0?'<button type="button" class="button secondary" id="previous-step">مرحله قبل</button>':''}<button type="submit" class="button primary" id="next-step">${state.step===4?'ثبت نهایی پاسخ‌ها':'ذخیره و ادامه'} <span aria-hidden="true">←</span></button></div></div><div class="save-indicator" id="save-indicator">${state.survey.updated_at?'آخرین ذخیره: '+new Date(state.survey.updated_at).toLocaleString('fa-IR'):'پاسخ‌های شما پس از ذخیره در حساب‌تان نگهداری می‌شود.'}</div></form></div>`;
+    $('#app-content').innerHTML=`<div class="card form-card${turn > 0 ? ' turn-forward' : turn < 0 ? ' turn-back' : ''}"><div class="form-heading"><div><div class="card-kicker"><span class="status-dot"></span> پرسشنامه شناسایی فعالیت‌ها</div><h2>سه کار تا یک تغییر</h2></div><span class="status-pill">پیش‌نویس</span></div>${stepper()}<form id="survey-form" class="question-panel">${state.step===0?information():state.step<4?taskForm(state.step-1):review()}<div id="form-error" class="error-box" role="alert" hidden></div><div class="form-actions"><button type="button" class="button quiet" id="save-draft">ذخیره پیش‌نویس</button><div class="form-actions-group">${state.step>0?'<button type="button" class="button secondary" id="previous-step">مرحله قبل</button>':''}<button type="submit" class="button primary" id="next-step">${state.step===4?'ثبت نهایی پاسخ‌ها':'ذخیره و ادامه'} <span aria-hidden="true">←</span></button></div></div><div class="save-indicator" id="save-indicator">${state.survey.updated_at?'آخرین ذخیره: '+new Date(state.survey.updated_at).toLocaleString('fa-IR'):'پاسخ‌های شما پس از ذخیره در حساب‌تان نگهداری می‌شود.'}</div></form></div>`;
     $('#survey-form').oninput=()=>{state.dirty=true;$('#save-indicator').textContent='تغییرات جدید هنوز ذخیره نشده است.';};
-    $('#survey-form').onsubmit=async e=>{e.preventDefault();capture();if(state.step===4){if(!$('#confirm-survey').checked)return;return save('submit');}const saved=await save('draft',false);if(saved){state.step++;renderForm();focusStep();}};
+    $('#survey-form').onsubmit=async e=>{e.preventDefault();capture();if(state.step===4){if(!$('#confirm-survey').checked)return;return save('submit');}const saved=await save('draft',false);if(saved){state.step++;renderForm(1);focusStep();}};
     $('#save-draft').onclick=()=>save('draft');
-    $('#previous-step')?.addEventListener('click',()=>{capture();state.step--;renderForm();focusStep();});
-    $$('[data-step]').forEach(button=>button.onclick=()=>{capture();state.step=+button.dataset.step;renderForm();focusStep();});
+    $('#previous-step')?.addEventListener('click',()=>{capture();state.step--;renderForm(-1);focusStep();});
+    $$('[data-step]').forEach(button=>button.onclick=()=>{capture();const nextStep=+button.dataset.step;const turn=Math.sign(nextStep-state.step);state.step=nextStep;renderForm(turn);focusStep();});
     $$('[data-tool]').forEach(button=>button.onclick=()=>{const input=$('[data-field="tools"]');const values=input.value.split(/[،,]/).map(v=>v.trim()).filter(Boolean);if(!values.includes(button.dataset.tool)){values.push(button.dataset.tool);input.value=values.join('، ');input.dispatchEvent(new Event('input',{bubbles:true}));}});
   }
   function focusStep() {
@@ -433,6 +449,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
     finally{state.busy=false;$$('.form-actions button').forEach(b=>b.disabled=false);}
   }
   function renderReceipt() {
+    setBackground(4);
     const s=state.survey;
     $('#app-content').innerHTML=`<div class="card form-card"><div class="receipt-heading"><div class="receipt-icon" aria-hidden="true">✓</div><div class="card-kicker receipt-kicker">${preview?'ثبت نمایشی':'ثبت نهایی در سامانه'}</div><h2>سه فعالیت شما ثبت شد.</h2><p>سپاس که برای بهتر شدن فرایندهای کاری همراه شدید.</p><div class="tracking">کد پیگیری <b dir="ltr">${esc(s.id?.replaceAll('-','').slice(0,12).toUpperCase() || '')}</b></div></div>${summary(s)}<div class="soft-note">پاسخ‌ها در حساب شما قابل مشاهده است. برای اصلاح پاسخ ثبت‌شده، از مسئول طرح بخواهید ویرایش را باز کند.</div></div>`;
   }
