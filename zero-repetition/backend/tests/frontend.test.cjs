@@ -2,17 +2,23 @@
 const fs=require('node:fs'),vm=require('node:vm'),crypto=require('node:crypto'),assert=require('node:assert/strict');
 const tools=require('../../response-tools.js');
 const nodes=new Map();
-const element=key=>{if(!nodes.has(key))nodes.set(key,{value:'',hidden:false,disabled:false,innerHTML:'',textContent:'',dataset:{},querySelector:s=>element(s),querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},focus(){},scrollIntoView(){},addEventListener(){},setAttribute(){}});return nodes.get(key);};
+const element=key=>{if(!nodes.has(key))nodes.set(key,{value:'',hidden:false,disabled:false,innerHTML:'',textContent:'',dataset:{},open:false,insertAdjacentHTML(position,html){this.innerHTML+=html;},showModal(){this.open=true;},close(){this.open=false;},select(){},reset(){},querySelector:s=>element(s),querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},focus(){},scrollIntoView(){},addEventListener(){},setAttribute(){}});return nodes.get(key);};
 const document={body:{dataset:{},classList:{add(){},remove(){},toggle(){}}},querySelector:s=>element(s),querySelectorAll:()=>[],getElementById:id=>element('#'+id)};
-const requests=[];
-const sandbox={document,window:{ZERO_REPETITION_CONFIG:{apiUrl:'https://database.invalid/functions/v1/zero-repetition-api'},ZERO_REPETITION_TOOLS:tools,addEventListener(){}},location:{hash:'#invite=synthetic-private-token',pathname:'/zero-repetition/',search:''},history:{replaceState(){}},URL,URLSearchParams,AbortController,Blob,Uint8Array,crypto:crypto.webcrypto,setTimeout,clearTimeout,FormData:class{},confirm:()=>true,
- fetch:async(url,options)=>{requests.push(JSON.parse(options.body));return new Response(JSON.stringify({ok:false,code:'DATABASE_UNAVAILABLE',message:'offline'}),{status:503,headers:{'Content-Type':'application/json'}});}};
+const requests=[],historyUrls=[];let respond=async()=>new Response(JSON.stringify({ok:false,code:'DATABASE_UNAVAILABLE',message:'offline'}),{status:503,headers:{'Content-Type':'application/json'}});
+const sandbox={document,window:{ZERO_REPETITION_CONFIG:{apiUrl:'https://database.invalid/functions/v1/zero-repetition-api'},ZERO_REPETITION_TOOLS:tools,addEventListener(){}},location:{origin:'https://mofid-academy.github.io',hash:'',pathname:'/zero-repetition/',search:''},history:{replaceState(a,b,url){historyUrls.push(url);}},URL,URLSearchParams,AbortController,Blob,Uint8Array,crypto:crypto.webcrypto,setTimeout,clearTimeout,FormData:class{},confirm:()=>true,
+ fetch:async(url,options)=>{const body=JSON.parse(options.body);requests.push(body);return respond(body);}};
 let source=fs.readFileSync('../app-live.js','utf8');
-source=source.replace('  initialize();','  globalThis.app={initialize,state,renderForm,renderAdmin,renderRows,getMatches:()=>currentMatches};');
+source=source.replace('  initialize();','  globalThis.app={initialize,state,renderForm,renderAdmin,renderRows,getMatches:()=>currentMatches,loadAccounts};');
 vm.createContext(sandbox);vm.runInContext(source,sandbox);
 (async()=>{
  const app=sandbox.app;await app.initialize();
- assert.equal(element('#login-submit').disabled,false);console.log('PASS health failure does not disable the sign-in button');
+ assert.equal(element('#login-submit').disabled,false);assert.equal(element('#admin-password-field').hidden,true);console.log('PASS public entry is enabled without an invitation, including after a failed health request');
+ element('#login-username').value='Open.User';
+ const submit=()=>element('#login-form').onsubmit({preventDefault(){}});
+ respond=async()=>{throw new Error('temporary connection failure');};await submit();const firstStart=requests.at(-1);assert.equal(firstStart.action,'participant_start');assert.equal(firstStart.data.username,'open.user');assert.equal(firstStart.data.access_key.length,64);
+ respond=async()=>Response.json({ok:true,user:{username:'open.user',full_name:'',department:'',is_admin:false},survey:null,token:'synthetic-open-private-token'});
+ await submit();assert.deepEqual(requests.at(-1),firstStart);assert.equal(app.state.user.username,'open.user');assert(historyUrls.at(-1).includes('#invite=synthetic-open-private-token'));console.log('PASS a new visitor starts without manager setup and a connection retry preserves the same private claim');
+ assert(element('#app-content').innerHTML.includes('کپی لینک ادامه'));console.log('PASS the questionnaire offers a private continuation link without browser answer storage');
  app.state.user={username:'qa.user',full_name:'آزمایش',department:'آکادمی',is_admin:false};app.renderForm();
  const before=requests.length;await element('#survey-form').onsubmit({preventDefault(){}});
  assert.equal(app.state.step,1);assert.equal(requests.length,before);console.log('PASS moving between questionnaire pages makes no network request');
@@ -21,5 +27,11 @@ vm.createContext(sandbox);vm.runInContext(source,sandbox);
  assert.equal(app.getMatches().length,1);assert.equal(app.getMatches()[0].id,'one');console.log('PASS admin position filter and Persian name search combine correctly');
  assert.equal(element('#sync-sheets-button').disabled,true);assert.equal(element('#export-button').disabled,false);console.log('PASS unconfigured Sheets leaves admin data and Excel available');
  const html=fs.readFileSync('../index.html','utf8');assert(html.includes('response-tools.js'));assert(!/localStorage|sessionStorage/.test(source));assert(!source.includes('window.ExcelJS'));console.log('PASS no browser response database or remote Excel dependency');
- console.log('PASS 5 frontend behavior checks; browser visual QA unavailable in this environment');
+ respond=async body=>{assert.equal(body.action,'invites_list');return Response.json({ok:true,accounts:[{id:'one',username:'ali',full_name:'',department:''}]});};
+ await app.loadAccounts();assert(element('#accounts-content').innerHTML.includes('شرکت برای همه همکاران آزاد است'));assert(!element('#accounts-content').innerHTML.includes('create-account-form'));assert(element('#account-list').innerHTML.includes('علی كريمي'));console.log('PASS account administration lists self-enrolled colleagues and a shared public link without a manual selection form');
+ await element('#logout-button').onclick();assert(!historyUrls.at(-1).includes('invite='));console.log('PASS signing out clears the private continuation token from the address');
+const privateToken='zr2.'+Buffer.from(JSON.stringify({username:'returning.user'})).toString('base64url')+'.synthetic';sandbox.location.hash='#invite='+privateToken;
+ respond=async body=>Response.json(body.action==='health'?{ok:true,ready:true,apiVersion:'zero-repetition/3'}:{ok:true,user:{username:'returning.user',is_admin:false},survey:null});
+ sandbox.atob=globalThis.atob;await app.initialize();assert.equal(element('#login-username').value,'returning.user');await submit();assert.equal(requests.at(-1).action,'invite_login');assert.equal(requests.at(-1).token,privateToken);console.log('PASS existing private continuation links still sign in and prefill the organizational username');
+ console.log('PASS 10 frontend behavior checks; browser visual QA unavailable in this environment');
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -66,7 +66,24 @@ export function createApi({db,config,fetchImpl=fetch,now=Date.now}){
     if(!body||typeof body!=='object'||Array.isArray(body)||Buffer.byteLength(JSON.stringify(body))>262144)fail('INVALID_REQUEST','درخواست معتبر نیست.');
     const {action}=body,data=body.data||{};
     if(action==='health'){
-      await db('health',{});return {ok:true,ready:true,apiVersion:'zero-repetition/3',storage:'private-database'};
+      await db('health',{});return {ok:true,ready:true,apiVersion:'zero-repetition/3',storage:'private-database',entryMode:'open'};
+    }
+    if(action==='participant_start'){
+      const username=usernameOf(data.username),id=requireId(body.request_id);
+      if(typeof data.access_key!=='string'||!/^[a-f0-9]{64}$/.test(data.access_key))fail('INVALID_START','شروع پرسشنامه تأیید نشد؛ صفحه را دوباره باز کنید.');
+      const gate=await db('rate_limit',{key:createHmac('sha256',config.signingKey).update('start:'+ip+':'+username).digest('hex')});
+      if(!gate.allowed)fail('RATE_LIMIT','تعداد تلاش‌ها زیاد است؛ کمی بعد دوباره امتحان کنید.',429);
+      // A username or account UUID is never a credential. Bind creation/retries
+      // to a fresh browser capability, with a server-derived invitation JTI.
+      const bytes=createHmac('sha256',config.signingKey).update(JSON.stringify(['public-start',id,username,data.access_key])).digest().subarray(0,16);
+      bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+      const hex=bytes.toString('hex'),jti=[hex.slice(0,8),hex.slice(8,12),hex.slice(12,16),hex.slice(16,20),hex.slice(20)].join('-');
+      const people=[{id,jti,username,full_name:'',department:'',expires_at:new Date(now()+180*86400000).toISOString()}];
+      const [a]=await mutation('invite_create',body,{people},'public:start:'+username);
+      if(a.id!==id||a.jti!==jti)fail('ACCOUNT_EXISTS','این نام کاربری قبلاً ثبت شده است. برای ادامه از لینک خصوصی خود استفاده کنید؛ اگر آن را ندارید، از مسئول طرح لینک ادامه بخواهید.',409);
+      const token=new URL(invite(a).url).hash.slice('#invite='.length);
+      await ownerOf(verify(token,'invite'));
+      return {ok:true,user:{username:a.username,full_name:a.full_name,department:a.department,is_admin:false},survey:await db('response_get',{id:a.id}),token};
     }
     if(action==='admin_login'){
       const gate=await db('rate_limit',{key:createHmac('sha256',config.signingKey).update('login:'+ip).digest('hex')});

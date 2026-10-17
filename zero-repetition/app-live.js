@@ -12,7 +12,7 @@
   const blankSurvey = () => ({full_name:'', department:'', job_title:'', tasks:[blankTask(),blankTask(),blankTask()], revision:0, status:'draft'});
   const state = {user:null, survey:blankSurvey(), step:0, dirty:false, busy:false, responses:[], accounts:[], isAdmin:false, sheetsConfigured:false};
   let toastTimer;
-  let apiToken='',inviteToken='',loginMode='participant',apiReady=false,pendingSave=null;
+  let apiToken='',inviteToken='',loginMode='participant',apiReady=false,pendingSave=null,pendingStart=null;
   const config=window.ZERO_REPETITION_CONFIG || {};
   const tools=window.ZERO_REPETITION_TOOLS;
   let currentMatches=[];
@@ -62,7 +62,9 @@
     let action,payload=data || {},token=apiToken;
     if(path==='/api/login'){
       if(loginMode==='admin')return apiCall({action:'admin_login',username:data.username,secret:data.password});
-      return apiCall({action:'invite_login',token:inviteToken,username:data.username});
+      if(inviteToken)return apiCall({action:'invite_login',token:inviteToken,username:data.username});
+      if(!pendingStart||pendingStart.data.username!==data.username)pendingStart={action:'participant_start',request_id:crypto.randomUUID(),data:{username:data.username,access_key:(crypto.randomUUID()+crypto.randomUUID()).replaceAll('-','')}};
+      return apiCall(pendingStart);
     }
     if(path==='/api/survey')action=method==='GET'?'survey_get':'survey_save';
     else if(path==='/api/admin/responses')action='responses_list';
@@ -92,10 +94,10 @@
     $('#login-username').required=true;
     $('#login-password').required=admin;
     $('#login-password').value='';
-    $('#login-submit').textContent=admin?'ورود به مدیریت ←':'ورود به پرسشنامه ←';
-    $('#login-submit').disabled=!apiReady || (!admin&&!inviteToken);
+    $('#login-submit').textContent=admin?'ورود به مدیریت ←':inviteToken?'ادامه پرسشنامه ←':'شروع پرسشنامه ←';
+    $('#login-submit').disabled=!apiReady;
     $('#login-intro').textContent=admin?'با نام کاربری و رمز اختصاصی مدیریت وارد شوید.':'نام کاربری سازمانی خود را وارد کنید؛ مثلاً M.mirsheri.';
-    $('#login-foot-text').textContent=admin?'دسترسی مدیریت فقط با رمز اختصاصی مسئول طرح فعال می‌شود.':'هر لینک فقط به پاسخ همان همکار دسترسی دارد. پاسخ‌ها در پایگاه‌دادهٔ خصوصی سامانه نگهداری می‌شوند.';
+    $('#login-foot-text').textContent=admin?'دسترسی مدیریت فقط با رمز اختصاصی مسئول طرح فعال می‌شود.':inviteToken?'این لینک خصوصی فقط به پاسخ شما دسترسی دارد.':'شرکت برای همه همکاران آزاد است؛ حساب شما هنگام شروع ساخته می‌شود. پاسخ‌ها عمومی نیستند.';
     $('#participant-entry-button').hidden=admin===false;
     errorBox('','login-error');
   }
@@ -118,6 +120,15 @@
     if(user.is_admin)return loadAdmin();
     if(initialSurvey!==undefined){state.survey=initialSurvey || {...blankSurvey(),full_name:user.full_name || '',department:user.department || ''};state.dirty=false;state.step=0;renderForm();return;}
     await loadMine();
+  }
+  function resumeNote() {
+    if(!inviteToken)return '';
+    const url=location.origin+location.pathname+'#invite='+inviteToken;
+    return `<div class="soft-note resume-note"><p>برای ادامه در زمان دیگر، لینک خصوصی خود را نگه دارید و فقط برای خودتان ذخیره کنید.</p><button type="button" class="button secondary" id="copy-resume-link">کپی لینک ادامه</button><input type="text" id="resume-link-input" value="${esc(url)}" dir="ltr" readonly hidden aria-label="لینک خصوصی ادامه پرسشنامه"></div>`;
+  }
+  function bindResumeLink() {
+    const button=$('#copy-resume-link');if(!button)return;
+    button.onclick=async()=>{const input=$('#resume-link-input');try{await navigator.clipboard.writeText(input.value);toast('لینک خصوصی ادامه کپی شد.');}catch{input.hidden=false;input.focus();input.select();toast('لینک نمایش‌داده‌شده را برای خودتان کپی کنید.');}};
   }
   async function loadMine() {
     state.isAdmin=false;updateHeader();
@@ -163,6 +174,7 @@
     if(state.survey.status==='submitted') return renderReceipt();
     document.body.classList.remove('is-admin');
     $('#app-content').innerHTML=`<div class="card form-card${turn > 0 ? ' turn-forward' : turn < 0 ? ' turn-back' : ''}"><div class="form-heading"><div><div class="card-kicker"><span class="status-dot"></span> پرسشنامه شناسایی فعالیت‌ها</div><h2>سه کار تا یک تغییر</h2></div><span class="status-pill">پیش‌نویس</span></div>${stepper()}<form id="survey-form" class="question-panel">${state.step===0?information():state.step<4?taskForm(state.step-1):review()}<div id="form-error" class="error-box" role="alert" hidden></div><div class="form-actions"><button type="button" class="button quiet" id="save-draft">ذخیره پیش‌نویس</button><div class="form-actions-group">${state.step>0?'<button type="button" class="button secondary" id="previous-step">مرحله قبل</button>':''}<button type="submit" class="button primary" id="next-step">${state.step===4?'ثبت نهایی پاسخ‌ها':'ادامه'} <span aria-hidden="true">←</span></button></div></div><div class="save-indicator" id="save-indicator">${state.survey.updated_at?'آخرین ذخیره: '+new Date(state.survey.updated_at).toLocaleString('fa-IR'):'برای نگهداری دائمی، ذخیره پیش‌نویس یا ثبت نهایی را بزنید.'}</div></form></div>`;
+    $('#app-content').insertAdjacentHTML('beforeend',resumeNote());bindResumeLink();
     $('#survey-form').oninput=()=>{state.dirty=true;$('#save-indicator').textContent='تغییرات جدید هنوز ذخیره نشده است.';};
     $('#survey-form').onsubmit=async e=>{e.preventDefault();capture();if(state.step===4){if(!$('#confirm-survey').checked)return;return save('submit');}state.step++;renderForm(1);focusStep();};
     $('#save-draft').onclick=()=>save('draft');
@@ -192,6 +204,7 @@
     setBackground(5);
     const s=state.survey;
     $('#app-content').innerHTML=`<div class="card form-card"><div class="receipt-heading"><div class="receipt-icon" aria-hidden="true">✓</div><div class="card-kicker receipt-kicker">ثبت نهایی در سامانه</div><h2>سه فعالیت شما ثبت شد.</h2><p>سپاس که برای بهتر شدن فرایندهای کاری همراه شدید.</p><div class="tracking">کد پیگیری <b dir="ltr">${esc(s.id?.replaceAll('-','').slice(0,12).toUpperCase() || '')}</b></div></div>${summary(s)}<div class="soft-note">پاسخ‌ها در حساب شما قابل مشاهده است. برای اصلاح پاسخ ثبت‌شده، از مسئول طرح بخواهید ویرایش را باز کند.</div></div>`;
+    $('#app-content').insertAdjacentHTML('beforeend',resumeNote());bindResumeLink();
   }
   function pill(status) {
     const map={submitted:['submitted','ثبت نهایی'],draft:['','پیش‌نویس'],done:['submitted','ذخیره شد'],pending:['pending','در صف'],processing:['pending','در حال انتقال'],failed:['failed','خطای انتقال'],none:['','—'],superseded:['','نسخه پیشین']};
@@ -212,7 +225,7 @@
     const submitted=state.responses.filter(s=>s.status==='submitted');
     const departments=[...new Set(state.responses.map(s=>s.department).filter(Boolean))].sort();
     const positions=[...new Set(state.responses.map(s=>s.job_title).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fa'));
-    $('#app-content').innerHTML=`<div class="card admin-card"><div class="admin-title-row"><div><div class="card-kicker"><span class="status-dot"></span> پنل مدیریت طرح</div><h2>فرصت‌ها از همین‌جا شروع می‌شوند.</h2><p>پاسخ‌های همکاران، در یک نمای منظم و قابل جست‌وجو.</p></div><div class="admin-buttons"><button class="button secondary" type="button" id="accounts-button">مدیریت حساب‌ها</button><button class="button secondary" type="button" id="refresh-responses">به‌روزرسانی</button><button class="button secondary" type="button" id="sync-sheets-button">ارسال این نما به شیت</button><button class="button primary" type="button" id="export-button">اکسل این نما ↓</button></div></div><div class="stats"><div class="stat"><span class="stat-label">پاسخ ثبت نهایی</span><span class="stat-value">${fa(submitted.length)}<span class="stat-unit">نفر</span></span></div><div class="stat"><span class="stat-label">فعالیت ثبت‌شده</span><span class="stat-value">${fa(submitted.length*3)}<span class="stat-unit">فعالیت</span></span></div><div class="stat"><span class="stat-label">حساب‌های شرکت‌کننده</span><span class="stat-value">${fa(data.registered_users)}<span class="stat-unit">نفر</span></span></div><div class="stat"><span class="stat-label">زمان فعالیت‌های ثبت‌شده در ماه</span><span class="stat-value">${fa(submitted.reduce((sum,s)=>sum+surveyHours(s),0))}<span class="stat-unit">ساعت</span></span></div></div><div class="filters"><input class="filter-input" id="response-search" placeholder="جست‌وجوی نام، نام کاربری یا عنوان فعالیت…" aria-label="جست‌وجو"><select class="filter-select" id="department-filter" aria-label="واحد"><option value="">همه واحدها</option>${departments.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('')}</select><select class="filter-select" id="position-filter" aria-label="پوزیشن"><option value="">همه پوزیشن‌ها</option>${positions.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')}<option value="__empty__">سمت وارد نشده</option></select><select class="filter-select" id="status-filter" aria-label="وضعیت پاسخ"><option value="">همه وضعیت‌ها</option><option value="submitted">ثبت نهایی</option><option value="draft">پیش‌نویس</option></select></div><div class="table-scroll"><table class="responses-table"><thead><tr><th>نام و نام کاربری سازمانی</th><th>واحد</th><th>پوزیشن / سمت</th><th>فعالیت‌ها</th><th>زمان ماهانه</th><th>وضعیت پاسخ</th><th>ثبت در شیت</th><th>جزئیات</th></tr></thead><tbody id="response-rows"></tbody></table><div class="empty-state" id="empty-state" hidden><strong>هنوز پاسخی در این نما نیست.</strong>با تغییر فیلترها یا دریافت پاسخ‌های جدید، موارد اینجا نمایش داده می‌شود.</div></div><div class="table-foot"><span id="table-count"></span><span>زمان ماهانه، برآورد فعالیت‌هاست؛ معادل صرفه‌جویی قطعی نیست.</span></div><div class="integration-note"><span>${state.sheetsConfigured?'پاسخ‌ها در سامانه محفوظ‌اند. ارسال این نمای فیلترشده به شیت، اختیاری است.':'پاسخ‌ها در سامانه محفوظ‌اند. اتصال اختیاری شیت هنوز تنظیم نشده است.'}</span></div></div>`;
+    $('#app-content').innerHTML=`<div class="card admin-card"><div class="admin-title-row"><div><div class="card-kicker"><span class="status-dot"></span> پنل مدیریت طرح</div><h2>فرصت‌ها از همین‌جا شروع می‌شوند.</h2><p>پاسخ‌های همکاران، در یک نمای منظم و قابل جست‌وجو.</p></div><div class="admin-buttons"><button class="button secondary" type="button" id="accounts-button">حساب‌های همکاران</button><button class="button secondary" type="button" id="refresh-responses">به‌روزرسانی</button><button class="button secondary" type="button" id="sync-sheets-button">ارسال این نما به شیت</button><button class="button primary" type="button" id="export-button">اکسل این نما ↓</button></div></div><div class="stats"><div class="stat"><span class="stat-label">پاسخ ثبت نهایی</span><span class="stat-value">${fa(submitted.length)}<span class="stat-unit">نفر</span></span></div><div class="stat"><span class="stat-label">فعالیت ثبت‌شده</span><span class="stat-value">${fa(submitted.length*3)}<span class="stat-unit">فعالیت</span></span></div><div class="stat"><span class="stat-label">حساب‌های شرکت‌کننده</span><span class="stat-value">${fa(data.registered_users)}<span class="stat-unit">نفر</span></span></div><div class="stat"><span class="stat-label">زمان فعالیت‌های ثبت‌شده در ماه</span><span class="stat-value">${fa(submitted.reduce((sum,s)=>sum+surveyHours(s),0))}<span class="stat-unit">ساعت</span></span></div></div><div class="filters"><input class="filter-input" id="response-search" placeholder="جست‌وجوی نام، نام کاربری یا عنوان فعالیت…" aria-label="جست‌وجو"><select class="filter-select" id="department-filter" aria-label="واحد"><option value="">همه واحدها</option>${departments.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('')}</select><select class="filter-select" id="position-filter" aria-label="پوزیشن"><option value="">همه پوزیشن‌ها</option>${positions.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')}<option value="__empty__">سمت وارد نشده</option></select><select class="filter-select" id="status-filter" aria-label="وضعیت پاسخ"><option value="">همه وضعیت‌ها</option><option value="submitted">ثبت نهایی</option><option value="draft">پیش‌نویس</option></select></div><div class="table-scroll"><table class="responses-table"><thead><tr><th>نام و نام کاربری سازمانی</th><th>واحد</th><th>پوزیشن / سمت</th><th>فعالیت‌ها</th><th>زمان ماهانه</th><th>وضعیت پاسخ</th><th>ثبت در شیت</th><th>جزئیات</th></tr></thead><tbody id="response-rows"></tbody></table><div class="empty-state" id="empty-state" hidden><strong>هنوز پاسخی در این نما نیست.</strong>با تغییر فیلترها یا دریافت پاسخ‌های جدید، موارد اینجا نمایش داده می‌شود.</div></div><div class="table-foot"><span id="table-count"></span><span>زمان ماهانه، برآورد فعالیت‌هاست؛ معادل صرفه‌جویی قطعی نیست.</span></div><div class="integration-note"><span>${state.sheetsConfigured?'پاسخ‌ها در سامانه محفوظ‌اند. ارسال این نمای فیلترشده به شیت، اختیاری است.':'پاسخ‌ها در سامانه محفوظ‌اند. اتصال اختیاری شیت هنوز تنظیم نشده است.'}</span></div></div>`;
     $('#response-search').oninput=renderRows;
     $('#department-filter').onchange=renderRows;
     $('#status-filter').onchange=renderRows;
@@ -258,26 +271,13 @@
   }
   async function loadAccounts() {
     try{
-      const data=await request('/api/admin/accounts');state.accounts=data.accounts;
-      $('#accounts-content').innerHTML=`<div class="dialog-head"><span class="eyebrow-dark">لینک‌های اختصاصی</span><button class="icon-button" type="button" data-close-dialog aria-label="بستن">×</button></div><h2>دسترسی همکاران</h2><p>هر همکار با لینک اختصاصی خود وارد می‌شود. ظرفیت طرح ۳۰۰ نفر است.</p><form id="create-account-form"><div class="fields-grid"><label class="field"><span>نام و نام خانوادگی</span><input name="full_name" maxlength="120" required></label><label class="field"><span>واحد</span><input name="department" maxlength="100" required></label><label class="field full-row"><span>نام کاربری سازمانی</span><input name="username" type="text" dir="ltr" placeholder="M.mirsheri" maxlength="64" required></label></div><div id="account-error" class="error-box" role="alert" hidden></div><button class="button primary" type="submit">ایجاد لینک اختصاصی</button></form><details class="bulk-invites"><summary>ایجاد گروهی لینک‌ها</summary><form id="bulk-invite-form"><label class="field"><span>فهرست همکاران؛ هر سطر: نام کاربری سازمانی، نام و نام خانوادگی، واحد</span><textarea id="bulk-invite-text" maxlength="180000" placeholder="M.mirsheri,نام و نام خانوادگی,واحد" required></textarea></label><label class="field"><span>یا فایل CSV همین فهرست</span><input id="bulk-invite-file" type="file" accept=".csv,text/csv"></label><button class="button secondary" type="submit">ساخت لینک‌های گروهی</button></form></details><div id="invite-results"></div><div class="account-list" id="account-list"></div>`;
+      const data=await request('/api/admin/accounts');
+      state.accounts=data.accounts.map(a=>{const r=state.responses.find(r=>r.id===a.id);return {...a,full_name:r?.full_name||a.full_name||a.username,department:r?.department||a.department||''};});
+      const publicUrl=location.origin+location.pathname;
+      $('#accounts-content').innerHTML=`<div class="dialog-head"><span class="eyebrow-dark">حساب‌های همکاران</span><button class="icon-button" type="button" data-close-dialog aria-label="بستن">×</button></div><h2>شرکت برای همه همکاران آزاد است</h2><p>همین لینک عمومی را برای همکاران بفرستید. هر فرد با نام کاربری سازمانی خودش شروع می‌کند و حساب او خودکار ساخته می‌شود؛ نیازی به انتخاب افراد یا ساخت حساب توسط مدیر نیست. ظرفیت طرح ۳۰۰ نفر است.</p><label class="field"><span>لینک عمومی پرسشنامه</span><input id="public-form-link" type="text" dir="ltr" readonly value="${esc(publicUrl)}"></label><button class="button secondary" type="button" id="copy-public-link">کپی لینک عمومی</button><div id="invite-results"></div><div class="account-list" id="account-list"></div>`;
       renderAccounts();bindDialogClose($('#accounts-dialog'));if(!$('#accounts-dialog').open)$('#accounts-dialog').showModal();
-      $('#create-account-form').onsubmit=async e=>{e.preventDefault();const person=Object.fromEntries(new FormData(e.currentTarget));const button=$('button[type=submit]',e.currentTarget);button.disabled=true;try{const result=await request('/api/admin/accounts','POST',{people:[person]});await loadAccounts();showInviteResults(result.invites);}catch(ex){errorBox(ex.message,'account-error');button.disabled=false;}};
-      $('#bulk-invite-file').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>250000){toast('حجم فایل فهرست بیش از حد مجاز است.',true);return;}$('#bulk-invite-text').value=await file.text();};
-      $('#bulk-invite-form').onsubmit=async e=>{e.preventDefault();const button=$('button[type=submit]',e.currentTarget);button.disabled=true;try{const people=parsePeopleCsv($('#bulk-invite-text').value);const result=await request('/api/admin/accounts','POST',{people});await loadAccounts();showInviteResults(result.invites);}catch(ex){toast(ex.message,true);button.disabled=false;}};
+      $('#copy-public-link').onclick=async()=>{const input=$('#public-form-link');try{await navigator.clipboard.writeText(input.value);toast('لینک عمومی کپی شد.');}catch{input.focus();input.select();toast('لینک عمومی را از کادر انتخاب‌شده کپی کنید.');}};
     }catch(e){toast(e.message,true);}
-  }
-  function parsePeopleCsv(text) {
-    text=text.replace(/^\uFEFF/,'');const first=text.split(/\r?\n/)[0] || '',sep=first.includes('\t')?'\t':first.includes(';')?';':',';
-    const rows=[];let row=[],value='',quoted=false;
-    for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quoted&&text[i+1]==='"'){value+='"';i++;}else quoted=!quoted;}else if(c===sep&&!quoted){row.push(value.trim());value='';}else if(c==='\n'&&!quoted){row.push(value.trim());rows.push(row);row=[];value='';}else if(c!=='\r')value+=c;}
-    if(quoted)throw new Error('علامت نقل‌قول در فایل CSV کامل نیست.');row.push(value.trim());rows.push(row);
-    const clean=rows.filter(r=>r.some(v=>v));if(!clean.length)throw new Error('فهرست خالی است.');
-    const head=clean[0].map(v=>v.toLowerCase());
-    if(head.some(v=>['email','ایمیل','ایمیل سازمانی'].includes(v)))throw new Error('در فایل فهرست، ستون username یا نام کاربری سازمانی را جایگزین ایمیل کنید.');
-    const usernameIndex=head.findIndex(v=>['username','نام کاربری','نام کاربری سازمانی','نام سازمانی'].includes(v));
-    let indexes=[0,1,2];if(usernameIndex>=0){indexes=[usernameIndex,head.findIndex(v=>['full_name','name','نام','نام و نام خانوادگی'].includes(v)),head.findIndex(v=>['department','واحد','واحد سازمانی'].includes(v))];clean.shift();if(indexes.some(i=>i<0))throw new Error('سرستون‌ها باید شامل نام کاربری، نام و واحد باشند.');}
-    if(!clean.length||clean.length>300)throw new Error('فهرست باید بین ۱ تا ۳۰۰ نفر داشته باشد.');
-    return clean.map(r=>({username:r[indexes[0]] || '',full_name:r[indexes[1]] || '',department:r[indexes[2]] || ''}));
   }
   function showInviteResults(invites) {
     if(!Array.isArray(invites)||!invites.length)return;
@@ -287,7 +287,7 @@
     $('#invite-results').scrollIntoView({block:'nearest',behavior:'smooth'});
   }
   function renderAccounts() {
-    $('#account-list').innerHTML=state.accounts.length?state.accounts.map(a=>`<div class="account-row"><div><strong>${esc(a.full_name)}</strong><small><bdi>${esc(a.username)}</bdi> · ${esc(a.department)}</small></div><button type="button" class="table-button" data-renew="${esc(a.id)}">تولید لینک جدید</button></div>`).join(''):'<p>هنوز همکار جدیدی اضافه نشده است.</p>';
+    $('#account-list').innerHTML=state.accounts.length?state.accounts.map(a=>`<div class="account-row"><div><strong>${esc(a.full_name)}</strong><small><bdi>${esc(a.username)}</bdi> · ${esc(a.department)}</small></div><button type="button" class="table-button" data-renew="${esc(a.id)}">بازیابی لینک ادامه</button></div>`).join(''):'<p>هنوز همکار جدیدی اضافه نشده است.</p>';
     $$('[data-renew]').forEach(b=>b.onclick=async()=>{const a=state.accounts.find(a=>a.id===b.dataset.renew);if(!a||!confirm('لینک قبلی '+a.full_name+' غیرفعال و لینک جدید ساخته شود؟'))return;b.disabled=true;try{const result=await request('/api/admin/invite-reset','POST',{id:a.id});await loadAccounts();showInviteResults(result.invites);}catch(e){toast(e.message,true);b.disabled=false;}});
   }
   function bindDialogClose(dialog) {$$('[data-close-dialog]',dialog).forEach(b=>b.onclick=()=>dialog.close());}
@@ -295,17 +295,27 @@
   $('#help-button').onclick=()=>$('#help-dialog').showModal();
   $('#my-form-button').onclick=()=>{if(!state.dirty||confirm('تغییرات ذخیره نشده است. پاسخ ذخیره‌شده دوباره دریافت شود؟'))loadMine();};
   $('#admin-button').onclick=loadAdmin;
-  $('#logout-button').onclick=async()=>{if(state.dirty&&!confirm('تغییرات ذخیره نشده است. از حساب خارج شوید؟'))return;state.user=null;state.isAdmin=false;state.dirty=false;state.survey=blankSurvey();apiToken='';inviteToken='';pendingSave=null;$('#app-content').innerHTML='';$('#login-form').reset();setLoginMode(loginMode);updateHeader();};
+  $('#logout-button').onclick=async()=>{if(state.dirty&&!confirm('تغییرات ذخیره نشده است. از حساب خارج شوید؟'))return;state.user=null;state.isAdmin=false;state.dirty=false;state.survey=blankSurvey();apiToken='';inviteToken='';pendingSave=null;pendingStart=null;history.replaceState(null,'',location.pathname+location.search+(loginMode==='admin'?'#admin':''));$('#app-content').innerHTML='';$('#login-form').reset();setLoginMode(loginMode);updateHeader();};
   $('#toggle-password').onclick=()=>{const input=$('#login-password'),show=input.type==='password';input.type=show?'text':'password';$('#toggle-password').textContent=show?'پنهان':'نمایش';$('#toggle-password').setAttribute('aria-pressed',String(show));};
   $('#admin-entry-button').onclick=()=>setLoginMode('admin');
   $('#participant-entry-button').onclick=()=>setLoginMode('participant');
-  $('#login-form').onsubmit=async e=>{e.preventDefault();errorBox('','login-error');if(!apiReady)return;if(loginMode==='participant'&&!inviteToken)return errorBox('از لینک اختصاصی خود وارد شوید.','login-error');$('#login-submit').disabled=true;try{const data=await request('/api/login','POST',{username:$('#login-username').value.trim().toLowerCase(),password:$('#login-password').value});apiToken=loginMode==='admin'?data.token:inviteToken;$('#login-password').value='';await afterLogin(data.user,data.survey);}catch(ex){errorBox(ex.message,'login-error');}finally{$('#login-submit').disabled=!apiReady||(!inviteToken&&loginMode==='participant');}};
+  $('#login-form').onsubmit=async e=>{
+    e.preventDefault();errorBox('','login-error');if(!apiReady)return;$('#login-submit').disabled=true;
+    try{
+      const data=await request('/api/login','POST',{username:$('#login-username').value.trim().toLowerCase(),password:$('#login-password').value});
+      if(loginMode==='admin')apiToken=data.token;
+      else{inviteToken=data.token||inviteToken;apiToken=inviteToken;pendingStart=null;history.replaceState(null,'',location.pathname+location.search+'#invite='+inviteToken);}
+      $('#login-password').value='';await afterLogin(data.user,data.survey);
+    }catch(ex){errorBox(ex.message,'login-error');}finally{$('#login-submit').disabled=!apiReady;}
+  };
   window.addEventListener('beforeunload',e=>{if(state.dirty){e.preventDefault();e.returnValue='';}});
   async function initialize() {
     const fragment=new URLSearchParams(location.hash.slice(1));
     inviteToken=fragment.get('invite') || '';
     if(location.hash==='#admin')loginMode='admin';
-    if(inviteToken)history.replaceState(null,'',location.pathname+location.search);
+    if(inviteToken){
+      try{const claim=JSON.parse(atob(inviteToken.split('.')[1].replaceAll('-','+').replaceAll('_','/')));if(typeof claim.username==='string'&&/^[a-z][a-z0-9._-]{0,63}$/.test(claim.username))$('#login-username').value=claim.username;}catch{}
+    }
     apiReady=Boolean(config.apiUrl);setLoginMode(loginMode);updateHeader();
     const status=$('#connection-status');
     if(!config.apiUrl){status.textContent='اتصال ثبت پاسخ‌ها در حال آماده‌سازی است.';return;}
