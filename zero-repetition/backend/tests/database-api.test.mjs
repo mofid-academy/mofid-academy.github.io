@@ -9,6 +9,8 @@ const tools=require('../../response-tools.js');
 const ExcelJS=require('exceljs');
 const pg=new PGlite();
 await pg.exec('create role anon;create role authenticated;create role service_role bypassrls;');
+// Hosted Vault encrypts the secret; this local fixture checks SQL permissions.
+await pg.exec('create schema vault;create table vault.decrypted_secrets(name text,decrypted_secret text);');
 await pg.exec(await readFile(new URL('../supabase/migrations/202610170001_independent_storage.sql',import.meta.url),'utf8'));
 let calls=0,checks=0,externalCalls=0;
 const db=async(action,data={})=>{calls++;try{return (await pg.query('select public.zr_store($1,$2::jsonb) as value',[action,JSON.stringify(data)])).rows[0].value;}catch(e){throw databaseError(e.message);}};

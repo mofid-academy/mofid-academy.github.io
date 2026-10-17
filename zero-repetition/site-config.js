@@ -1,3 +1,3 @@
 'use strict';
-// Set only after the private database API has been deployed and verified.
-window.ZERO_REPETITION_CONFIG=Object.freeze({apiUrl:''});
+// Public API address only. Credentials and responses stay on the server.
+window.ZERO_REPETITION_CONFIG=Object.freeze({apiUrl:'https://siwmzffadbbhcyyppwzn.supabase.co/functions/v1/zero-repetition-api'});

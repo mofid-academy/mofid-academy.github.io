@@ -158,3 +158,15 @@ end;
 $$;
 revoke all on function public.zr_store(text,jsonb) from public,anon,authenticated;
 grant execute on function public.zr_store(text,jsonb) to service_role;
+
+-- Runtime keys live encrypted in Supabase Vault, never in the public repository.
+-- Only the platform's server role can resolve this private configuration.
+grant usage on schema vault to service_role;
+grant select on vault.decrypted_secrets to service_role;
+create function public.zr_runtime_config() returns jsonb
+language sql stable security invoker set search_path = '' as $$
+ select v.decrypted_secret::jsonb from vault.decrypted_secrets v
+ where v.name='zero_repetition_runtime';
+$$;
+revoke all on function public.zr_runtime_config() from public,anon,authenticated;
+grant execute on function public.zr_runtime_config() to service_role;
