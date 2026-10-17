@@ -57,3 +57,6 @@ Run npm ci then npm test in this directory. There are 63 behavior checks for the
 The hosted API also passed real draft/final writes, fresh reads, participant isolation, administrator access and anonymous access rejection. Synthetic hosted test accounts and responses were removed. After signing-key separation, health and the existing administrator login were rechecked and a token signed with the legacy n8n key was rejected.
 
 The browser creates OOXML directly, needs no CDN or Google call, and writes user input as inline strings so leading equals signs are not formulas. Both generated worksheet layouts were rendered and inspected. Interactive browser visual QA was unavailable in the managed environment; do not claim it was performed.
+
+## حذف حساب توسط مدیر
+پس از اسکیما اولیه، `sql/account-delete.sql` را اعمال کنید. عملیات `account_delete` فقط با توکن مدیر قابل اجراست و حساب، پاسخ، رسیدهای ذخیره مرتبط و محتوای آن فرد در snapshotهای انتقال را پاک می‌کند. شناسه حذف‌شده بدون نام و پاسخ نگهداری می‌شود تا درخواست قدیمی حساب را احیا نکند. حذف با انتقال در حال اجرا تداخل نمی‌کند. نسخه‌های قبلی در شیت و اکسل حذف نمی‌شوند؛ تخصیص مجدد جایگاه و ارسال پاسخ جدید می‌تواند ردیف قبلی شیت را جایگزین کند.

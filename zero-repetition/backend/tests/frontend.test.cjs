@@ -3,7 +3,7 @@ const fs=require('node:fs'),vm=require('node:vm'),crypto=require('node:crypto'),
 const tools=require('../../response-tools.js');
 const nodes=new Map();
 const element=key=>{if(!nodes.has(key))nodes.set(key,{value:'',hidden:false,disabled:false,innerHTML:'',textContent:'',dataset:{},open:false,insertAdjacentHTML(position,html){this.innerHTML+=html;},showModal(){this.open=true;},close(){this.open=false;},select(){},reset(){},querySelector:s=>element(s),querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},focus(){},scrollIntoView(){},addEventListener(){},setAttribute(){}});return nodes.get(key);};
-const document={body:{dataset:{},classList:{add(){},remove(){},toggle(){}}},querySelector:s=>element(s),querySelectorAll:()=>[],getElementById:id=>element('#'+id)};
+const document={body:{dataset:{},classList:{add(){},remove(){},toggle(){}}},querySelector:s=>element(s),querySelectorAll:s=>s==='[data-delete-user]'?[element('#delete-test')]:[],getElementById:id=>element('#'+id)};
 const requests=[],historyUrls=[];let respond=async()=>new Response(JSON.stringify({ok:false,code:'DATABASE_UNAVAILABLE',message:'offline'}),{status:503,headers:{'Content-Type':'application/json'}});
 const sandbox={document,window:{ZERO_REPETITION_CONFIG:{apiUrl:'https://database.invalid/functions/v1/zero-repetition-api'},ZERO_REPETITION_TOOLS:tools,addEventListener(){}},location:{origin:'https://mofid-academy.github.io',hash:'',pathname:'/zero-repetition/',search:''},history:{replaceState(a,b,url){historyUrls.push(url);}},URL,URLSearchParams,AbortController,Blob,Uint8Array,crypto:crypto.webcrypto,setTimeout,clearTimeout,FormData:class{},confirm:()=>true,
  fetch:async(url,options)=>{const body=JSON.parse(options.body);requests.push(body);return respond(body);}};
@@ -29,9 +29,14 @@ vm.createContext(sandbox);vm.runInContext(source,sandbox);
  const html=fs.readFileSync('../index.html','utf8');assert(html.includes('response-tools.js'));assert(!/localStorage|sessionStorage/.test(source));assert(!source.includes('window.ExcelJS'));console.log('PASS no browser response database or remote Excel dependency');
  respond=async body=>{assert.equal(body.action,'invites_list');return Response.json({ok:true,accounts:[{id:'one',username:'ali',full_name:'',department:''}]});};
  await app.loadAccounts();assert(element('#accounts-content').innerHTML.includes('شرکت برای همه همکاران آزاد است'));assert(!element('#accounts-content').innerHTML.includes('create-account-form'));assert(element('#account-list').innerHTML.includes('علی كريمي'));console.log('PASS account administration lists self-enrolled colleagues and a shared public link without a manual selection form');
+ element('#delete-test').dataset.deleteUser='one';
+ sandbox.confirm=()=>false;const beforeDelete=requests.length;await element('#delete-test').onclick();assert.equal(requests.length,beforeDelete);console.log('PASS canceling deletion sends no request');
+ sandbox.confirm=()=>true;app.state.isAdmin=true;app.state.user.is_admin=true;
+ respond=async body=>Response.json(body.action==='account_delete'?{ok:true,deleted:true}:body.action==='responses_list'?{ok:true,responses:[],registered_users:1,sheets_configured:true}:{ok:true,accounts:[]});
+ await element('#delete-test').onclick();const deletion=requests.find(x=>x.action==='account_delete');assert.equal(deletion.data.id,'one');assert(deletion.request_id);assert.equal(app.state.responses.length,0);console.log('PASS confirmed deletion targets only selected account and refreshes the admin list');
  await element('#logout-button').onclick();assert(!historyUrls.at(-1).includes('invite='));console.log('PASS signing out clears the private continuation token from the address');
 const privateToken='zr2.'+Buffer.from(JSON.stringify({username:'returning.user'})).toString('base64url')+'.synthetic';sandbox.location.hash='#invite='+privateToken;
  respond=async body=>Response.json(body.action==='health'?{ok:true,ready:true,apiVersion:'zero-repetition/3'}:{ok:true,user:{username:'returning.user',is_admin:false},survey:null});
  sandbox.atob=globalThis.atob;await app.initialize();assert.equal(element('#login-username').value,'returning.user');await submit();assert.equal(requests.at(-1).action,'invite_login');assert.equal(requests.at(-1).token,privateToken);console.log('PASS existing private continuation links still sign in and prefill the organizational username');
- console.log('PASS 10 frontend behavior checks; browser visual QA unavailable in this environment');
+ console.log('PASS 12 frontend behavior checks; browser visual QA unavailable in this environment');
 })().catch(e=>{console.error(e);process.exitCode=1;});

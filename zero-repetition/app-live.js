@@ -71,11 +71,12 @@
     else if(path.startsWith('/api/admin/response/')){action='response_get';payload={id:decodeURIComponent(path.split('/').pop())};}
     else if(path==='/api/admin/accounts')action=method==='GET'?'invites_list':'invite_create';
     else if(path==='/api/admin/reopen')action='reopen';
+    else if(path==='/api/admin/account-delete')action='account_delete';
     else if(path==='/api/admin/invite-reset')action='invite_reset';
     else if(path==='/api/admin/sheets-sync')action='sheets_sync';
     else throw new Error('عملیات معتبر نیست.');
     const body={action,token,data:payload};
-    if(['survey_save','reopen','invite_create','invite_reset','sheets_sync'].includes(action)){
+    if(['survey_save','reopen','invite_create','invite_reset','account_delete','sheets_sync'].includes(action)){
       if(action==='survey_save'){
         const signature=JSON.stringify(payload);
         if(!pendingSave || pendingSave.signature!==signature)pendingSave={signature,id:crypto.randomUUID()};
@@ -240,8 +241,9 @@
     const matches=tools.selectResponses(state.responses,{query:$('#response-search').value,department:$('#department-filter').value,job_title:$('#position-filter').value,status:$('#status-filter').value});
     currentMatches=matches;
     $('#sync-sheets-button').disabled=!state.sheetsConfigured||!matches.length;
-    $('#response-rows').innerHTML=matches.map(s=>`<tr><td class="person-cell"><b>${esc(s.full_name || 'نام وارد نشده')}</b><small dir="ltr">${esc(s.username)}</small></td><td>${esc(s.department || '—')}</td><td>${esc(s.job_title || '—')}</td><td>${fa(s.tasks.filter(t=>t.title).length)} فعالیت</td><td>${fa(surveyHours(s))} ساعت</td><td>${pill(s.status)}</td><td>${pill(s.sync_state)}</td><td><button type="button" class="table-button" data-detail="${esc(s.id)}">مشاهده ←</button></td></tr>`).join('');
+    $('#response-rows').innerHTML=matches.map(s=>`<tr><td class="person-cell"><b>${esc(s.full_name || 'نام وارد نشده')}</b><small dir="ltr">${esc(s.username)}</small></td><td>${esc(s.department || '—')}</td><td>${esc(s.job_title || '—')}</td><td>${fa(s.tasks.filter(t=>t.title).length)} فعالیت</td><td>${fa(surveyHours(s))} ساعت</td><td>${pill(s.status)}</td><td>${pill(s.sync_state)}</td><td><button type="button" class="table-button" data-detail="${esc(s.id)}">مشاهده ←</button> <button type="button" class="table-button delete-user-button" data-delete-user="${esc(s.id)}">حذف کاربر</button></td></tr>`).join('');
     $('#empty-state').hidden=matches.length>0;$('#table-count').textContent=`نمایش ${fa(matches.length)} پاسخ از ${fa(state.responses.length)}`;
+    bindDeleteUsers();
     $$('[data-detail]').forEach(b=>b.onclick=()=>showDetail(b.dataset.detail));
   }
   async function showDetail(id) {
@@ -287,8 +289,26 @@
     $('#invite-results').scrollIntoView({block:'nearest',behavior:'smooth'});
   }
   function renderAccounts() {
-    $('#account-list').innerHTML=state.accounts.length?state.accounts.map(a=>`<div class="account-row"><div><strong>${esc(a.full_name)}</strong><small><bdi>${esc(a.username)}</bdi> · ${esc(a.department)}</small></div><button type="button" class="table-button" data-renew="${esc(a.id)}">بازیابی لینک ادامه</button></div>`).join(''):'<p>هنوز همکار جدیدی اضافه نشده است.</p>';
+    $('#account-list').innerHTML=state.accounts.length?state.accounts.map(a=>`<div class="account-row"><div><strong>${esc(a.full_name)}</strong><small><bdi>${esc(a.username)}</bdi> · ${esc(a.department)}</small></div><button type="button" class="table-button" data-renew="${esc(a.id)}">بازیابی لینک ادامه</button><button type="button" class="table-button delete-user-button" data-delete-user="${esc(a.id)}">حذف کاربر</button></div>`).join(''):'<p>هنوز همکار جدیدی اضافه نشده است.</p>';
+    bindDeleteUsers();
     $$('[data-renew]').forEach(b=>b.onclick=async()=>{const a=state.accounts.find(a=>a.id===b.dataset.renew);if(!a||!confirm('لینک قبلی '+a.full_name+' غیرفعال و لینک جدید ساخته شود؟'))return;b.disabled=true;try{const result=await request('/api/admin/invite-reset','POST',{id:a.id});await loadAccounts();showInviteResults(result.invites);}catch(e){toast(e.message,true);b.disabled=false;}});
+  }
+  function bindDeleteUsers() {
+    $$('[data-delete-user]').forEach(button=>button.onclick=async()=>{
+      const id=button.dataset.deleteUser;
+      const person=state.responses.find(x=>x.id===id)||state.accounts?.find(x=>x.id===id);
+      if(!person)return;
+      if(!confirm('حساب '+(person.full_name||person.username)+' ('+person.username+') و همه پاسخ‌های او از سامانه حذف شود؟\nاین کار برگشت‌پذیر نیست و لینک ادامه قبلی غیرفعال می‌شود. نسخه‌های قبلی در شیت و اکسل حذف نمی‌شوند.'))return;
+      button.disabled=true;
+      try{
+        await request('/api/admin/account-delete','POST',{id});
+        const accountsOpen=$('#accounts-dialog').open;
+        $('#detail-dialog').close();
+        await loadAdmin();
+        if(accountsOpen)await loadAccounts();
+        toast('حساب و پاسخ‌های کاربر از سامانه حذف شد.');
+      }catch(e){toast(e.message,true);button.disabled=false;}
+    });
   }
   function bindDialogClose(dialog) {$$('[data-close-dialog]',dialog).forEach(b=>b.onclick=()=>dialog.close());}
   $$('dialog').forEach(dialog=>{bindDialogClose(dialog);dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});});

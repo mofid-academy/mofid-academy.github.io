@@ -106,8 +106,9 @@ export function createApi({db,config,fetchImpl=fetch,now=Date.now}){
       const survey=await db('response_get',{id:a.id});
       return {ok:true,survey,...(action==='invite_login'?{user:{username:a.username,full_name:a.full_name,department:a.department,is_admin:false}}:{})};
     }
-    if(!['responses_list','response_get','reopen','invites_list','invite_create','invite_reset','sheets_sync'].includes(action))fail('UNKNOWN_ACTION','عملیات معتبر نیست.',404);
+    if(!['responses_list','response_get','reopen','invites_list','invite_create','invite_reset','account_delete','sheets_sync'].includes(action))fail('UNKNOWN_ACTION','عملیات معتبر نیست.',404);
     verify(body.token,'admin');
+    if(action==='account_delete')return {ok:true,...await mutation('account_delete',body,{id:requireId(data.id)},'admin:account_delete')};
     if(action==='responses_list')return {ok:true,...await db('responses_list',{}),sheets_configured:sheetsReady()};
     if(action==='response_get')return {ok:true,survey:await db('response_get',{id:requireId(data.id)})};
     if(action==='reopen')return {ok:true,survey:await mutation('reopen',body,{id:requireId(data.id)},'admin:reopen')};
