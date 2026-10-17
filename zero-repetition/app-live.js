@@ -16,7 +16,8 @@
   const config=window.ZERO_REPETITION_CONFIG || {};
 
   function setBackground(step = 0) {
-    document.body.dataset.scene = Math.abs(Number(step) || 0) % 2 === 1 ? 'autumn' : 'leafy';
+    const scenes = ['leafy', 'night-sign', 'day-elevated', 'night', 'sunset', 'night-low-angle'];
+    document.body.dataset.scene = scenes[Math.abs(Math.trunc(Number(step) || 0)) % scenes.length];
   }
 
   function hours(tasks) {
@@ -185,7 +186,7 @@
     finally{state.busy=false;$$('.form-actions button').forEach(b=>b.disabled=false);}
   }
   function renderReceipt() {
-    setBackground(4);
+    setBackground(5);
     const s=state.survey;
     $('#app-content').innerHTML=`<div class="card form-card"><div class="receipt-heading"><div class="receipt-icon" aria-hidden="true">✓</div><div class="card-kicker receipt-kicker">ثبت نهایی در سامانه</div><h2>سه فعالیت شما ثبت شد.</h2><p>سپاس که برای بهتر شدن فرایندهای کاری همراه شدید.</p><div class="tracking">کد پیگیری <b dir="ltr">${esc(s.id?.replaceAll('-','').slice(0,12).toUpperCase() || '')}</b></div></div>${summary(s)}<div class="soft-note">پاسخ‌ها در حساب شما قابل مشاهده است. برای اصلاح پاسخ ثبت‌شده، از مسئول طرح بخواهید ویرایش را باز کند.</div></div>`;
   }

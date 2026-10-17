@@ -9,7 +9,7 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Zero repetition | Mofid Academy</title>
-  <style>:root{--scene-leafy:url('brand/building.jpg?v=leafy-20261014');--scene-autumn:url('brand/building-autumn.jpg?v=20261014')}
+  <style>:root{--scene-leafy:url('brand/building-leafy-corrected.webp?v=20261017');--scene-night-sign:url('brand/building-night-sign.webp?v=20261017');--scene-day-elevated:url('brand/building-day-elevated.webp?v=20261017');--scene-night:url('brand/building-night.webp?v=20261017');--scene-sunset:url('brand/building-sunset.webp?v=20261017');--scene-night-low-angle:url('brand/building-night-low-angle.webp?v=20261017')}
 /* Diagonal composition inspired by the user-supplied TemplateMo 550 Diagoona. */
 @font-face{font-family:Pinar;src:url('brand/Pinar-VF.woff') format('woff');font-weight:100 900;font-display:swap}
 :root{--teal:#00AF9D;--teal-dark:#00796e;--red:#F32735;--ink:#17353b;--muted:#63797c;--border:#dce8e6;--soft:#f3f8f7;--danger:#bd1c2a;--radius:25px}
@@ -30,8 +30,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
 .scene{position:fixed;inset:0;z-index:-3;background:#112e34;overflow:hidden}
 .scene-photo{position:absolute;inset:0;background-position:right center;background-size:auto 100%;background-repeat:no-repeat;opacity:0;transform:scale(1.025);transition:opacity .7s ease,transform .9s ease}
 .scene-leafy{background-image:var(--scene-leafy)}
-.scene-autumn{background-image:var(--scene-autumn)}
-body[data-scene="leafy"] .scene-leafy,body[data-scene="autumn"] .scene-autumn{opacity:1;transform:scale(1)}
+.scene-night-sign{background-image:var(--scene-night-sign)}
+.scene-day-elevated{background-image:var(--scene-day-elevated)}
+.scene-night{background-image:var(--scene-night)}
+.scene-sunset{background-image:var(--scene-sunset)}
+.scene-night-low-angle{background-image:var(--scene-night-low-angle)}
+body[data-scene="leafy"] .scene-leafy,body[data-scene="night-sign"] .scene-night-sign,body[data-scene="day-elevated"] .scene-day-elevated,body[data-scene="night"] .scene-night,body[data-scene="sunset"] .scene-sunset,body[data-scene="night-low-angle"] .scene-night-low-angle{opacity:1;transform:scale(1)}
 .scene:before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(270deg,rgba(8,33,37,.46) 0%,rgba(8,33,37,.54) 38%,rgba(8,33,37,.94) 68%,#112e34 100%)}
 .scene:after{content:'';position:absolute;inset:0;z-index:2;background:linear-gradient(0deg,rgba(7,33,37,.9),transparent 70%)}
 .diagonal{position:fixed;inset:0 42% 0 0;z-index:-2;background:linear-gradient(225deg,rgba(15,41,47,.73),rgba(12,34,39,.95));clip-path:polygon(0 0,82% 0,100% 100%,0 100%);border-top:3px solid #00af9d44}
@@ -222,11 +226,11 @@ body[data-scene="leafy"] .scene-leafy,body[data-scene="autumn"] .scene-autumn{op
 .bulk-invites{margin:24px 0;padding:16px;border:1px solid var(--border);border-radius:14px}.bulk-invites summary{cursor:pointer;color:var(--teal-dark);margin-bottom:16px}#invite-results{margin-top:22px}#invite-results input{font-size:11px}#connection-status{margin-bottom:20px}
 </style>
   <script src="site-config.js?v=b137131e62" defer></script>
-  <script src="app-live.js?v=f8abe3ecf1" defer></script>
+  <script src="app-live.js?v=b2e7c4e194" defer></script>
 </head>
 <body data-scene="leafy">
   <a class="skip-link" href="#main">رفتن به محتوای اصلی</a>
-  <div class="scene" aria-hidden="true"><div class="scene-photo scene-leafy"></div><div class="scene-photo scene-autumn"></div></div>
+  <div class="scene" aria-hidden="true"><div class="scene-photo scene-leafy"></div><div class="scene-photo scene-night-sign"></div><div class="scene-photo scene-day-elevated"></div><div class="scene-photo scene-night"></div><div class="scene-photo scene-sunset"></div><div class="scene-photo scene-night-low-angle"></div></div>
   <div class="diagonal" aria-hidden="true"></div>
   <div class="site-wrap">
     <header class="site-header">
