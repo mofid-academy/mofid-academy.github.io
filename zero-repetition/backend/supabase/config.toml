@@ -1,0 +1,4 @@
+[functions.zero-repetition-api]
+# The handler validates the existing signed invitations and administrator secret.
+# No Supabase user JWT or browser service key is used.
+verify_jwt = false

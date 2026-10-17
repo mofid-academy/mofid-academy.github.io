@@ -10,10 +10,12 @@
   const labels = ['مشخصات', 'کار اول', 'کار دوم', 'کار سوم', 'بازبینی'];
   const blankTask = () => ({title:'', steps:'', count:'', frequency:'daily', minutes:'', tools:'', human_decision:''});
   const blankSurvey = () => ({full_name:'', department:'', job_title:'', tasks:[blankTask(),blankTask(),blankTask()], revision:0, status:'draft'});
-  const state = {user:null, survey:blankSurvey(), step:0, dirty:false, busy:false, responses:[], accounts:[], isAdmin:false};
+  const state = {user:null, survey:blankSurvey(), step:0, dirty:false, busy:false, responses:[], accounts:[], isAdmin:false, sheetsConfigured:false};
   let toastTimer;
   let apiToken='',inviteToken='',loginMode='participant',apiReady=false,pendingSave=null;
   const config=window.ZERO_REPETITION_CONFIG || {};
+  const tools=window.ZERO_REPETITION_TOOLS;
+  let currentMatches=[];
 
   function setBackground(step = 0) {
     const scenes = ['leafy', 'night-sign', 'day-elevated', 'night', 'sunset', 'night-low-angle'];
@@ -40,7 +42,7 @@
     if(!config.apiUrl)throw new Error('اتصال سامانه هنوز فعال نشده است.');
     const url=new URL(config.apiUrl);
     if(url.protocol!=='https:')throw new Error('آدرس اتصال سامانه معتبر نیست.');
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),90000);
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),body.action==='sheets_sync'?45000:15000);
     try{
       const res=await fetch(url.href,{method:'POST',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',signal:controller.signal,headers:{'Content-Type':'text/plain;charset=UTF-8',Accept:binary?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'application/json'},body:JSON.stringify(body)});
       const type=res.headers.get('Content-Type') || '';
@@ -68,9 +70,10 @@
     else if(path==='/api/admin/accounts')action=method==='GET'?'invites_list':'invite_create';
     else if(path==='/api/admin/reopen')action='reopen';
     else if(path==='/api/admin/invite-reset')action='invite_reset';
+    else if(path==='/api/admin/sheets-sync')action='sheets_sync';
     else throw new Error('عملیات معتبر نیست.');
     const body={action,token,data:payload};
-    if(['survey_save','reopen','invite_create','invite_reset'].includes(action)){
+    if(['survey_save','reopen','invite_create','invite_reset','sheets_sync'].includes(action)){
       if(action==='survey_save'){
         const signature=JSON.stringify(payload);
         if(!pendingSave || pendingSave.signature!==signature)pendingSave={signature,id:crypto.randomUUID()};
@@ -92,7 +95,7 @@
     $('#login-submit').textContent=admin?'ورود به مدیریت ←':'ورود به پرسشنامه ←';
     $('#login-submit').disabled=!apiReady || (!admin&&!inviteToken);
     $('#login-intro').textContent=admin?'با نام کاربری و رمز اختصاصی مدیریت وارد شوید.':'نام کاربری سازمانی خود را وارد کنید؛ مثلاً M.mirsheri.';
-    $('#login-foot-text').textContent=admin?'دسترسی مدیریت فقط با رمز اختصاصی مسئول طرح فعال می‌شود.':'هر لینک فقط به پاسخ همان همکار دسترسی دارد. پاسخ‌ها در شیت خصوصی طرح نگهداری می‌شوند.';
+    $('#login-foot-text').textContent=admin?'دسترسی مدیریت فقط با رمز اختصاصی مسئول طرح فعال می‌شود.':'هر لینک فقط به پاسخ همان همکار دسترسی دارد. پاسخ‌ها در پایگاه‌دادهٔ خصوصی سامانه نگهداری می‌شوند.';
     $('#participant-entry-button').hidden=admin===false;
     errorBox('','login-error');
   }
@@ -159,9 +162,9 @@
     setBackground(state.step);
     if(state.survey.status==='submitted') return renderReceipt();
     document.body.classList.remove('is-admin');
-    $('#app-content').innerHTML=`<div class="card form-card${turn > 0 ? ' turn-forward' : turn < 0 ? ' turn-back' : ''}"><div class="form-heading"><div><div class="card-kicker"><span class="status-dot"></span> پرسشنامه شناسایی فعالیت‌ها</div><h2>سه کار تا یک تغییر</h2></div><span class="status-pill">پیش‌نویس</span></div>${stepper()}<form id="survey-form" class="question-panel">${state.step===0?information():state.step<4?taskForm(state.step-1):review()}<div id="form-error" class="error-box" role="alert" hidden></div><div class="form-actions"><button type="button" class="button quiet" id="save-draft">ذخیره پیش‌نویس</button><div class="form-actions-group">${state.step>0?'<button type="button" class="button secondary" id="previous-step">مرحله قبل</button>':''}<button type="submit" class="button primary" id="next-step">${state.step===4?'ثبت نهایی پاسخ‌ها':'ذخیره و ادامه'} <span aria-hidden="true">←</span></button></div></div><div class="save-indicator" id="save-indicator">${state.survey.updated_at?'آخرین ذخیره: '+new Date(state.survey.updated_at).toLocaleString('fa-IR'):'پاسخ‌های شما پس از ذخیره در حساب‌تان نگهداری می‌شود.'}</div></form></div>`;
+    $('#app-content').innerHTML=`<div class="card form-card${turn > 0 ? ' turn-forward' : turn < 0 ? ' turn-back' : ''}"><div class="form-heading"><div><div class="card-kicker"><span class="status-dot"></span> پرسشنامه شناسایی فعالیت‌ها</div><h2>سه کار تا یک تغییر</h2></div><span class="status-pill">پیش‌نویس</span></div>${stepper()}<form id="survey-form" class="question-panel">${state.step===0?information():state.step<4?taskForm(state.step-1):review()}<div id="form-error" class="error-box" role="alert" hidden></div><div class="form-actions"><button type="button" class="button quiet" id="save-draft">ذخیره پیش‌نویس</button><div class="form-actions-group">${state.step>0?'<button type="button" class="button secondary" id="previous-step">مرحله قبل</button>':''}<button type="submit" class="button primary" id="next-step">${state.step===4?'ثبت نهایی پاسخ‌ها':'ادامه'} <span aria-hidden="true">←</span></button></div></div><div class="save-indicator" id="save-indicator">${state.survey.updated_at?'آخرین ذخیره: '+new Date(state.survey.updated_at).toLocaleString('fa-IR'):'برای نگهداری دائمی، ذخیره پیش‌نویس یا ثبت نهایی را بزنید.'}</div></form></div>`;
     $('#survey-form').oninput=()=>{state.dirty=true;$('#save-indicator').textContent='تغییرات جدید هنوز ذخیره نشده است.';};
-    $('#survey-form').onsubmit=async e=>{e.preventDefault();capture();if(state.step===4){if(!$('#confirm-survey').checked)return;return save('submit');}const saved=await save('draft',false);if(saved){state.step++;renderForm(1);focusStep();}};
+    $('#survey-form').onsubmit=async e=>{e.preventDefault();capture();if(state.step===4){if(!$('#confirm-survey').checked)return;return save('submit');}state.step++;renderForm(1);focusStep();};
     $('#save-draft').onclick=()=>save('draft');
     $('#previous-step')?.addEventListener('click',()=>{capture();state.step--;renderForm(-1);focusStep();});
     $$('[data-step]').forEach(button=>button.onclick=()=>{capture();const nextStep=+button.dataset.step;const turn=Math.sign(nextStep-state.step);state.step=nextStep;renderForm(turn);focusStep();});
@@ -201,25 +204,30 @@
     state.isAdmin=true;updateHeader();
     $('#app-content').innerHTML='<div class="card admin-card"><p class="muted">در حال دریافت پاسخ‌ها…</p></div>';
     try{
-      const data=await request('/api/admin/responses');state.responses=data.responses;
+      const data=await request('/api/admin/responses');state.responses=data.responses;state.sheetsConfigured=Boolean(data.sheets_configured);
       renderAdmin(data);
     }catch(e){$('#app-content').innerHTML='<div class="card admin-card"><p>دریافت پاسخ‌ها انجام نشد.</p><button class="button secondary" id="retry-admin" type="button">تلاش دوباره</button></div>';$('#retry-admin').onclick=loadAdmin;toast(e.message,true);}
   }
   function renderAdmin(data) {
     const submitted=state.responses.filter(s=>s.status==='submitted');
     const departments=[...new Set(state.responses.map(s=>s.department).filter(Boolean))].sort();
-    $('#app-content').innerHTML=`<div class="card admin-card"><div class="admin-title-row"><div><div class="card-kicker"><span class="status-dot"></span> پنل مدیریت طرح</div><h2>فرصت‌ها از همین‌جا شروع می‌شوند.</h2><p>پاسخ‌های همکاران، در یک نمای منظم و قابل جست‌وجو.</p></div><div class="admin-buttons"><button class="button secondary" type="button" id="accounts-button">مدیریت حساب‌ها</button><button class="button primary" type="button" id="export-button">دریافت اکسل ↓</button></div></div><div class="stats"><div class="stat"><span class="stat-label">پاسخ ثبت نهایی</span><span class="stat-value">${fa(submitted.length)}<span class="stat-unit">نفر</span></span></div><div class="stat"><span class="stat-label">فعالیت ثبت‌شده</span><span class="stat-value">${fa(submitted.length*3)}<span class="stat-unit">فعالیت</span></span></div><div class="stat"><span class="stat-label">حساب‌های شرکت‌کننده</span><span class="stat-value">${fa(data.registered_users)}<span class="stat-unit">نفر</span></span></div><div class="stat"><span class="stat-label">زمان فعالیت‌های ثبت‌شده در ماه</span><span class="stat-value">${fa(submitted.reduce((sum,s)=>sum+surveyHours(s),0))}<span class="stat-unit">ساعت</span></span></div></div><div class="filters"><input class="filter-input" id="response-search" placeholder="جست‌وجوی نام، نام کاربری یا عنوان فعالیت…" aria-label="جست‌وجو"><select class="filter-select" id="department-filter" aria-label="واحد"><option value="">همه واحدها</option>${departments.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('')}</select><select class="filter-select" id="status-filter" aria-label="وضعیت پاسخ"><option value="">همه وضعیت‌ها</option><option value="submitted">ثبت نهایی</option><option value="draft">پیش‌نویس</option></select></div><div class="table-scroll"><table class="responses-table"><thead><tr><th>نام و نام کاربری سازمانی</th><th>واحد</th><th>فعالیت‌ها</th><th>زمان ماهانه</th><th>وضعیت پاسخ</th><th>ثبت در شیت</th><th>جزئیات</th></tr></thead><tbody id="response-rows"></tbody></table><div class="empty-state" id="empty-state" hidden><strong>هنوز پاسخی در این نما نیست.</strong>با تغییر فیلترها یا دریافت پاسخ‌های جدید، موارد اینجا نمایش داده می‌شود.</div></div><div class="table-foot"><span id="table-count"></span><span>زمان ماهانه، برآورد فعالیت‌هاست؛ معادل صرفه‌جویی قطعی نیست.</span></div><div class="integration-note"><span>پاسخ‌ها در شیت خصوصی طرح ذخیره می‌شوند.</span></div></div>`;
+    const positions=[...new Set(state.responses.map(s=>s.job_title).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fa'));
+    $('#app-content').innerHTML=`<div class="card admin-card"><div class="admin-title-row"><div><div class="card-kicker"><span class="status-dot"></span> پنل مدیریت طرح</div><h2>فرصت‌ها از همین‌جا شروع می‌شوند.</h2><p>پاسخ‌های همکاران، در یک نمای منظم و قابل جست‌وجو.</p></div><div class="admin-buttons"><button class="button secondary" type="button" id="accounts-button">مدیریت حساب‌ها</button><button class="button secondary" type="button" id="refresh-responses">به‌روزرسانی</button><button class="button secondary" type="button" id="sync-sheets-button">ارسال این نما به شیت</button><button class="button primary" type="button" id="export-button">اکسل این نما ↓</button></div></div><div class="stats"><div class="stat"><span class="stat-label">پاسخ ثبت نهایی</span><span class="stat-value">${fa(submitted.length)}<span class="stat-unit">نفر</span></span></div><div class="stat"><span class="stat-label">فعالیت ثبت‌شده</span><span class="stat-value">${fa(submitted.length*3)}<span class="stat-unit">فعالیت</span></span></div><div class="stat"><span class="stat-label">حساب‌های شرکت‌کننده</span><span class="stat-value">${fa(data.registered_users)}<span class="stat-unit">نفر</span></span></div><div class="stat"><span class="stat-label">زمان فعالیت‌های ثبت‌شده در ماه</span><span class="stat-value">${fa(submitted.reduce((sum,s)=>sum+surveyHours(s),0))}<span class="stat-unit">ساعت</span></span></div></div><div class="filters"><input class="filter-input" id="response-search" placeholder="جست‌وجوی نام، نام کاربری یا عنوان فعالیت…" aria-label="جست‌وجو"><select class="filter-select" id="department-filter" aria-label="واحد"><option value="">همه واحدها</option>${departments.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('')}</select><select class="filter-select" id="position-filter" aria-label="پوزیشن"><option value="">همه پوزیشن‌ها</option>${positions.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('')}<option value="__empty__">سمت وارد نشده</option></select><select class="filter-select" id="status-filter" aria-label="وضعیت پاسخ"><option value="">همه وضعیت‌ها</option><option value="submitted">ثبت نهایی</option><option value="draft">پیش‌نویس</option></select></div><div class="table-scroll"><table class="responses-table"><thead><tr><th>نام و نام کاربری سازمانی</th><th>واحد</th><th>پوزیشن / سمت</th><th>فعالیت‌ها</th><th>زمان ماهانه</th><th>وضعیت پاسخ</th><th>ثبت در شیت</th><th>جزئیات</th></tr></thead><tbody id="response-rows"></tbody></table><div class="empty-state" id="empty-state" hidden><strong>هنوز پاسخی در این نما نیست.</strong>با تغییر فیلترها یا دریافت پاسخ‌های جدید، موارد اینجا نمایش داده می‌شود.</div></div><div class="table-foot"><span id="table-count"></span><span>زمان ماهانه، برآورد فعالیت‌هاست؛ معادل صرفه‌جویی قطعی نیست.</span></div><div class="integration-note"><span>${state.sheetsConfigured?'پاسخ‌ها در سامانه محفوظ‌اند. ارسال این نمای فیلترشده به شیت، اختیاری است.':'پاسخ‌ها در سامانه محفوظ‌اند. اتصال اختیاری شیت هنوز تنظیم نشده است.'}</span></div></div>`;
     $('#response-search').oninput=renderRows;
     $('#department-filter').onchange=renderRows;
     $('#status-filter').onchange=renderRows;
+    $('#position-filter').onchange=renderRows;
+    $('#refresh-responses').onclick=loadAdmin;
+    $('#sync-sheets-button').onclick=syncSheets;
     $('#accounts-button').onclick=loadAccounts;
     $('#export-button').onclick=exportExcel;
     renderRows();
   }
   function renderRows() {
-    const q=$('#response-search').value.trim().toLowerCase(),dept=$('#department-filter').value,status=$('#status-filter').value;
-    const matches=state.responses.filter(s=>(!dept||s.department===dept)&&(!status||s.status===status)&&(!q||[s.full_name,s.username,...s.tasks.map(t=>t.title)].join(' ').toLowerCase().includes(q)));
-    $('#response-rows').innerHTML=matches.map(s=>`<tr><td class="person-cell"><b>${esc(s.full_name || 'نام وارد نشده')}</b><small dir="ltr">${esc(s.username)}</small></td><td>${esc(s.department || '—')}</td><td>${fa(s.tasks.filter(t=>t.title).length)} فعالیت</td><td>${fa(surveyHours(s))} ساعت</td><td>${pill(s.status)}</td><td>${pill(s.sync_state)}</td><td><button type="button" class="table-button" data-detail="${esc(s.id)}">مشاهده ←</button></td></tr>`).join('');
+    const matches=tools.selectResponses(state.responses,{query:$('#response-search').value,department:$('#department-filter').value,job_title:$('#position-filter').value,status:$('#status-filter').value});
+    currentMatches=matches;
+    $('#sync-sheets-button').disabled=!state.sheetsConfigured||!matches.length;
+    $('#response-rows').innerHTML=matches.map(s=>`<tr><td class="person-cell"><b>${esc(s.full_name || 'نام وارد نشده')}</b><small dir="ltr">${esc(s.username)}</small></td><td>${esc(s.department || '—')}</td><td>${esc(s.job_title || '—')}</td><td>${fa(s.tasks.filter(t=>t.title).length)} فعالیت</td><td>${fa(surveyHours(s))} ساعت</td><td>${pill(s.status)}</td><td>${pill(s.sync_state)}</td><td><button type="button" class="table-button" data-detail="${esc(s.id)}">مشاهده ←</button></td></tr>`).join('');
     $('#empty-state').hidden=matches.length>0;$('#table-count').textContent=`نمایش ${fa(matches.length)} پاسخ از ${fa(state.responses.length)}`;
     $$('[data-detail]').forEach(b=>b.onclick=()=>showDetail(b.dataset.detail));
   }
@@ -238,8 +246,15 @@
   }
   async function exportExcel() {
     const button=$('#export-button');button.disabled=true;
-    try{const blob=await apiCall({action:'export',token:apiToken},{binary:true});downloadBlob(blob,'Zero-Repetition-Responses-'+new Date().toISOString().slice(0,10)+'.xlsx');toast('فایل اکسل آماده شد.');}
+    try{const bytes=tools.buildXlsx(currentMatches);downloadBlob(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'Zero-Repetition-Responses-'+new Date().toISOString().slice(0,10)+'.xlsx');toast('اکسل همین نمای فیلترشده آماده شد.');}
     catch(e){toast(e.message,true);}finally{button.disabled=false;}
+  }
+  async function syncSheets(){
+    const button=$('#sync-sheets-button');button.disabled=true;
+    const ids=currentMatches.map(s=>s.id);
+    try{const result=await request('/api/admin/sheets-sync','POST',{ids});toast(fa(result.count)+' پاسخ به شیت ارسال شد.');}
+    catch(e){toast(e.message,true);}
+    finally{await loadAdmin();}
   }
   async function loadAccounts() {
     try{
@@ -268,7 +283,7 @@
     if(!Array.isArray(invites)||!invites.length)return;
     $('#invite-results').innerHTML=`<div class="soft-note"><strong>لینک‌ها آماده‌اند.</strong><p>هر لینک را فقط برای همان همکار بفرستید.</p><button type="button" class="button secondary" id="download-invites">دریافت فهرست لینک‌ها</button></div>${invites.map((p,i)=>`<label class="field"><span>${esc(p.full_name)} · <bdi>${esc(p.username)}</bdi></span><input dir="ltr" type="text" readonly value="${esc(p.url)}" id="invite-link-${i}"><button class="button secondary" type="button" data-copy-invite="${i}">کپی لینک</button></label>`).join('')}`;
     $$('[data-copy-invite]').forEach(b=>b.onclick=async()=>{const input=$('#invite-link-'+b.dataset.copyInvite);try{await navigator.clipboard.writeText(input.value);toast('لینک کپی شد.');}catch{input.focus();input.select();toast('لینک را از کادر انتخاب‌شده کپی کنید.');}});
-    $('#download-invites').onclick=()=>{const safe=v=>{v=String(v??'');if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replaceAll('"','""')+'"';};const rows=[['نام و نام خانوادگی','ایمیل','واحد','لینک اختصاصی'],...invites.map(p=>[p.full_name,p.username,p.department,p.url])];downloadBlob(new Blob(['\uFEFF'+rows.map(r=>r.map(safe).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}),'Zero-Repetition-Private-Invites.csv');};
+    $('#download-invites').onclick=()=>{const safe=v=>{v=String(v??'');if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replaceAll('"','""')+'"';};const rows=[['نام و نام خانوادگی','نام کاربری سازمانی','واحد','لینک اختصاصی'],...invites.map(p=>[p.full_name,p.username,p.department,p.url])];downloadBlob(new Blob(['\uFEFF'+rows.map(r=>r.map(safe).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}),'Zero-Repetition-Private-Invites.csv');};
     $('#invite-results').scrollIntoView({block:'nearest',behavior:'smooth'});
   }
   function renderAccounts() {
@@ -291,16 +306,16 @@
     inviteToken=fragment.get('invite') || '';
     if(location.hash==='#admin')loginMode='admin';
     if(inviteToken)history.replaceState(null,'',location.pathname+location.search);
-    setLoginMode(loginMode);updateHeader();
+    apiReady=Boolean(config.apiUrl);setLoginMode(loginMode);updateHeader();
     const status=$('#connection-status');
     if(!config.apiUrl){status.textContent='اتصال ثبت پاسخ‌ها در حال آماده‌سازی است.';return;}
     status.textContent='در حال اتصال به سامانه…';
     try{
       const data=await apiCall({action:'health'});
-      if(data.apiVersion!=='zero-repetition/2'||data.ready!==true)throw new Error('تنظیمات اتصال سامانه کامل نیست.');
-      apiReady=true;status.hidden=true;setLoginMode(loginMode);
+      if(data.apiVersion!=='zero-repetition/3'||data.ready!==true)throw new Error('تنظیمات اتصال سامانه کامل نیست.');
+      status.hidden=true;
       if(inviteToken&&loginMode==='participant')$('#login-username').focus({preventScroll:true});
-    }catch(e){status.textContent='اتصال به سامانه برقرار نشد؛ پاسخ جدیدی ثبت نمی‌شود.';errorBox(e.message,'login-error');}
+    }catch(e){status.textContent='بررسی اتصال انجام نشد. می‌توانید ورود را دوباره امتحان کنید.';}
   }
   initialize();
 })();

@@ -1,2 +1,3 @@
 'use strict';
-window.ZERO_REPETITION_CONFIG=Object.freeze({apiUrl:'https://zerorepetition.app.n8n.cloud/webhook/zero-repetition-api'});
+// Set only after the private database API has been deployed and verified.
+window.ZERO_REPETITION_CONFIG=Object.freeze({apiUrl:''});

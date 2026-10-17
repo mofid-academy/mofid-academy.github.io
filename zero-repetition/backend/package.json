@@ -1,0 +1,13 @@
+{
+  "name": "zero-repetition-private-backend",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/database-api.test.mjs tests/frontend.test.cjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
+    "exceljs": "4.4.0"
+  }
+}
