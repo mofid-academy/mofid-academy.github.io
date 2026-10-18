@@ -226,6 +226,7 @@ body[data-scene="leafy"] .scene-leafy,body[data-scene="night-sign"] .scene-night
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
 .resume-note{margin-top:16px;background:rgba(255,255,255,.88);border-radius:16px;padding:18px 22px}.resume-note p{margin:0 0 10px}.resume-note input{margin-top:12px;font-size:11px}.bulk-invites{margin:24px 0;padding:16px;border:1px solid var(--border);border-radius:14px}.bulk-invites summary{cursor:pointer;color:var(--teal-dark);margin-bottom:16px}#invite-results{margin-top:22px}#invite-results input{font-size:11px}#connection-status{margin-bottom:20px}
 .delete-user-button{color:#b91c2b!important;border-color:rgba(243,39,53,.28)!important}
+#login-username::-webkit-search-cancel-button{-webkit-appearance:none}
 #login-username::placeholder{color:#000;opacity:1}
 .scene-night-sign{background-position:calc(100% + clamp(120px,16vw,280px)) center}
 .activity-options{display:grid;gap:16px;margin:24px 0}
@@ -237,7 +238,7 @@ body[data-scene="leafy"] .scene-leafy,body[data-scene="night-sign"] .scene-night
 </style>
   <script src="site-config.js?v=2e2632bec3" defer></script>
   <script src="response-tools.js?v=e00cc6d6ae" defer></script>
-  <script src="app-live.js?v=9283d397ed" defer></script>
+  <script src="app-live.js?v=32e0596e7c" defer></script>
 </head>
 <body data-scene="leafy">
   <a class="skip-link" href="#main">رفتن به محتوای اصلی</a>
@@ -275,7 +276,7 @@ body[data-scene="leafy"] .scene-leafy,body[data-scene="night-sign"] .scene-night
           <h2>زمان شما،<br><span class="text-teal">ارزشمندتر از تکرار است</span></h2>
           <p class="card-intro" id="login-intro">نام کاربری سازمانی خود را وارد کنید</p><div class="soft-note" id="connection-status" role="status">در حال اتصال به سامانه…</div>
           <form id="login-form" autocomplete="off">
-            <label class="field" id="login-username-field"><span>نام کاربری سازمانی</span><input type="text" name="organizational-handle" id="login-username" dir="ltr" placeholder="M.mirsheri" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" required><small>بدون بخش ایمیل وارد کنید</small></label>
+            <label class="field" id="login-username-field"><span>نام کاربری سازمانی</span><input type="search" readonly name="survey-handle" id="login-username" dir="ltr" placeholder="M.mirsheri" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" required><small>بدون بخش ایمیل وارد کنید</small></label>
             <label class="field" id="admin-password-field" hidden><span>رمز مدیریت</span><span class="password-wrap"><input type="password" name="password" id="login-password" autocomplete="current-password" maxlength="1024"><button id="toggle-password" type="button" class="password-toggle" aria-label="نمایش رمز عبور" aria-pressed="false">نمایش</button></span></label>
             <div id="login-error" class="error-box" role="alert" hidden></div>
             <button type="submit" class="button primary full" id="login-submit">شروع پرسشنامه <span aria-hidden="true">←</span></button>

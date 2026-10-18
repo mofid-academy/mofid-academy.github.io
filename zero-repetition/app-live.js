@@ -94,6 +94,10 @@
     $('#login-username-field').hidden=false;
     $('#login-username').required=true;
     $('#login-username').autocomplete=admin?'username':'off';
+    $('#login-username').type=admin?'text':'search';
+    $('#login-username').name=admin?'username':'survey-handle';
+    $('#login-password').disabled=!admin;
+    if(!admin&&!inviteToken){$('#login-username').value='';$('#login-username').readOnly=true;}else $('#login-username').readOnly=false;
     $('#login-password').required=admin;
     $('#login-password').value='';
     $('#login-submit').textContent=admin?'ورود به مدیریت ←':inviteToken?'ادامه پرسشنامه ←':'شروع پرسشنامه ←';
@@ -342,6 +346,13 @@
   $('#toggle-password').onclick=()=>{const input=$('#login-password'),show=input.type==='password';input.type=show?'text':'password';$('#toggle-password').textContent=show?'پنهان':'نمایش';$('#toggle-password').setAttribute('aria-pressed',String(show));};
   $('#admin-entry-button').onclick=()=>setLoginMode('admin');
   $('#participant-entry-button').onclick=()=>setLoginMode('participant');
+  function enableHandleEntry(){
+    const input=$('#login-username');
+    if(loginMode==='participant'&&!inviteToken&&input.readOnly){input.value='';input.readOnly=false;}
+  }
+  $('#login-username').addEventListener('focus',enableHandleEntry);
+  $('#login-username').addEventListener('pointerdown',enableHandleEntry);
+  $('#login-username').addEventListener('keydown',enableHandleEntry);
   $('#login-form').onsubmit=async e=>{
     e.preventDefault();errorBox('','login-error');if(!apiReady)return;$('#login-submit').disabled=true;
     try{
