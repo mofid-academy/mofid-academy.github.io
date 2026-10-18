@@ -288,7 +288,7 @@
   }
   async function exportExcel() {
     const button=$('#export-button');button.disabled=true;
-    try{const bytes=tools.buildXlsx(currentMatches);downloadBlob(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'Zero-Repetition-Responses-'+new Date().toISOString().slice(0,10)+'.xlsx');toast('اکسل همین نمای فیلترشده آماده شد');}
+    try{const bytes=tools.buildXlsx(currentMatches);downloadBlob(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'Zero-Repeat-Responses-'+new Date().toISOString().slice(0,10)+'.xlsx');toast('اکسل همین نمای فیلترشده آماده شد');}
     catch(e){toast(e.message,true);}finally{button.disabled=false;}
   }
   async function syncSheets(){
@@ -312,7 +312,7 @@
     if(!Array.isArray(invites)||!invites.length)return;
     $('#invite-results').innerHTML=`<div class="soft-note"><strong>لینک‌ها آماده‌اند</strong><p>هر لینک را فقط برای همان همکار بفرستید</p><button type="button" class="button secondary" id="download-invites">دریافت فهرست لینک‌ها</button></div>${invites.map((p,i)=>`<label class="field"><span>${esc(p.full_name)} · <bdi>${esc(p.username)}</bdi></span><input dir="ltr" type="text" readonly value="${esc(p.url)}" id="invite-link-${i}"><button class="button secondary" type="button" data-copy-invite="${i}">کپی لینک</button></label>`).join('')}`;
     $$('[data-copy-invite]').forEach(b=>b.onclick=async()=>{const input=$('#invite-link-'+b.dataset.copyInvite);try{await navigator.clipboard.writeText(input.value);toast('لینک کپی شد');}catch{input.focus();input.select();toast('لینک را از کادر انتخاب‌شده کپی کنید');}});
-    $('#download-invites').onclick=()=>{const safe=v=>{v=String(v??'');if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replaceAll('"','""')+'"';};const rows=[['نام و نام خانوادگی','نام کاربری سازمانی','واحد','لینک اختصاصی'],...invites.map(p=>[p.full_name,p.username,p.department,p.url])];downloadBlob(new Blob(['\uFEFF'+rows.map(r=>r.map(safe).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}),'Zero-Repetition-Private-Invites.csv');};
+    $('#download-invites').onclick=()=>{const safe=v=>{v=String(v??'');if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replaceAll('"','""')+'"';};const rows=[['نام و نام خانوادگی','نام کاربری سازمانی','واحد','لینک اختصاصی'],...invites.map(p=>[p.full_name,p.username,p.department,p.url])];downloadBlob(new Blob(['\uFEFF'+rows.map(r=>r.map(safe).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}),'Zero-Repeat-Private-Invites.csv');};
     $('#invite-results').scrollIntoView({block:'nearest',behavior:'smooth'});
   }
   function renderAccounts() {
