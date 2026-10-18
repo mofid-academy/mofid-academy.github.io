@@ -37,6 +37,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);bo
 .scene-night-low-angle{background-image:var(--scene-night-low-angle)}
 body[data-scene="leafy"] .scene-leafy,body[data-scene="night-sign"] .scene-night-sign,body[data-scene="day-elevated"] .scene-day-elevated,body[data-scene="night"] .scene-night,body[data-scene="sunset"] .scene-sunset,body[data-scene="night-low-angle"] .scene-night-low-angle{opacity:1;transform:scale(1)}
 .scene:before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(270deg,rgba(8,33,37,.46) 0%,rgba(8,33,37,.54) 38%,rgba(8,33,37,.94) 68%,#112e34 100%)}
+.scene-light{position:absolute;inset:-25%;z-index:3;pointer-events:none;background:linear-gradient(110deg,transparent 35%,rgba(189,255,239,.04) 43%,rgba(255,249,220,.23) 49%,rgba(200,255,241,.12) 53%,transparent 62%);mix-blend-mode:screen;opacity:0;transform:translateX(-110%);animation:building-light-pass 30s linear infinite}
+@keyframes building-light-pass{0%,89%{opacity:0;transform:translateX(-110%)}90%{opacity:0;transform:translateX(-110%)}92%{opacity:.85}97%{opacity:.85}100%{opacity:0;transform:translateX(110%)}}
 .scene:after{content:'';position:absolute;inset:0;z-index:2;background:linear-gradient(0deg,rgba(7,33,37,.9),transparent 70%)}
 .diagonal{position:fixed;inset:0 42% 0 0;z-index:-2;background:linear-gradient(225deg,rgba(15,41,47,.73),rgba(12,34,39,.95));clip-path:polygon(0 0,82% 0,100% 100%,0 100%);border-top:3px solid #00af9d44}
 .site-wrap{max-width:1600px;min-height:100vh;display:flex;flex-direction:column;margin:auto;padding:28px 64px 20px}
@@ -243,7 +245,7 @@ body[data-scene="leafy"] .scene-leafy,body[data-scene="night-sign"] .scene-night
 </head>
 <body data-scene="leafy">
   <a class="skip-link" href="#main">رفتن به محتوای اصلی</a>
-  <div class="scene" aria-hidden="true"><div class="scene-photo scene-leafy"></div><div class="scene-photo scene-night-sign"></div><div class="scene-photo scene-day-elevated"></div><div class="scene-photo scene-night"></div><div class="scene-photo scene-sunset"></div><div class="scene-photo scene-night-low-angle"></div></div>
+  <div class="scene" aria-hidden="true"><div class="scene-photo scene-leafy"></div><div class="scene-photo scene-night-sign"></div><div class="scene-photo scene-day-elevated"></div><div class="scene-photo scene-night"></div><div class="scene-photo scene-sunset"></div><div class="scene-photo scene-night-low-angle"></div><div class="scene-light"></div></div>
   <div class="diagonal" aria-hidden="true"></div>
   <div class="site-wrap">
     <header class="site-header">
@@ -275,7 +277,7 @@ body[data-scene="leafy"] .scene-leafy,body[data-scene="night-sign"] .scene-night
           <div class="card-kicker">طرح شناسایی فعالیت‌های تکراری</div>
           <p class="card-intro" id="login-intro">نام کاربری سازمانی خود را وارد کنید</p><div class="soft-note" id="connection-status" role="status">در حال اتصال به سامانه…</div>
           <form id="login-form" autocomplete="off">
-            <label class="field" id="login-username-field"><span>نام کاربری سازمانی</span><input type="search" readonly name="survey-handle" id="login-username" dir="ltr" placeholder="M.mirsheri" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" required><small>بدون بخش ایمیل وارد کنید</small></label>
+            <label class="field" id="login-username-field"><span>نام کاربری سازمانی</span><input type="search" readonly name="survey-handle" id="login-username" dir="ltr" placeholder="M.mirsheri" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" required><small>نام کاربری سازمانی خود را وارد کنید</small></label>
             <label class="field" id="admin-password-field" hidden><span>رمز مدیریت</span><span class="password-wrap"><input type="password" name="password" id="login-password" autocomplete="current-password" maxlength="1024"><button id="toggle-password" type="button" class="password-toggle" aria-label="نمایش رمز عبور" aria-pressed="false">نمایش</button></span></label>
             <div id="login-error" class="error-box" role="alert" hidden></div>
             <button type="submit" class="button primary full" id="login-submit">شروع پرسشنامه <span aria-hidden="true">←</span></button>
