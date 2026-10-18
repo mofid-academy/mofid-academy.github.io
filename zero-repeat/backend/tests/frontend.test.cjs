@@ -2,11 +2,11 @@
 const fs=require('node:fs'),vm=require('node:vm'),crypto=require('node:crypto'),assert=require('node:assert/strict');
 const tools=require('../../response-tools.js');
 const nodes=new Map();
-const element=key=>{if(!nodes.has(key))nodes.set(key,{value:'',hidden:false,disabled:false,innerHTML:'',textContent:'',dataset:{},open:false,insertAdjacentHTML(position,html){this.innerHTML+=html;},showModal(){this.open=true;},close(){this.open=false;},select(){},reset(){},querySelector:s=>element(s),querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},focus(){},scrollIntoView(){},addEventListener(){},setAttribute(){}});return nodes.get(key);};
+const element=key=>{if(!nodes.has(key))nodes.set(key,{value:'',hidden:false,disabled:false,innerHTML:'',textContent:'',dataset:{},open:false,listeners:{},insertAdjacentHTML(position,html){this.innerHTML+=html;},showModal(){this.open=true;},close(){this.open=false;},select(){},reset(){},querySelector:s=>element(s),querySelectorAll:()=>[],classList:{add(){},remove(){},toggle(){}},focus(){},scrollIntoView(){},addEventListener(type,fn){this.listeners[type]=fn;},setAttribute(){}});return nodes.get(key);};
 const document={body:{dataset:{},classList:{add(){},remove(){},toggle(){}}},querySelector:s=>element(s),querySelectorAll:s=>s==='[data-delete-user]'?[element('#delete-test')]:[],getElementById:id=>element('#'+id)};
 const requests=[],historyUrls=[];let respond=async()=>new Response(JSON.stringify({ok:false,code:'DATABASE_UNAVAILABLE',message:'offline'}),{status:503,headers:{'Content-Type':'application/json'}});
 const sandbox={document,window:{ZERO_REPETITION_CONFIG:{apiUrl:'https://database.invalid/functions/v1/zero-repetition-api'},ZERO_REPETITION_TOOLS:tools,addEventListener(){}},location:{origin:'https://mofid-academy.github.io',hash:'',pathname:'/zero-repetition/',search:''},history:{replaceState(a,b,url){historyUrls.push(url);}},URL,URLSearchParams,AbortController,Blob,Uint8Array,crypto:crypto.webcrypto,setTimeout,clearTimeout,FormData:class{},confirm:()=>true,
- fetch:async(url,options)=>{const body=JSON.parse(options.body);requests.push(body);return respond(body);}};
+ requestAnimationFrame:fn=>fn(),fetch:async(url,options)=>{const body=JSON.parse(options.body);requests.push(body);return respond(body);}};
 let source=fs.readFileSync('../app-live.js','utf8');
 source=source.replace('  initialize();','  globalThis.app={initialize,state,renderForm,renderAdmin,renderRows,getMatches:()=>currentMatches,loadAccounts};');
 vm.createContext(sandbox);vm.runInContext(source,sandbox);
@@ -15,6 +15,14 @@ vm.createContext(sandbox);vm.runInContext(source,sandbox);
  assert.equal(element('#login-submit').disabled,false);assert.equal(element('#admin-password-field').hidden,true);console.log('PASS public entry is enabled without an invitation, including after a failed health request');
  element('#login-username').value='Open.User';
  const submit=()=>element('#login-form').onsubmit({preventDefault(){}});
+ element('#guide-read').disabled=true;
+ assert.equal(element('#login-card').hidden,true);assert.equal(element('#event-guide').hidden,false);
+ const beforeGuide=requests.length;await submit();assert.equal(requests.length,beforeGuide);
+ element('#guide-continue').onclick();assert.equal(element('#login-card').hidden,true);
+ const scroll=element('#event-guide-scroll');scroll.clientHeight=300;scroll.scrollHeight=1200;scroll.scrollTop=0;scroll.listeners.scroll();assert.equal(element('#guide-read').disabled,true);
+ scroll.scrollTop=900;scroll.listeners.scroll();assert.equal(element('#guide-read').disabled,false);
+ element('#guide-read').checked=true;element('#guide-read').listeners.change();assert.equal(element('#guide-continue').disabled,false);
+ element('#guide-continue').onclick();assert.equal(element('#login-card').hidden,false);assert.equal(element('#event-guide').hidden,true);console.log('PASS guide requires reaching the end and confirming before public enrollment');
  respond=async()=>{throw new Error('temporary connection failure');};await submit();const firstStart=requests.at(-1);assert.equal(firstStart.action,'participant_start');assert.equal(firstStart.data.username,'open.user');assert.equal(firstStart.data.access_key.length,64);
  respond=async()=>Response.json({ok:true,user:{username:'open.user',full_name:'',department:'',is_admin:false},survey:null,token:'synthetic-open-private-token'});
  await submit();assert.deepEqual(requests.at(-1),firstStart);assert.equal(app.state.user.username,'open.user');assert(historyUrls.at(-1).includes('#invite=synthetic-open-private-token'));console.log('PASS a new visitor starts without manager setup and a connection retry preserves the same private claim');

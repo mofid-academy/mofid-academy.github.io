@@ -16,6 +16,20 @@
   const config=window.ZERO_REPETITION_CONFIG || {};
   const tools=window.ZERO_REPETITION_TOOLS;
   let currentMatches=[];
+  let guideAccepted=false;
+  function updateGuideGate(){
+    const needsGuide=!state.user&&loginMode==='participant'&&!inviteToken&&!guideAccepted;
+    $('#event-guide').hidden=!needsGuide;
+    $('#login-card').hidden=!!state.user||needsGuide;
+    if(needsGuide)requestAnimationFrame(checkGuideEnd);
+  }
+  function checkGuideEnd(){
+    const area=$('#event-guide-scroll');
+    if(!$('#event-guide').hidden&&area.clientHeight>0&&area.scrollHeight-area.scrollTop-area.clientHeight<=12){
+      $('#guide-read').disabled=false;
+      $('#guide-read-status').textContent='پس از تأیید مطالعه می‌توانید پرسشنامه را شروع کنید';
+    }
+  }
 
   function setBackground(step = 0) {
     const scenes = ['leafy', 'night-sign', 'day-elevated', 'night', 'sunset', 'night-low-angle'];
@@ -106,10 +120,11 @@
     $('#login-foot-text').textContent=admin?'دسترسی مدیریت فقط با رمز اختصاصی مسئول طرح فعال می‌شود':inviteToken?'این لینک برای ادامه و مشاهده پاسخ‌های شماست':'شرکت برای همه همکاران آزاد است؛ حساب شما هنگام شروع ساخته می‌شود. پاسخ‌ها عمومی نیستند';
     $('#participant-entry-button').hidden=admin===false;
     errorBox('','login-error');
+    updateGuideGate();
   }
   function updateHeader() {
     const logged = !!state.user;
-    $('#login-card').hidden=logged;
+    updateGuideGate();
     $('#app-content').hidden=!logged;
     $('#logout-button').hidden=!logged;
     $('#my-form-button').hidden=!logged || state.user.is_admin;
@@ -353,8 +368,16 @@
   $('#login-username').addEventListener('focus',enableHandleEntry);
   $('#login-username').addEventListener('pointerdown',enableHandleEntry);
   $('#login-username').addEventListener('keydown',enableHandleEntry);
+  $('#event-guide-scroll').addEventListener('scroll',checkGuideEnd,{passive:true});
+  window.addEventListener('resize',checkGuideEnd);
+  $('#guide-read').addEventListener('change',()=>{$('#guide-continue').disabled=$('#guide-read').disabled||!$('#guide-read').checked;});
+  $('#guide-continue').onclick=()=>{
+    if($('#guide-read').disabled||!$('#guide-read').checked)return;
+    guideAccepted=true;updateGuideGate();$('#login-username').focus({preventScroll:true});
+  };
   $('#login-form').onsubmit=async e=>{
     e.preventDefault();errorBox('','login-error');if(!apiReady)return;$('#login-submit').disabled=true;
+    if(loginMode==='participant'&&!inviteToken&&!guideAccepted){$('#login-submit').disabled=false;updateGuideGate();return;}
     try{
       const data=await request('/api/login','POST',{username:$('#login-username').value.trim().toLowerCase(),password:$('#login-password').value});
       if(loginMode==='admin')apiToken=data.token;
