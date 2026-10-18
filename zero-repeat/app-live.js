@@ -102,7 +102,7 @@
     $('#login-password').value='';
     $('#login-submit').textContent=admin?'ورود به مدیریت ←':inviteToken?'ادامه پرسشنامه ←':'شروع پرسشنامه ←';
     $('#login-submit').disabled=!apiReady;
-    $('#login-intro').textContent=admin?'با نام کاربری و رمز اختصاصی مدیریت وارد شوید':'نام کاربری سازمانی خود را وارد کنید';
+    $('#login-intro').textContent=admin?'با نام کاربری و رمز اختصاصی مدیریت وارد شوید':'نام سازمانی خود را وارد کنید';
     $('#login-foot-text').textContent=admin?'دسترسی مدیریت فقط با رمز اختصاصی مسئول طرح فعال می‌شود':inviteToken?'این لینک برای ادامه و مشاهده پاسخ‌های شماست':'شرکت برای همه همکاران آزاد است؛ حساب شما هنگام شروع ساخته می‌شود. پاسخ‌ها عمومی نیستند';
     $('#participant-entry-button').hidden=admin===false;
     errorBox('','login-error');
