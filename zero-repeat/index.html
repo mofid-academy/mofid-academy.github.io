@@ -44,7 +44,7 @@ body[data-scene="leafy"] .scene-leafy,body[data-scene="night-sign"] .scene-night
 .site-wrap{max-width:1600px;min-height:100vh;display:flex;flex-direction:column;margin:auto;padding:28px 64px 20px}
 .site-header{display:flex;align-items:center;justify-content:space-between;gap:25px;color:white;min-height:95px}
 .brand{display:flex;align-items:center;gap:17px;flex-shrink:0}
-.logo-box{width:86px;height:86px;background:#fff;border-radius:19px;display:grid;place-items:center;box-shadow:0 8px 25px #0002;overflow:hidden}
+.logo-box{width:72px;height:72px;background:#fff;border-radius:17px;display:grid;place-items:center;box-shadow:0 8px 25px #0002;overflow:hidden}
 .logo-box img{width:100%;height:100%;object-fit:contain}
 .brand-name{display:block;font-size:20px;font-weight:700;letter-spacing:-.5px}
 .brand-sub{display:block;font-size:12px;color:#c3d7d4;margin-top:2px}
@@ -250,7 +250,7 @@ body[data-scene="leafy"] .scene-leafy,body[data-scene="night-sign"] .scene-night
   <div class="site-wrap">
     <header class="site-header">
       <a class="brand" href="#" aria-label="صفحه نخست طرح تکرار صفر">
-        <span class="logo-box"><img src="brand/logo.webp" width="92" height="92" alt="لوگوی مفید آکادمی"></span>
+        <span class="logo-box"><img src="brand/logo.webp" width="78" height="78" alt="لوگوی مفید آکادمی"></span>
         <span class="brand-text"><span class="brand-name">مفید آکادمی</span><span class="brand-sub">Zero repeat</span></span>
       </a>
       <nav class="header-nav" aria-label="منوی اصلی">
@@ -274,10 +274,9 @@ body[data-scene="leafy"] .scene-leafy,body[data-scene="night-sign"] .scene-night
       </aside>
       <section class="workspace" aria-live="polite" aria-label="پرسشنامه" id="workspace">
         <div class="card login-card" id="login-card">
-          <div class="card-kicker">طرح شناسایی فعالیت‌های تکراری</div>
           <p class="card-intro" id="login-intro">نام کاربری سازمانی خود را وارد کنید</p><div class="soft-note" id="connection-status" role="status">در حال اتصال به سامانه…</div>
           <form id="login-form" autocomplete="off">
-            <label class="field" id="login-username-field"><span>نام کاربری سازمانی</span><input type="search" readonly name="survey-handle" id="login-username" dir="ltr" placeholder="M.mirsheri" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" required><small>نام کاربری سازمانی خود را وارد کنید</small></label>
+            <label class="field" id="login-username-field"><span>نام سازمانی</span><input type="search" readonly name="survey-handle" id="login-username" dir="ltr" placeholder="M.mirsheri" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" required><small>نام سازمانی خود را وارد کنید</small></label>
             <label class="field" id="admin-password-field" hidden><span>رمز مدیریت</span><span class="password-wrap"><input type="password" name="password" id="login-password" autocomplete="current-password" maxlength="1024"><button id="toggle-password" type="button" class="password-toggle" aria-label="نمایش رمز عبور" aria-pressed="false">نمایش</button></span></label>
             <div id="login-error" class="error-box" role="alert" hidden></div>
             <button type="submit" class="button primary full" id="login-submit">شروع پرسشنامه <span aria-hidden="true">←</span></button>
