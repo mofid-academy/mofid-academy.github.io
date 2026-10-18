@@ -38,7 +38,7 @@ Only the administrator's explicit button invokes n8n. Transfers use fixed partic
 
 ## Access and storage
 
-- zr_accounts: up to 300 unique usernames and invitation identifiers.
+- zr_accounts: up to 300 independent registrations with unique IDs; usernames may repeat.
 - zr_responses: canonical answers, status, revision and optional synchronization status.
 - zr_requests: scoped transaction receipts prevent duplicate writes.
 - zr_sync_jobs: manual-transfer snapshots and leases.
@@ -60,3 +60,5 @@ The browser creates OOXML directly, needs no CDN or Google call, and writes user
 
 ## حذف حساب توسط مدیر
 پس از اسکیما اولیه، `sql/account-delete.sql` را اعمال کنید. عملیات `account_delete` فقط با توکن مدیر قابل اجراست و حساب، پاسخ، رسیدهای ذخیره مرتبط و محتوای آن فرد در snapshotهای انتقال را پاک می‌کند. شناسه حذف‌شده بدون نام و پاسخ نگهداری می‌شود تا درخواست قدیمی حساب را احیا نکند. حذف با انتقال در حال اجرا تداخل نمی‌کند. نسخه‌های قبلی در شیت و اکسل حذف نمی‌شوند؛ تخصیص مجدد جایگاه و ارسال پاسخ جدید می‌تواند ردیف قبلی شیت را جایگزین کند.
+
+Apply `sql/repeat-submissions.sql` after `sql/account-delete.sql` to allow repeated public submissions. Each fresh start gets its own ID, private capability and Sheets slot. Retrying the same request remains idempotent.
