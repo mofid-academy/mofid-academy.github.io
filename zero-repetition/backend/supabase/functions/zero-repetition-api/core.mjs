@@ -18,18 +18,27 @@ const requireId=id=>{if(!uuid(id))fail('INVALID_ID','شناسه معتبر نی�
 const publicAccount=a=>({id:a.id,slot:a.slot,username:a.username,full_name:a.full_name,department:a.department,is_active:a.is_active});
 
 export function normalizeSurvey(input,owner,final){
-  if(!input||typeof input!=='object'||!Array.isArray(input.tasks)||input.tasks.length!==3)fail('THREE_TASKS','دقیقاً سه فعالیت وارد کنید.');
-  const number=(value,integer=false)=>{
-    if(value===''||value===null||value===undefined){if(final)fail('REQUIRED_NUMBER','تعداد دفعات و زمان را وارد کنید.');return '';}
-    if(!['number','string'].includes(typeof value))fail('INVALID_NUMBER','تعداد یا زمان معتبر نیست.');
-    const n=Number(value);if(!Number.isFinite(n)||n<(integer?1:.01)||n>100000||(integer&&!Number.isInteger(n)))fail('INVALID_NUMBER','تعداد یا زمان معتبر نیست.');return n;
+  if(!input||typeof input!=='object'||!Array.isArray(input.tasks)||input.tasks.length>3)fail('INVALID_TASKS','حداکثر سه فعالیت وارد کنید');
+  if(input.no_repetitive_tasks!==undefined&&typeof input.no_repetitive_tasks!=='boolean')fail('INVALID_INPUT','انتخاب وضعیت فعالیت معتبر نیست');
+  const blank=()=>({title:'',steps:'',count:'',frequency:'daily',minutes:'',tools:'',human_decision:''});
+  const noTasks=input.no_repetitive_tasks===true;
+  const number=(value,integer,required)=>{
+    if(value===''||value===null||value===undefined){if(required)fail('REQUIRED_NUMBER','تعداد دفعات و زمان را وارد کنید');return '';}
+    if(!['number','string'].includes(typeof value))fail('INVALID_NUMBER','تعداد یا زمان معتبر نیست');
+    const n=Number(value);if(!Number.isFinite(n)||n<(integer?1:.01)||n>100000||(integer&&!Number.isInteger(n)))fail('INVALID_NUMBER','تعداد یا زمان معتبر نیست');return n;
   };
-  const tasks=input.tasks.map(t=>{
-    if(!t||typeof t!=='object'||!['daily','weekly','monthly'].includes(t.frequency))fail('INVALID_TASK','فعالیت یا دوره تکرار معتبر نیست.');
-    return {title:text(t.title,160,final),steps:text(t.steps,4000,final),count:number(t.count,true),frequency:t.frequency,minutes:number(t.minutes),tools:text(t.tools,500,final),human_decision:text(t.human_decision,1000)};
+  const tasks=Array.from({length:3},(_,i)=>{
+    const t=input.tasks[i]??blank();
+    if(typeof t!=='object'||Array.isArray(t))fail('INVALID_TASK','فعالیت معتبر نیست');
+    const used=['title','steps','count','minutes','tools','human_decision'].some(k=>t[k]!==undefined&&t[k]!==null&&String(t[k]).trim()!=='');
+    if(!used)return blank();
+    if(noTasks)fail('TASK_CONFLICT','برای انتخاب کار تکراری ندارم، فعالیت‌های قبلی را پاک کنید');
+    if(!['daily','weekly','monthly'].includes(t.frequency))fail('INVALID_TASK','دوره تکرار معتبر نیست');
+    return {title:text(t.title,160,final),steps:text(t.steps,4000,final),count:number(t.count,true,final),frequency:t.frequency,minutes:number(t.minutes,false,final),tools:text(t.tools,500,final),human_decision:text(t.human_decision,1000)};
   });
+  if(final&&!noTasks&&!tasks.some(t=>t.title))fail('TASK_REQUIRED','حداقل یک کار وارد کنید یا گزینه کار تکراری ندارم را انتخاب کنید');
   const factors={daily:22,weekly:4.33,monthly:1};
-  return {username:owner.username,full_name:text(input.full_name,120,final),department:text(input.department,100,final),job_title:text(input.job_title,100),tasks,
+  return {username:owner.username,full_name:text(input.full_name,120,final),department:text(input.department,100,final),job_title:text(input.job_title,100),no_repetitive_tasks:noTasks,tasks,
     monthly_hours:Math.round(tasks.reduce((s,t)=>s+(+t.count||0)*(+t.minutes||0)*factors[t.frequency]/60,0)*100)/100};
 }
 
