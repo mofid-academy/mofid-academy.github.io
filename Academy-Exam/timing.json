@@ -7,5 +7,13 @@
   "timeZone": "Asia/Tehran",
   "timeEndpoint": "",
   "serverEpoch": 1791699023905,
-  "updatedAt": "2026-10-11T07:22:33.337Z"
+  "updatedAt": "2026-10-11T07:22:33.337Z",
+  "hiddenResults": {
+    "version": 1,
+    "keys": [
+      "dcf25dacd13159d18a71b0a99017cc5dc5aba8be9454313bfb8c52fe3df900cf"
+    ],
+    "revision": "vis_4b51abfbaa874ef2a2111b3629f0997b",
+    "updatedAt": "2026-10-19T10:08:55.213Z"
+  }
 }
