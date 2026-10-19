@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>مدیریت آزمون، آرشیو و نتایج | آکادمی مفید</title>
+<link rel="preload" href="../assets/Pinar-VF.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="admin-brand.css?v=p20261019">
 <style>html,body{height:100%;margin:0;background:#f6f9f8;font-family:Tahoma,sans-serif}.loading{display:grid;place-items:center;height:100%;color:#315b55}</style>
 </head>
 <body><div class="loading">در حال بارگذاری پنل مدیریت…</div>
@@ -34,6 +36,14 @@ async function readLiveTiming(url='https://raw.githubusercontent.com/mofid-acade
 
   // Secure mode is fail-closed: no native browser request to the GitHub API.
   html=html.replace(/connect-src[^;]+;/,directive=>directive.replace('https://api.github.com',''));
+  // Keep admin branding separate from the participant form and generated bundle.
+  html=html
+    .replace(/<link\b[^>]*href="https:\/\/fonts\.googleapis\.com\/[^"]*"[^>]*>/g,'')
+    .replace(/font-src[^;]+;/,"font-src 'self';")
+    .replace(/img-src[^;]+;/,"img-src 'self' data: blob:;")
+    .replace(/style-src[^;]+;/,"style-src 'self' 'unsafe-inline';")
+    .replace('<span class="mark">A</span>','<img class="academy-logo" src="../assets/mofid-academy-logo.webp" alt="لوگوی آکادمی مفید" width="64" height="64" decoding="async">')
+    .replace('</head>','<link rel="preload" href="../assets/Pinar-VF.woff" as="font" type="font/woff" crossorigin><link rel="stylesheet" href="admin-brand.css?v=p20261019"></head>');
   const oldCheck='if(!t.startsWith("github_pat_"))';
   if(!html.includes(oldCheck))throw Error('نسخه پنل برای اتصال امن نیاز به به‌روزرسانی دارد.');
   html=html.replace(oldCheck,'if(!/^[\\x21-\\x7e]{16,128}$/.test(t)||/^(github_pat_|ghp_)/.test(t))')
@@ -60,6 +70,7 @@ async function readLiveTiming(url='https://raw.githubusercontent.com/mofid-acade
 </script>
 </body>
 </html>
+
 
 
 

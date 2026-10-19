@@ -1,0 +1,33 @@
+@font-face {
+  font-family: "Pinar VF";
+  src: url("../assets/Pinar-VF.woff") format("woff");
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+}
+
+body,
+body * {
+  font-family: "Pinar VF", Tahoma, sans-serif !important;
+}
+
+.topbar {
+  padding-block: 9px;
+}
+
+.brand {
+  min-width: 0;
+}
+
+.brand > div {
+  min-width: 0;
+}
+
+.brand .academy-logo {
+  display: block;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 10px;
+}
