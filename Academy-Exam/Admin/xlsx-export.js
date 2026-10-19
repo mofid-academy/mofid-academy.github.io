@@ -30,7 +30,7 @@
   function rows(results){
     const summary=[['نام واردشده','عنوان آزمون','نوبت آزمون','شناسه ارسال','زمان دریافت','وضعیت تصحیح','نمره','حداکثر','درصد','صحیح','غلط','بدون پاسخ','ثبت در شیت']];
     const detail=[['نام واردشده','شناسه ارسال','نوبت آزمون','شماره سؤال','متن سؤال','نوع','پاسخ شرکت‌کننده','پاسخ صحیح / نمونه','وضعیت','نمره','بارم']];
-    for(const r of results){const g=r.grading||{},s=r.submission||{};
+    for(const r of results){const g=r.grading||{},s=r.submission||{};if(g.status==='deleted')continue;
       summary.push([r.username,s.exam_title,r.run_id,r.submission_id,r.received,g.status==='graded'?'تصحیح شده':'در انتظار بررسی',g.total_score??'',g.total_max??'',g.percent??'',g.correct??'',g.wrong??'',g.unanswered??'',r.sheet_synced?'ثبت شده':'در انتظار همگام‌سازی']);
       if(g.details?.length)for(const d of g.details)detail.push([r.username,r.submission_id,r.run_id,d.position,d.question,d.type==='mcq'?'تستی':'تشریحی',d.answer,d.type==='mcq'?d.correct_answer:d.sample_answer,status[d.status]||status.pending,d.score??'',d.max_score]);
       else for(const [i,a]of(s.answers||[]).entries())detail.push([r.username,r.submission_id,r.run_id,i+1,a.question_id,'',a.answer,'',status.pending,'','']);
@@ -48,3 +48,4 @@
   }
   global.AcademyExcel={create,rows};
 })(typeof window==='object'?window:globalThis);
+
