@@ -1,15 +1,9 @@
 /* Academy timing controls for the admin studio. */
 (function(){
 "use strict";
-async function readLiveTiming(){
- const url='https://raw.githubusercontent.com/mofid-academy/mofid-academy.github.io/main/Academy-Exam/timing.json';
- const r=await fetch(url+'?live='+Date.now()+'-'+Math.random().toString(36).slice(2),{cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(10000)});
- if(!r.ok)throw Error('خواندن زمان‌بندی تازه ناموفق بود؛ دوباره تلاش کنید.');
- const c=await r.json();
- if(typeof c.enabled!=='boolean'||!Number.isFinite(Number(c.durationMinutes))||Number(c.durationMinutes)<1||Number(c.durationMinutes)>480)throw Error('تنظیمات زمان‌بندی معتبر نیست.');
- for(const k of ['openAt','lastStartAt'])if(c[k]&&(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(c[k])||!Number.isFinite(Date.parse(c[k]+':00+03:30'))))throw Error('تاریخ زمان‌بندی معتبر نیست.');
- const epoch=Date.parse(r.headers.get('Date')||'');
- return {...c,durationMinutes:Number(c.durationMinutes),serverEpoch:Number.isFinite(epoch)?epoch:Date.now()};
+async function readLiveTiming(options={}){
+ if(!window.__ACADEMY_PUBLIC_NETWORK__)throw Error('مسیر عمومی اتصال آماده نیست؛ صفحه را دوباره بارگذاری کنید.');
+ return window.__ACADEMY_PUBLIC_NETWORK__.readTiming(options);
 }
 
 const initial={version:1,enabled:true,openAt:"",lastStartAt:"",durationMinutes:15,timeZone:"Asia/Tehran",timeEndpoint:"",...(window.__ACADEMY_TIMING__||{})};
@@ -153,5 +147,6 @@ function install(){
 patchPreview();
 install();
 })();
+
 
 

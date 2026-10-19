@@ -1,4 +1,4 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمون آکادمی مفید</title></head><body><p style="font-family:Tahoma;text-align:center;margin-top:12vh">در حال آماده‌سازی آزمون…</p><script>
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمون آکادمی مفید</title><script src="public-network.js?v=n20261019"></script></head><body><p style="font-family:Tahoma;text-align:center;margin-top:12vh">در حال آماده‌سازی آزمون…</p><script>
 (async()=>{
 function patchSubmissionRuntime(html) {
  return html.replace(/(<script id="academy-question-runtime"[^>]*>)([\s\S]*?)(<\/script>)/,(_,start,code,end)=>{
@@ -52,26 +52,22 @@ function patchArchiveRuntime(html) {
  });
 }
 
-async function readLiveTiming(){
- const url='https://raw.githubusercontent.com/mofid-academy/mofid-academy.github.io/main/Academy-Exam/timing.json';
- const r=await fetch(url+'?live='+Date.now()+'-'+Math.random().toString(36).slice(2),{cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(10000)});
- if(!r.ok)throw Error('خواندن زمان‌بندی تازه ناموفق بود؛ دوباره تلاش کنید.');
- const c=await r.json();
- if(typeof c.enabled!=='boolean'||!Number.isFinite(Number(c.durationMinutes))||Number(c.durationMinutes)<1||Number(c.durationMinutes)>480)throw Error('تنظیمات زمان‌بندی معتبر نیست.');
- for(const k of ['openAt','lastStartAt'])if(c[k]&&(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(c[k])||!Number.isFinite(Date.parse(c[k]+':00+03:30'))))throw Error('تاریخ زمان‌بندی معتبر نیست.');
- const epoch=Date.parse(r.headers.get('Date')||'');
- return {...c,durationMinutes:Number(c.durationMinutes),serverEpoch:Number.isFinite(epoch)?epoch:Date.now()};
+async function readLiveTiming(options={}){
+ if(!window.__ACADEMY_PUBLIC_NETWORK__)throw Error('مسیر عمومی اتصال آماده نیست؛ صفحه را دوباره بارگذاری کنید.');
+ return window.__ACADEMY_PUBLIC_NETWORK__.readTiming(options);
 }
 
   const [baseR,tR]=await Promise.all([
     fetch('base.html?v='+Date.now(),{cache:'no-store'}),
-    readLiveTiming()
+    readLiveTiming({localOnly:true})
   ]);
   if(!baseR.ok) throw new Error('base '+baseR.status);
   let base=await baseR.text();
   base=base.split("https://miladmirsheriseyed.app.n8n.cloud").join("https://miladmirsheriam.app.n8n.cloud").split("https://miladmirsheriii.app.n8n.cloud").join("https://miladmirsheriam.app.n8n.cloud").split("https://miladmmirsheri.app.n8n.cloud").join("https://miladmirsheriam.app.n8n.cloud");
   base=base.replace(/(<script id="academy-question-bank"[^>]*>[\s\S]*?"submitApproved"\s*:\s*)false/, '$1true');
   base=patchArchiveRuntime(patchSubmissionRuntime(base));
+  base=base.replace(/<link\b[^>]*\bhref=["']https:\/\/fonts\.(?:googleapis|gstatic)\.com[^"']*["'][^>]*>/gi,'');
+  const networkScript='<scr'+'ipt src="public-network.js?v=n20261019"></scr'+'ipt>';
   const cfg=tR;
   const liveReader=readLiveTiming;
   window.__ACADEMY_READ_TIMING__=liveReader;
@@ -212,6 +208,7 @@ async function refreshTiming(){
  return refreshing;
 }
 setInterval(()=>{if(!document.hidden&&!attempt&&!startedUntimed&&!finished)refreshTiming();},10000);
+setTimeout(()=>refreshTiming(),0);
 go=async function(i){
  if(!attempt&&!startedUntimed){if(starting)return;starting=true;const ok=await refreshTiming();starting=false;if(!ok)return;if(!timingEnabled)startedUntimed=true;}
 
@@ -249,8 +246,8 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(attemp
 })();
 `;
 
-  const networkPolicy='<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; base-uri \'self\'; object-src \'none\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\' https://fonts.googleapis.com; font-src \'self\' data: https://fonts.gstatic.com; img-src \'self\' data:; connect-src \'self\' https://raw.githubusercontent.com https://miladmirsheriam.app.n8n.cloud; form-action \'self\'">';
-  let html=base.replace('<head>','<head>'+networkPolicy).replace('</head>',css+'</head>');
+  const networkPolicy='<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; base-uri \'self\'; object-src \'none\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; font-src \'self\' data:; img-src \'self\' data:; connect-src \'self\' https://raw.githubusercontent.com https://miladmirsheriam.app.n8n.cloud; form-action \'self\'">';
+  let html=base.replace('<head>','<head>'+networkPolicy+networkScript).replace('</head>',css+'</head>');
   html=html.replace('<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>','<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>'+badge);
   html=html.replace('$("fM").textContent = toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3));','$("fM").textContent = '+(cfg.enabled!==false?'toFa('+Number(cfg.durationMinutes||15)+') + " دقیقه"':'toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3))')+';');
   const marker='\nboot();';
@@ -260,6 +257,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(attemp
   document.open();window.__ACADEMY_READ_TIMING__=liveReader;document.write(html);document.close();
 })().catch(e=>{document.body.innerHTML='<div style="font-family:Tahoma;text-align:center;margin:12vh auto;max-width:650px"><h2>آزمون در دسترس نیست</h2><p>'+String(e.message||e)+'</p></div>';console.error(e);});
 </script></body></html>
+
 
 
 
