@@ -54,28 +54,31 @@ document.head.append(style);
 
 
 async function saveTimingToGitHub(target,t){
- const apiUrl="https://api.github.com/repos/mofid-academy/mofid-academy.github.io/contents/Academy-Exam/timing.json";
- const headers={Accept:"application/vnd.github+json",Authorization:"Bearer "+t};
+ const apiPath="/repos/mofid-academy/mofid-academy.github.io/contents/Academy-Exam/timing.json";
  const matches=value=>value&&value.updatedAt===target.updatedAt&&value.enabled===target.enabled&&value.durationMinutes===target.durationMinutes&&value.openAt===target.openAt&&value.lastStartAt===target.lastStartAt&&value.timeEndpoint===target.timeEndpoint;
  function decode(meta){try{return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(meta.content.replace(/\s/g,'')),c=>c.charCodeAt(0))));}catch{return null;}}
- async function request(url,options={}){
-  const response=await fetch(url,{...options,headers:{...headers,...options.headers},credentials:"omit",referrerPolicy:"no-referrer",cache:"no-store",signal:AbortSignal.timeout(15000)});
-  if(!response.ok){
-   const error=new Error(response.status===401?"توکن GitHub معتبر نیست یا منقضی شده؛ از «اتصال ادمین» دوباره متصل شوید.":response.status===403?"GitHub اجازه ذخیره نداد؛ دسترسی Contents: Read and write و محدودیت درخواست‌ها را بررسی کنید.":response.status===404?"فایل زمان‌بندی یا دسترسی توکن به مخزن پیدا نشد.":"ذخیره زمان‌بندی در GitHub ناموفق بود ("+response.status+").");
-   error.httpStatus=response.status;throw error;
-  }
+ async function request(path,options={}){
+  if(typeof window.__ACADEMY_ADMIN_REQUEST__!=='function')throw Error('مسیر امن ادمین آماده نیست. پنل را دوباره باز کنید.');
+  const response=await window.__ACADEMY_ADMIN_REQUEST__({method:options.method||'GET',path,key:t,body:options.body?JSON.parse(options.body):undefined,signal:AbortSignal.timeout(15000)});
   return response.json();
  }
- const bytes=new TextEncoder().encode(JSON.stringify(target,null,2)+"\n");
- let binary="";for(const byte of bytes)binary+=String.fromCharCode(byte);
  let lastError;
  for(let attempt=0;attempt<3;attempt++){
   if(attempt)await new Promise(resolve=>setTimeout(resolve,700*attempt));
   try{
    // Re-read before every write: a lost response may follow a successful commit.
-   const meta=await request(apiUrl+"?ref=main&live="+Date.now());
-   if(matches(decode(meta)))return;
-   await request(apiUrl,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:"Academy Studio: update exam timing",content:btoa(binary),sha:meta.sha,branch:"main"})});
+   const meta=await request(apiPath+"?ref=main&live="+Date.now());
+   const current=decode(meta);
+   if(!current||typeof current!=="object"||Array.isArray(current))throw Error('ساختار تنظیمات سایت معتبر نیست.');
+   if(matches(current))return;
+   // The timing editor never owns the display-only result deletion registry.
+   // Merge its latest value after each SHA conflict, instead of a stale preview copy.
+   const document={...current,...target};
+   if(Object.prototype.hasOwnProperty.call(current,'hiddenResults'))document.hiddenResults=current.hiddenResults;
+   else delete document.hiddenResults;
+   const bytes=new TextEncoder().encode(JSON.stringify(document,null,2)+"\n");
+   let binary="";for(const byte of bytes)binary+=String.fromCharCode(byte);
+   await request(apiPath,{method:"PUT",body:JSON.stringify({message:"Academy Studio: update exam timing",content:btoa(binary),sha:meta.sha,branch:"main"})});
    return;
   }catch(error){
    lastError=error;
@@ -150,4 +153,5 @@ function install(){
 patchPreview();
 install();
 })();
+
 

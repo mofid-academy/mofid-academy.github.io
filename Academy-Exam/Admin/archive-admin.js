@@ -4,7 +4,8 @@
   const ENDPOINT='https://miladmirsheriam.app.n8n.cloud/webhook/academy-archive-v5';
   const protocol='academy-private-v5',controllers=new Set();
   let ready=false,healthPromise=null,view='',archives=[],runs=[],results=[],selectedRun='',resultEpoch=0,busy=false,publishAttempt=null,panel,archiveBtn,resultBtn,dialog,deletionDialog;
-  let features=new Set(),deleteAttempt=null,privateEpoch=0;
+  let features=new Set(),hiddenKeys=new Set(),privateEpoch=0;
+  const TIMING_PATH='/repos/mofid-academy/mofid-academy.github.io/contents/Academy-Exam/timing.json';
   const api=()=>window.__ACADEMY_ADMIN__;
   const clone=x=>JSON.parse(JSON.stringify(x));
   const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
@@ -31,6 +32,56 @@
     if(ready&&!force)return true;
     if(!healthPromise)healthPromise=call('health').then(r=>{if(r.protocol!==protocol||r.ready!==true)throw Error('نسخهٔ سرور خصوصی با پنل هماهنگ نیست.');features=new Set(Array.isArray(r.features)?r.features:[]);ready=true;return true;}).finally(()=>{healthPromise=null;});
     return healthPromise;
+  }
+  function visibilityKeys(config){
+    const value=config.hiddenResults;if(value===undefined)return new Set();
+    if(!value||value.version!==1||!Array.isArray(value.keys)||value.keys.length>10000||value.keys.some(k=>typeof k!=='string'||!/^[0-9a-f]{64}$/.test(k)))throw Error('فهرست حذف‌های سامانه قابل بررسی نیست. تنظیمات مدیریت را بررسی کنید.');
+    return new Set(value.keys);
+  }
+  async function visibilityKey(row){
+    if(!/^run_[A-Za-z0-9_-]{16,100}$/.test(row.run_id||'')||!/^sub_[A-Za-z0-9_-]{8,150}$/.test(row.submission_id||''))throw Error('شناسهٔ پاسخ برای حذف از نمایش معتبر نیست.');
+    const bytes=new TextEncoder().encode('academy-result-visibility-v1\u0000'+row.run_id+'\u0000'+row.submission_id);
+    return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),n=>n.toString(16).padStart(2,'0')).join('');
+  }
+  async function visibleRows(items,keys){
+    const pairs=await Promise.all(items.map(async row=>({row,key:await visibilityKey(row)})));
+    return pairs.filter(x=>!keys.has(x.key)&&x.row.grading?.status!=='deleted').map(x=>x.row);
+  }
+  async function configRequest(key,options={}){
+    if(window.__ACADEMY_ADMIN_TRANSPORT__!=='n8n-v1'||typeof window.__ACADEMY_ADMIN_REQUEST__!=='function')throw Error('مسیر امن ادمین آماده نیست. پنل را دوباره باز کنید.');
+    const epoch=privateEpoch,ctrl=new AbortController();controllers.add(ctrl);const timer=setTimeout(()=>ctrl.abort(),25000);
+    try{
+      const method=options.method||'GET',path=TIMING_PATH+(method==='PUT'?'':'?ref=main&live='+Date.now());
+      const response=await window.__ACADEMY_ADMIN_REQUEST__({method,path,key,body:options.body?JSON.parse(options.body):undefined,signal:ctrl.signal});
+      if(api()?.token()!==key||epoch!==privateEpoch)throw Error('جلسهٔ مدیریت پایان یافته است. دوباره وارد شوید.');
+      if(!response.ok){const e=Error('ثبت یا دریافت تنظیمات حذف تأیید نشد.');e.httpStatus=response.status;throw e;}
+      return await response.json();
+    }finally{clearTimeout(timer);controllers.delete(ctrl);}
+  }
+  async function readVisibility(key=api()?.token()){
+    if(!key)throw Error('ابتدا از «اتصال ادمین» وارد شوید.');
+    const meta=await configRequest(key);let config;
+    try{config=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Uint8Array.from(atob(meta.content.replace(/\s/g,'')),c=>c.charCodeAt(0))));}catch{throw Error('تنظیمات حذف از نمایش قابل خواندن نیست.');}
+    if(!/^[0-9a-f]{40}$/.test(meta.sha||'')||!config||typeof config!=='object'||Array.isArray(config))throw Error('نسخهٔ تنظیمات حذف معتبر نیست.');
+    return {meta,config,keys:visibilityKeys(config)};
+  }
+  async function hideResults(rows){
+    const key=api()?.token(),epoch=privateEpoch,wanted=await Promise.all(rows.map(visibilityKey));let lastError;
+    for(let attempt=0;attempt<3;attempt++){
+      if(!key||api()?.token()!==key||epoch!==privateEpoch)throw Error('جلسهٔ مدیریت پایان یافته است. دوباره وارد شوید.');
+      try{
+        const current=await readVisibility(key);
+        if(wanted.every(k=>current.keys.has(k)))return current.keys;
+        const merged=new Set([...current.keys,...wanted]);if(merged.size>10000)throw Error('ظرفیت فهرست حذف‌ها تکمیل شده است.');
+        const config={...current.config,hiddenResults:{version:1,keys:[...merged].sort(),revision:'vis_'+crypto.randomUUID().replace(/-/g,''),updatedAt:new Date().toISOString()}};
+        const bytes=new TextEncoder().encode(JSON.stringify(config,null,2)+'\n');if(bytes.length>900000)throw Error('حجم تنظیمات حذف بیش از حد مجاز است.');
+        let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);
+        await configRequest(key,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({branch:'main',sha:current.meta.sha,message:'Academy: hide selected exam results',content:btoa(binary)})});
+        const verified=await readVisibility(key);if(wanted.every(k=>verified.keys.has(k)))return verified.keys;
+        throw Error('تأیید ذخیرهٔ حذف از نتایج دریافت نشد.');
+      }catch(e){lastError=e;if(e.httpStatus&&![408,409,429,500,502,503,504].includes(e.httpStatus))throw e;}
+    }
+    throw Error('ثبت حذف از نتایج تأیید نشد. '+String(lastError?.message||'نتایج را تازه‌سازی کنید.'));
   }
   async function pages(action,data={}){
     let out=[],after=0,seen=new Set();
@@ -86,8 +137,10 @@
   function uniqueRows(items){const map=new Map();for(const r of items.sort((a,b)=>a.id-b.id)){if(!map.has(r.submission_id))map.set(r.submission_id,r);else if(map.get(r.submission_id).submission?.fingerprint!==r.submission?.fingerprint)throw Error('ارسال‌های متفاوت با یک شناسه وجود دارند؛ بررسی ادمین لازم است.');}return [...map.values()];}
   async function refreshResults(){
     const epoch=++resultEpoch;
-    await refreshRuns();const run=selectedRun;const incoming=run?uniqueRows(await pages('results',{run_id:run})):[];
-    if(epoch!==resultEpoch||run!==selectedRun)return false;results=incoming.filter(r=>r.grading?.status!=='deleted');
+    await refreshRuns();const run=selectedRun;
+    const [incoming,visibility]=await Promise.all([run?pages('results',{run_id:run}):Promise.resolve([]),readVisibility()]);
+    const mergedKeys=new Set([...hiddenKeys,...visibility.keys]),visible=await visibleRows(uniqueRows(incoming),mergedKeys);
+    if(epoch!==resultEpoch||run!==selectedRun)return false;hiddenKeys=mergedKeys;results=visible;
     if(view==='results')drawResults();
     return true;
   }
@@ -100,7 +153,6 @@
     for(const r of runs){const o=el('option',r.title+' — '+date(r.created)+(r.state==='active'?'':' — آمادهٔ انتشار'));o.value=r.key;select.append(o);}select.value=selectedRun;
     select.onchange=async()=>{selectedRun=select.value;results=[];try{await refreshResults();}catch(e){error(e);}};panel.append(select);
     const stats=el('div',undefined,'academy-private-stats');stats.append(el('span',fa(results.length)+' پاسخ ثبت‌شده'),el('span',fa(results.filter(r=>r.grading?.status==='graded').length)+' تصحیح‌شده'),el('span',fa(results.filter(r=>!r.sheet_synced).length)+' در انتظار شیت'));panel.append(stats);
-    if(ready&&!features.has('delete-results'))panel.append(el('p','برای فعال شدن حذف، فایل Academy Private Suite v6 را در ورک‌فلوی خصوصی فعلی وارد و Publish کنید؛ سپس نتایج را تازه‌سازی کنید.','tip'));
     const search=el('input');search.type='search';search.placeholder='جست‌وجوی نام شرکت‌کننده';search.setAttribute('aria-label','جست‌وجوی نام شرکت‌کننده');panel.append(search);const wrap=el('div',undefined,'academy-private-table-wrap');panel.append(wrap);
     function draw(){wrap.replaceChildren();const table=el('table'),head=el('tr');['نام واردشده','دریافت','وضعیت','نمره / بارم','درصد','شیت','عملیات'].forEach(t=>head.append(el('th',t)));const thead=el('thead');thead.append(head);table.append(thead);const tbody=el('tbody');
       const names=new Map();for(const r of results){if(!names.has(r.username))names.set(r.username,[]);names.get(r.username).push(r);}
@@ -110,39 +162,35 @@
     }search.oninput=draw;draw();
   }
   function deleteButton(label,rows,scope){
-    const button=action(label,async()=>deleteResults(rows,scope));button.classList.add('academy-delete');button.disabled=!features.has('delete-results');
+    const button=action(label,async()=>deleteResults(rows,scope));button.classList.add('academy-delete');
     button.setAttribute('aria-label',label+' برای '+rows[0].username);return button;
   }
   function confirmDeletion(rows,scope){
     deletionDialog.replaceChildren();const name=rows[0].username,run=runs.find(r=>r.key===rows[0].run_id);
-    deletionDialog.append(el('h2',scope==='participant'?'حذف شرکت‌کننده از این نوبت':'حذف این ارسال'),el('p','نام واردشده: '+name),el('p','آزمون: '+(run?.title||'نوبت انتخاب‌شده')),el('p',fa(rows.length)+' ارسال انتخاب شده است. نام، پاسخ‌ها و نمره‌های این رکوردها حذف می‌شوند و قابل بازگردانی نیستند.','academy-delete-warning'));
+    deletionDialog.append(el('h2',scope==='participant'?'حذف شرکت‌کننده از نتایج این نوبت':'حذف این ارسال از نتایج'),el('p','نام واردشده: '+name),el('p','آزمون: '+(run?.title||'نوبت انتخاب‌شده')),el('p',fa(rows.length)+' ارسال انتخاب شده است. این رکوردها از فهرست نتایج و اکسل سامانه حذف می‌شوند.','academy-delete-warning'));
     if(scope==='participant')deletionDialog.append(el('p','همهٔ رکوردهای انتخاب‌شده با همین نام در این نوبت حذف می‌شوند. نام‌ها همان متن واردشده در فرم هستند.','tip'));
     const list=el('ul');for(const r of rows)list.append(el('li',date(r.received)+' — '+r.submission_id));deletionDialog.append(list);
-    deletionDialog.append(el('p','رکوردها از نتایج و اکسل سامانه حذف می‌شوند. در شیت، نام و اطلاعات پاسخ پاک و وضعیت «حذف‌شده توسط ادمین» ثبت می‌شود.','tip'));
+    deletionDialog.append(el('p','اطلاعات ثبت‌شده در شیت حفظ می‌شود. حذف از نمایش در سامانه ذخیره می‌شود و با تازه‌سازی صفحه یا ورود از مرورگر دیگر برنمی‌گردد.','tip'));
     const tools=el('div',undefined,'academy-private-tools'),cancel=el('button','انصراف'),confirm=el('button','حذف '+fa(rows.length)+' ارسال','academy-delete');cancel.type=confirm.type='button';tools.append(cancel,confirm);deletionDialog.append(tools);
     return new Promise(resolve=>{let accepted=false;deletionDialog.addEventListener('close',()=>resolve(accepted),{once:true});cancel.onclick=()=>deletionDialog.close();confirm.onclick=()=>{accepted=true;deletionDialog.close();};deletionDialog.showModal();cancel.focus();});
   }
   async function deleteResults(rows,scope){
-    if(!features.has('delete-results'))throw Error('ابتدا ورک‌فلوی خصوصی v6 را فعال و نتایج را تازه‌سازی کنید.');
     if(!rows.length||rows.length>100)throw Error('در هر مرحله بین ۱ تا ۱۰۰ ارسال را حذف کنید.');
     const key=api()?.token(),run=rows[0].run_id,username=rows[0].username,epoch=privateEpoch;
     if(!key||rows.some(r=>r.run_id!==run||r.username!==username))throw Error('انتخاب رکوردهای حذف معتبر نیست. نتایج را تازه‌سازی کنید.');
     if(!await confirmDeletion(rows,scope))return;
     if(api()?.token()!==key||epoch!==privateEpoch)throw Error('جلسهٔ مدیریت پایان یافته است. دوباره وارد شوید.');
-    const targets=rows.map(r=>({submission_id:r.submission_id,fingerprint:r.submission?.fingerprint,expected_grade:r.grade_revision||''}));
-    const signature=JSON.stringify({run,username,scope,targets});
-    if(!deleteAttempt||deleteAttempt.signature!==signature)deleteAttempt={signature,request_id:'del_'+crypto.randomUUID().replace(/-/g,'')};
-    const requestId=deleteAttempt.request_id;
-    say('در حال حذف رکوردهای انتخاب‌شده…');
-    let out;
-    try{out=await call('delete_results',{run_id:run,username,scope,targets,request_id:requestId});}
+    resultEpoch++;
+    say('در حال ثبت حذف از نتایج سامانه…');
+    let saved;
+    try{saved=await hideResults(rows);}
     catch(e){if(api()?.token()===key&&epoch===privateEpoch){try{await refreshResults();}catch{}}throw Error(String(e.message||e)+' پیش از تلاش مجدد، فهرست نتایج را بررسی کنید.');}
     if(epoch!==privateEpoch)throw Error('جلسهٔ مدیریت پایان یافته است. دوباره وارد شوید.');
-    if(out.run_id!==run||out.request_id!==requestId||!Array.isArray(out.deleted_ids)||out.deleted_ids.some(id=>!targets.some(t=>t.submission_id===id))||new Set(out.deleted_ids).size!==out.deleted_ids.length||out.deleted_count!==out.deleted_ids.length)throw Error('تأیید حذف قابل بررسی نیست. نتایج را تازه‌سازی کنید.');
-    const removed=new Set(out.deleted_ids);results=results.filter(r=>r.run_id!==run||!removed.has(r.submission_id));deleteAttempt=null;dialog.close();
+    const remaining=await visibleRows(results,saved);
+    if(epoch!==privateEpoch||api()?.token()!==key)throw Error('جلسهٔ مدیریت پایان یافته است. دوباره وارد شوید.');
+    resultEpoch++;hiddenKeys=saved;results=remaining;dialog.close();
     if(view==='results')drawResults();
-    const message=out.deleted_count===targets.length?fa(out.deleted_count)+' ارسال از نتایج و اکسل سامانه حذف شد. همگام‌سازی وضعیت شیت ادامه پیدا می‌کند.':fa(out.deleted_count)+' از '+fa(targets.length)+' ارسال حذف شد. رکوردهای باقی‌مانده هم‌زمان تغییر کرده‌اند؛ نتایج را تازه‌سازی کنید.';
-    say(message,out.deleted_count===targets.length?'success':'error');
+    say(fa(rows.length)+' ارسال از نتایج و اکسل سامانه حذف شد. اطلاعات شیت حفظ شده است.','success');
   }
   function showDetail(r){
     if(!api()?.token())throw Error('ابتدا وارد مدیریت شوید.');dialog.replaceChildren();const close=action('بستن',async()=>dialog.close());dialog.append(close,el('h2',r.username),el('p',(r.submission?.exam_title||'')+' — '+date(r.received)));
@@ -179,7 +227,7 @@
       archives=[];runs=[];results=[];
     }catch(e){error(e);}finally{busy=false;a.busy(false);}
   }
-  function purge(){privateEpoch++;resultEpoch++;for(const c of controllers)c.abort();controllers.clear();ready=false;healthPromise=null;features=new Set();deleteAttempt=null;archives=[];runs=[];results=[];selectedRun='';publishAttempt=null;api()?.clearPrivate();dialog?.close();dialog?.replaceChildren();deletionDialog?.close();deletionDialog?.replaceChildren();if(view)open(view);}
+  function purge(){privateEpoch++;resultEpoch++;for(const c of controllers)c.abort();controllers.clear();ready=false;healthPromise=null;features=new Set();hiddenKeys=new Set();archives=[];runs=[];results=[];selectedRun='';publishAttempt=null;api()?.clearPrivate();dialog?.close();dialog?.replaceChildren();deletionDialog?.close();deletionDialog?.replaceChildren();if(view)open(view);}
   function install(){
     if(!api()||!document.querySelector('.rail')){setTimeout(install,80);return;}
     const style=el('style');style.id='academy-private-style';style.textContent='.academy-private-mode .controls,.academy-private-mode .preview-zone{display:none}.academy-private-mode{grid-template-columns:176px minmax(0,1fr)!important}.academy-private-panel{grid-column:2/-1;overflow:auto;padding:clamp(16px,3vw,32px);min-width:0;background:#f6f9f8}.academy-private-panel[hidden]{display:none}.academy-private-panel h1{font-size:23px}.academy-private-lead{color:#55776b;max-width:900px}.academy-private-message{white-space:pre-wrap}.academy-private-message.error{color:#a03f39}.academy-private-message.success{color:#12634e}.academy-private-tools{display:flex;gap:9px;flex-wrap:wrap;margin:18px 0}.academy-private-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-top:20px}.academy-private-card{border:1px solid #d7e7e0;border-radius:14px;background:#fff;padding:16px;overflow-wrap:anywhere}.academy-private-card h2,.academy-private-card h3{font-size:15px}.academy-private-card button{margin:10px 0 0 8px}.academy-private-card p{white-space:pre-wrap}.academy-private-card small{color:#668578}.academy-private-stats{display:flex;gap:20px;flex-wrap:wrap;padding:16px 0}.academy-private-table-wrap{overflow:auto;margin-top:18px}.academy-private-panel table{width:100%;border-collapse:collapse;background:#fff}.academy-private-panel th,.academy-private-panel td{padding:12px;border-bottom:1px solid #d7e7e0;text-align:right;white-space:nowrap}.academy-private-panel th{background:#e7f6ef}.academy-private-panel input[type=search],.academy-private-panel select{max-width:650px;width:100%;padding:12px}.academy-private-detail{width:min(880px,90vw);max-width:90vw;max-height:88vh;overflow:auto}.academy-private-detail .academy-private-card{margin:12px 0}.academy-private-detail input{max-width:100px}.academy-grade.correct{color:#146548}.academy-grade.wrong{color:#a03f39}.academy-grade.partial,.academy-grade.pending{color:#906600}@media(max-width:640px){.academy-private-mode{display:flex!important}.academy-private-panel{width:100%;min-height:70vh;box-sizing:border-box}.academy-private-detail{padding:16px}}';document.head.append(style);
@@ -201,7 +249,7 @@
     document.getElementById('logout').addEventListener('click',purge);window.addEventListener('pagehide',purge);
     const originalAdopt=window.__ACADEMY_ON_BANK_ADOPTED__;
     window.__ACADEMY_ON_BANK_ADOPTED__=bank=>{originalAdopt?.(bank);if(!ready||!api().token())return;setTimeout(async()=>{if(busy)return;try{await saveBank(clone(bank));say('آزمون واردشده در آرشیو خصوصی ذخیره شد.','success');}catch(e){error(e);}},500);};
-    window.__ACADEMY_ARCHIVE__={health,open,refreshArchive,refreshResults,publish,version:6};
+    window.__ACADEMY_ARCHIVE__={health,open,refreshArchive,refreshResults,publish,version:7,deletionMode:'display-only'};
   }
   install();
 })();
