@@ -1,9 +1,23 @@
-/* Academy Admin file question importer v2 - every file creates a separate exam */
+/* Academy Admin importer v3 - confirmed imports are loaded without a second upload. */
 (function(){
 "use strict";
 const IMPORT_URL="https://miladmirsheriam.app.n8n.cloud/webhook/exam-import-file";
 const QUESTIONS_URL="https://miladmirsheriam.app.n8n.cloud/webhook/exam-questions";
 const MAX_FILE_BYTES=10*1024*1024;
+const QUESTIONS_TIMEOUT_MS=60000;
+const PENDING_KEY="academy-pending-question-import-v3";
+let activeRead=null,readSerial=0,importInProgress=false;
+
+function pendingImport(){
+  try{const x=JSON.parse(sessionStorage.getItem(PENDING_KEY)||"null");return x&&typeof x.examId==="string"&&x.examId?x:null;}catch{return null;}
+}
+function savePending(value){try{sessionStorage.setItem(PENDING_KEY,JSON.stringify(value));}catch{}}
+function clearPending(examId){if(pendingImport()?.examId===examId)try{sessionStorage.removeItem(PENDING_KEY);}catch{}}
+function cancelRead(){
+  readSerial++;
+  activeRead?.controller.abort();
+  activeRead=null;
+}
 
 function setStatus(message,type){
   const el=document.getElementById("status");
@@ -12,19 +26,65 @@ function setStatus(message,type){
 function currentBank(){
   try{return typeof window.__ACADEMY_GET_QUESTION_BANK__==="function"?window.__ACADEMY_GET_QUESTION_BANK__():null;}catch{return null;}
 }
-async function refreshQuestions(){
-  const r=await fetch(QUESTIONS_URL+"?ts="+Date.now(),{
-    headers:{Accept:"application/json"},credentials:"omit",cache:"no-store",referrerPolicy:"no-referrer",
-    signal:AbortSignal.timeout(30000)
-  });
-  if(!r.ok)throw new Error("دریافت سؤال‌های جدید ناموفق بود: HTTP "+r.status);
-  const data=await r.json();
-  if(window.AcademyQuestions&&typeof window.AcademyQuestions.fromInput==="function"&&typeof window.adoptQuestions==="function"){
-    window.adoptQuestions(window.AcademyQuestions.fromInput(data));
-    return true;
-  }
-  return false;
+function responseRoot(data){
+  return Array.isArray(data)&&data.length===1&&Array.isArray(data[0]?.questions)?data[0]:data;
 }
+function applyQuestions(data,expected){
+  const root=responseRoot(data),questions=Array.isArray(root)?root:root?.questions;
+  if(root?.accepted===false||root?.ok===false)throw Error(String(root.message||root.error||"سرور دریافت سؤال‌ها را تأیید نکرد.").slice(0,400));
+  if(!Array.isArray(questions)||!questions.length)throw Error("پاسخ سرور بانک سؤال معتبر و غیرخالی نداشت. سؤال‌های قبلی پنل حفظ شده‌اند.");
+  const examId=String(root?.examId||root?.exam_id||root?.originalExamId||"").trim();
+  if(expected?.examId&&examId!==expected.examId)throw Error("سؤال‌های دریافتی مربوط به آزمون ساخته‌شده نیستند؛ برای جلوگیری از جایگزینی اشتباه، سؤال‌های قبلی حفظ شدند.");
+  if(expected?.count>0&&questions.length!==expected.count)throw Error("تعداد سؤال‌های دریافتی با تأیید ساخت آزمون مطابقت ندارد. سؤال‌های قبلی حفظ شدند.");
+  const api=window.__ACADEMY_ADMIN__;
+  if(typeof api?.adopt!=="function")throw Error("نسخهٔ تازهٔ پنل بارگذاری نشده است. صفحه را دوباره باز کنید؛ فایل را دوباره ارسال نکنید.");
+  const bank=api.adopt(root);
+  document.dispatchEvent(new CustomEvent("academy-remote-questions-loaded",{detail:{examId:bank.originalExamId||examId,count:bank.questions.length}}));
+  clearPending(examId);
+  return bank;
+}
+async function refreshQuestions({url=QUESTIONS_URL,expected=pendingImport(),fromImport=false}={}){
+  if(importInProgress&&!fromImport)throw Error("فایل در حال پردازش است؛ سؤال‌ها پس از پایان ساخت به‌صورت خودکار دریافت می‌شوند.");
+  const u=new URL(url);
+  if(u.protocol!=="https:"||u.username||u.password||!["https://miladmirsheriam.app.n8n.cloud","https://mofid-academy.github.io"].includes(u.origin))throw Error("آدرس دریافت سؤال‌ها در فهرست امن پنل نیست.");
+  const key=u.href+"::"+(expected?.examId||"")+"::"+(expected?.count||"");
+  if(activeRead){if(activeRead.key===key)return activeRead.promise;throw Error("یک درخواست دریافت سؤال در حال انجام است؛ تا پایان آن صبر کنید.");}
+  const serial=++readSerial,controller=new AbortController();
+  let timedOut=false;
+  const timeout=setTimeout(()=>{timedOut=true;controller.abort();},QUESTIONS_TIMEOUT_MS);
+  const slow=setTimeout(()=>setStatus("سرور هنوز در حال آماده‌سازی سؤال‌هاست؛ دریافت تا ۶۰ ثانیه ادامه دارد. فایل را دوباره ارسال نکنید."),20000);
+  const record={key,controller,promise:null};
+  activeRead=record;
+  record.promise=(async()=>{
+    try{
+      u.searchParams.set("ts",String(Date.now()));
+      const r=await fetch(u.href,{
+        headers:{Accept:"application/json"},credentials:"omit",redirect:"error",cache:"no-store",
+        referrerPolicy:"no-referrer",signal:controller.signal
+      });
+      if(!r.ok){
+        if(r.status===404)throw Error("وب‌هوک exam-questions پیدا نشد. مسیر و Published بودن همان ورک‌فلو را بررسی کنید.");
+        throw Error("سرور دریافت سؤال‌ها پاسخ HTTP "+r.status+" برگرداند. اجرای ورک‌فلوی exam-questions را بررسی کنید.");
+      }
+      const text=await r.text();
+      if(text.length>2000000)throw Error("پاسخ سؤال‌ها بیش از حد مجاز بزرگ است.");
+      let data;try{data=JSON.parse(text);}catch{throw Error("پاسخ exam-questions فایل JSON معتبر نبود؛ سؤال‌های قبلی حفظ شدند.");}
+      if(serial!==readSerial||controller.signal.aborted)throw Error("دریافت قبلی لغو شد؛ سؤال‌های پنل تغییر نکردند.");
+      return applyQuestions(data,expected);
+    }catch(e){
+      if(timedOut)throw Error("سرور exam-questions تا ۶۰ ثانیه پاسخ نداد. فایل را دوباره ارسال نکنید؛ اجرای همان ورک‌فلو را بررسی کنید.");
+      if(serial!==readSerial)throw Error("دریافت قبلی لغو شد؛ سؤال‌های پنل تغییر نکردند.");
+      if(e instanceof TypeError)throw Error("ارتباط با exam-questions برقرار نشد. سؤال‌های قبلی پنل حفظ شده‌اند.");
+      throw e;
+    }finally{
+      clearTimeout(timeout);clearTimeout(slow);
+      if(activeRead===record)activeRead=null;
+    }
+  })();
+  return record.promise;
+}
+window.__ACADEMY_REFRESH_QUESTIONS__=refreshQuestions;
+window.addEventListener("pagehide",cancelRead);
 function styles(){
   if(document.getElementById("academy-file-import-style"))return;
   const s=document.createElement("style");s.id="academy-file-import-style";
@@ -70,6 +130,7 @@ function install(){
   btn.onclick=()=>file.click();
 
   file.onchange=async()=>{
+    if(importInProgress)return;
     const f=file.files&&file.files[0]; if(!f)return;
     result.classList.remove("error");
     const ext=(f.name.split(".").pop()||"").toLowerCase();
@@ -91,11 +152,16 @@ function install(){
     fd.append("bank_version","");
     fd.append("create_new_exam","true");
 
+    cancelRead();
+    importInProgress=true;
+    const remoteButton=document.getElementById("qb-load-remote");
+    if(remoteButton)remoteButton.disabled=true;
     btn.disabled=true;title.disabled=true;file.disabled=true;
     btn.textContent="در حال ساخت آزمون جدید…";
     result.textContent="فایل به n8n ارسال شد؛ سؤال‌ها و پاسخ‌ها در حال استخراج هستند…";
     setStatus("در حال ساخت آزمون جدید از فایل…");
 
+    let acceptedImport=null;
     try{
       const r=await fetch(IMPORT_URL,{
         method:"POST",body:fd,credentials:"omit",cache:"no-store",referrerPolicy:"no-referrer",
@@ -103,27 +169,34 @@ function install(){
       });
       let data=null;try{data=await r.json();}catch{}
       if(!r.ok)throw new Error((data&&data.error)||("HTTP "+r.status));
-      if(data&&data.accepted===false)throw new Error(data.error||"فایل پذیرفته نشد.");
+      data=responseRoot(data);
+      if(!data||typeof data!=="object"||Array.isArray(data))throw Error("پاسخ سرور ساخت آزمون قابل بررسی نبود؛ وضعیت آزمون را پیش از تکرار بررسی کنید.");
+      if(data&&(data.accepted===false||data.ok===false))throw new Error(data.error||data.message||"فایل پذیرفته نشد.");
 
-      const count=Number(data?.imported_count||data?.question_count||0);
+      const count=Number(data?.imported_count||data?.question_count||data?.saved||data?.questions?.length||0);
       const missing=Number(data?.missing_answer_count||0);
-      const examId=String(data?.exam_id||"");
+      const examId=String(data?.exam_id||data?.examId||"").trim();
+      if(data.accepted!==true&&data.ok!==true&&!(examId&&count>0))throw Error("سرور ساخت آزمون را تأیید نکرد؛ وضعیت آزمون را پیش از تکرار بررسی کنید.");
+      acceptedImport={examId,count,title:String(title.value||f.name)};
+      if(examId)savePending(acceptedImport);
       result.textContent=(count?count+" سؤال برای آزمون جدید ثبت شد. ":"آزمون جدید ثبت شد. ")+(examId?"شناسه: "+examId+". ":"")+(missing?missing+" سؤال پاسخ صریح نداشت. ":"")+"در حال تازه‌سازی پنل…";
 
-      const refreshed=await refreshQuestions();
-      if(refreshed){
-        result.textContent=(count?count+" سؤال در آزمون جدید و مستقل وارد شد. ":"آزمون جدید آماده است. ")+(examId?"شناسه: "+examId+". ":"")+(missing?missing+" سؤال بدون پاسخ صریح بود. ":"")+"سؤال‌های آزمون قبلی با این آزمون ادغام نشده‌اند.";
-        setStatus("آزمون جدید با موفقیت ساخته شد؛ پنل فقط سؤال‌های همین آزمون را نمایش می‌دهد.","success");
-      }else{
-        result.textContent="آزمون جدید ساخته شد. دکمه «دریافت سؤال‌های فعلی از n8n» را بزن تا همین آزمون جدید لود شود.";
-        setStatus("آزمون جدید ساخته شد. سؤال‌ها را دوباره از n8n دریافت کن.","success");
-      }
+      if(!examId)throw Error("پاسخ ساخت آزمون شناسهٔ آزمون نداشت؛ برای بررسی، دریافت سؤال‌ها را بزنید و فایل را دوباره ارسال نکنید.");
+      const bank=Array.isArray(data?.questions)&&data.questions.length
+        ?applyQuestions(data,acceptedImport)
+        :await refreshQuestions({expected:acceptedImport,fromImport:true});
+      result.textContent=bank.questions.length+" سؤال در آزمون جدید و مستقل وارد شد. شناسه: "+examId+". "+(missing?missing+" سؤال بدون پاسخ صریح بود. ":"")+"سؤال‌های آزمون قبلی با این آزمون ادغام نشده‌اند.";
+      setStatus("آزمون جدید با موفقیت ساخته و در پنل بارگذاری شد؛ برای دریافت سؤال‌ها نیازی به زدن دکمهٔ دیگری نیست.","success");
     }catch(e){
-      result.textContent="ورود فایل ناموفق بود: "+String(e.message||e);
+      result.textContent=acceptedImport
+        ?"فایل پذیرفته شده است؛ فقط بارگذاری سؤال‌ها در پنل تأیید نشد. "+String(e.message||e)+" فایل را دوباره ارسال نکنید؛ دکمهٔ دریافت سؤال‌ها را بزنید."
+        :"تأیید ورود فایل دریافت نشد: "+String(e.message||e)+" پیش از ارسال دوباره، وضعیت آزمون را بررسی کنید.";
       result.classList.add("error");
-      setStatus("ورود فایل ناموفق بود: "+String(e.message||e),"error");
+      setStatus(result.textContent,"error");
     }finally{
+      importInProgress=false;
       btn.disabled=false;title.disabled=false;file.disabled=false;btn.textContent="انتخاب PDF یا Word";file.value="";
+      if(remoteButton?.isConnected)remoteButton.disabled=false;
     }
   };
 }
@@ -133,4 +206,5 @@ observer.observe(document.documentElement,{subtree:true,childList:true});
 document.addEventListener("click",()=>setTimeout(install,0),true);
 setTimeout(install,300);
 })();
+
 

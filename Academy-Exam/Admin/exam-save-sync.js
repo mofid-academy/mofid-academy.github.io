@@ -198,7 +198,9 @@ function install(){
 }
 
 window.__ACADEMY_QUESTIONS_DIRTY__=false;
+document.addEventListener("academy-remote-questions-loaded",markQuestionsClean);
 patchQuestionsApi();
 watchQuestionImports();
 install();
 })();
+
