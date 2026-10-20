@@ -112,8 +112,8 @@ dialog input{min-height:46px}.dialog-actions{gap:9px}.dialog-actions button{min-
 @media(prefers-reduced-motion:no-preference){button,input,select,textarea,.qb-card{transition:background .16s,border-color .16s,box-shadow .16s}}
 
 /* The editor shares the participant's light/dark appearance preference. */
-:root{color-scheme:light;background:#d1eee2;--academy-admin-glass:rgba(238,255,245,.75);--academy-admin-line:rgba(77,164,117,.17)}
-body{background:radial-gradient(ellipse at 92% 0%,rgba(0,175,157,.22),transparent 50%),radial-gradient(ellipse at 6% 90%,rgba(0,175,157,.15),transparent 48%),linear-gradient(145deg,#d6f0e2,#eaf8ed);background-attachment:fixed}
+:root{color-scheme:light;background:#f2faf5;--academy-admin-glass:rgba(238,255,245,.75);--academy-admin-line:rgba(77,164,117,.17)}
+body{background:radial-gradient(ellipse at 0% 0%,rgba(255,255,255,.98),transparent 49%),radial-gradient(ellipse at 100% 0%,rgba(255,255,255,.92),transparent 47%),radial-gradient(ellipse at 0% 100%,rgba(255,255,255,.86),transparent 43%),radial-gradient(ellipse at 100% 100%,rgba(255,255,255,.95),transparent 47%),radial-gradient(ellipse at 82% 28%,rgba(0,175,157,.055),transparent 52%),radial-gradient(ellipse at 18% 76%,rgba(0,175,157,.035),transparent 50%),linear-gradient(155deg,#f2faf5,#e7f4ec 55%,#f0f9f3);background-attachment:fixed}
 .topbar{background:linear-gradient(100deg,rgba(245,255,249,.8),rgba(213,247,228,.72));backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-color:rgba(255,255,255,.72)}
 .actions{flex-wrap:wrap}
 .status{background:rgba(216,244,226,.85);border-color:var(--academy-admin-line)}
@@ -129,7 +129,7 @@ body{background:radial-gradient(ellipse at 92% 0%,rgba(0,175,157,.22),transparen
 .academy-theme-toggle:hover{background:#cdefd9;border-color:#92c8ac}
 .academy-theme-toggle:focus-visible{outline:2px solid #00af9d;outline-offset:3px}
 html[data-academy-theme="dark"]{color-scheme:dark;background:#08251c;--ink:#dff5e7;--muted:#94bba3;--teal:#73d7ad;--line:#2c5640;--light:#133b29;--academy-admin-glass:rgba(13,45,30,.88);--academy-admin-line:rgba(134,218,167,.17)}
-html[data-academy-theme="dark"] body{background:radial-gradient(ellipse at 95% 0%,rgba(0,175,157,.18),transparent 48%),radial-gradient(ellipse at 4% 92%,rgba(0,175,157,.12),transparent 45%),linear-gradient(145deg,#061e15,#0c2b1d);background-attachment:fixed}
+html[data-academy-theme="dark"] body{background:radial-gradient(ellipse at 0% 0%,rgba(255,255,255,.04),transparent 43%),radial-gradient(ellipse at 100% 100%,rgba(255,255,255,.025),transparent 43%),radial-gradient(ellipse at 95% 0%,rgba(0,175,157,.075),transparent 48%),radial-gradient(ellipse at 4% 92%,rgba(0,175,157,.045),transparent 45%),linear-gradient(145deg,#091d15,#0c2218);background-attachment:fixed}
 html[data-academy-theme="dark"] .topbar{background:linear-gradient(100deg,rgba(13,43,29,.93),rgba(14,60,40,.86));border-color:var(--line)}
 html[data-academy-theme="dark"] .brand small{color:#96bba4}
 html[data-academy-theme="dark"] .brand .academy-logo{background:#fff;border-color:#365f46}
