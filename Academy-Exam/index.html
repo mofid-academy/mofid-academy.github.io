@@ -1,8 +1,10 @@
-<!doctype html><html lang="fa" dir="rtl" data-academy-entry="3"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمون آکادمی مفید</title></head><body><p style="font-family:Tahoma;text-align:center;margin-top:12vh">در حال آماده‌سازی آزمون…</p><script>
+<!doctype html><html lang="fa" dir="rtl" data-academy-entry="3"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمون آکادمی مفید</title><style>html{background:#d1eee2;color:#164d3b;color-scheme:light}html[data-academy-theme="dark"]{background:#08251c;color:#dff5e7;color-scheme:dark}body{background:transparent;color:inherit}</style></head><body><p style="font-family:Tahoma;text-align:center;margin-top:12vh">در حال آماده‌سازی آزمون…</p><script>
 (async()=>{
 // Re-read the entry on each visit, even when the outer HTML came from browser cache.
 const loadStamp=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 function assetURL(path){const u=new URL(path,location.href);u.searchParams.set('academy_live',loadStamp);return u.href;}
+function preferredTheme(){try{const mode=localStorage.getItem('academy-appearance-v1');if(mode==='light'||mode==='dark')return mode;}catch{}return window.matchMedia?.('(prefers-color-scheme:dark)').matches?'dark':'light';}
+const appearance=preferredTheme();document.documentElement.dataset.academyTheme=appearance;
 if(!window.__ACADEMY_PUBLIC_ENTRY_REFRESHED__){
  try{
   const response=await fetch(assetURL('index.html'),{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(8000)});
@@ -93,6 +95,11 @@ async function readLiveTiming(options={}){
   base=base.split("https://miladmirsheriseyed.app.n8n.cloud").join("https://miladmirsheriam.app.n8n.cloud").split("https://miladmirsheriii.app.n8n.cloud").join("https://miladmirsheriam.app.n8n.cloud").split("https://miladmmirsheri.app.n8n.cloud").join("https://miladmirsheriam.app.n8n.cloud");
   base=base.replace(/(<script id="academy-question-bank"[^>]*>[\s\S]*?"submitApproved"\s*:\s*)false/, '$1true');
   base=patchArchiveRuntime(patchSubmissionRuntime(base));
+  // Direct question links keep final required-answer validation and existing timing gates.
+  base=base.replace(' go=function(i){\n  if(i>step',' go=function(i,options){\n  if(options?.navigation!=="question-map"&&i>step');
+  base=base.replace('  oldGo(i);decorate();','  return Promise.resolve(oldGo(i,options)).then(decorate);');
+  // A pending option animation must not move away from a question selected on the map.
+  base=base.replace('setTimeout(()=> last?review():go(i+1), 170);','setTimeout(()=>{if(b.isConnected&&step===i)(last?review():go(i+1));},170);');
   // Test drafts never read or replace a real participant's pending submission.
   base=base.replace(/const pendingKey=([^;\n]+);/,'const pendingKey=(window.__ACADEMY_TEST_SESSION__?"academy-test-pending-v1:":"")+$1;');
   base=base.replace('  const id=()=>globalThis.crypto?.randomUUID?.()', '  if(window.__ACADEMY_TEST_SESSION__&&!await window.__ACADEMY_TEST_SESSION__.ensure())return;\n  const id=()=>globalThis.crypto?.randomUUID?.()');
@@ -251,7 +258,7 @@ async function refreshTiming(){
 }
 setInterval(()=>{if(!document.hidden&&!attempt&&!startedUntimed&&!finished)refreshTiming();},10000);
 setTimeout(()=>refreshTiming(),0);
-go=async function(i){
+go=async function(i,options){
  if(testSession&&!await testSession.ensure())return;
  if(!attempt&&!startedUntimed){if(starting)return;starting=true;const ok=await refreshTiming();starting=false;if(!ok&&!testSession)return;const g=gate();if(!g.ok){oldIntro();gateUI();return;}if(!timingEnabled)startedUntimed=true;}
 
@@ -262,8 +269,15 @@ go=async function(i){
   }
   if(attempt&&now()>=attempt.deadline){expire();return;}
   if(attempt)persist();
-  oldGo(i);
-  if(attempt){attempt.step=i;persist();ticker();}
+  oldGo(i,options);
+  if(attempt){attempt.step=step;persist();ticker();}
+};
+
+window.__ACADEMY_NAVIGATE_QUESTION__=async function(index){
+ if(!Number.isInteger(index)||!exam||index<0||index>=exam.questions.length||step<0||step>exam.questions.length||sending||expired||finished||window.__ACADEMY_EXPIRED__)return false;
+ if(!document.querySelector('#view .qtext,#view .rev'))return false;
+ await go(index,{navigation:'question-map'});
+ return !expired&&!finished&&!sending&&step===index&&!!document.querySelector('#view .qtext');
 };
 
 review=async function(){
@@ -294,7 +308,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(attemp
   const skin='<style id="academy-exam-skin">'+visual.css.replace(/<\/style/gi,'<\\/style')+'</style>';
   const customStyle=base.match(/<style\b[^>]*\bid=["']academy-studio-overrides["'][^>]*>[\s\S]*?<\/style>/i)?.[0]||'';
   if(customStyle)base=base.replace(customStyle,'');
-  let html=base.replace('<head>','<head>'+networkPolicy+networkScript).replace('</head>',css+skin+customStyle+'</head>');
+  let html=base.replace('<html ','<html data-academy-theme="'+appearance+'" ').replace('<head>','<head>'+networkPolicy+networkScript).replace('</head>',css+skin+customStyle+'</head>');
   html=html.replace('<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>','<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>'+badge);
   html=html.replace('$("fM").textContent = toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3));','$("fM").textContent = '+(cfg.enabled!==false?'toFa('+Number(cfg.durationMinutes||15)+') + " دقیقه"':'toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3))')+';');
   const marker='\nboot();';

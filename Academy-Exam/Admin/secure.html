@@ -5,13 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>مدیریت آزمون، آرشیو و نتایج | آکادمی مفید</title>
 <link rel="preload" href="../assets/Pinar-VF.woff" as="font" type="font/woff" crossorigin>
-<style>html,body{height:100%;margin:0;background:#f6f9f8;font-family:Tahoma,sans-serif}.loading{display:grid;place-items:center;height:100%;color:#315b55}</style>
+<style>html,body{height:100%;margin:0;background:#d1eee2;font-family:Tahoma,sans-serif}html[data-academy-theme="dark"],html[data-academy-theme="dark"] body{background:#08251c;color:#dff5e7}html[data-academy-theme="dark"] .loading{color:#b6e5c7}.loading{display:grid;place-items:center;height:100%;color:#315b55}</style>
 </head>
 <body><div class="loading">در حال بارگذاری پنل مدیریت…</div>
 <script>
 (async()=>{
 const loadStamp=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 function assetURL(path){const u=new URL(path,location.href);u.searchParams.set('academy_live',loadStamp);return u.href;}
+function preferredTheme(){try{const mode=localStorage.getItem('academy-appearance-v1');if(mode==='light'||mode==='dark')return mode;}catch{}return window.matchMedia?.('(prefers-color-scheme:dark)').matches?'dark':'light';}
+const appearance=preferredTheme();document.documentElement.dataset.academyTheme=appearance;
 if(!window.__ACADEMY_ADMIN_ENTRY_REFRESHED__){
  try{
   const response=await fetch(assetURL('secure.html'),{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(8000)});
@@ -89,7 +91,9 @@ async function readLiveTiming(options={}){
   html=html.replace('optionDrafts=new Map();changed();render();','optionDrafts=new Map();changed();render();window.__ACADEMY_ON_BANK_ADOPTED__?.(JSON.parse(JSON.stringify(s)));');
   html=html.replace('بانک و فرم روی GitHub عمومی هستند. پاسخ صحیح، کلید دسترسی و معیار تصحیح محرمانه را در این پنل یا متن سؤال وارد نکن.','فایل عمومی فرم فقط شامل سؤال‌هاست. کلیدهای انتخاب‌شده هنگام ذخیره در آرشیو خصوصی سرور نگه داشته می‌شوند.');
   const visualState='<scr'+'ipt>window.__ACADEMY_VISUAL_ASSETS__='+JSON.stringify(visual).replace(/</g,'\\u003c')+closeScript;
-  const extensions=visualState+['timing-admin.js','visual-preview.js','site-access-admin.js','exam-save-sync.js','answer-key-ui.js','file-import-ui.js','xlsx-export.js','archive-admin.js'].map(path=>'<scr'+'ipt src="'+assetURL(path)+'">'+closeScript).join('');
+  const appearanceScript='<scr'+'ipt>'+visual.script.replace(/<\/script/gi,'<\\/script')+closeScript;
+  const extensions=visualState+appearanceScript+['timing-admin.js','visual-preview.js','site-access-admin.js','exam-save-sync.js','answer-key-ui.js','file-import-ui.js','xlsx-export.js','archive-admin.js'].map(path=>'<scr'+'ipt src="'+assetURL(path)+'">'+closeScript).join('');
+  html=html.replace('<html ','<html data-academy-theme="'+appearance+'" ');
   html=html.replace('<body>','<body>'+timingState);
   html=html.replace('</body>',extensions+'</body>');
   document.open();document.write(html);document.close();
