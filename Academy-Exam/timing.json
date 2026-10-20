@@ -22,5 +22,11 @@
     ],
     "revision": "vis_1402353a4b234d2f9983bce8be291404",
     "updatedAt": "2026-10-19T10:11:54.231Z"
+  },
+  "accessLock": {
+    "version": 1,
+    "locked": true,
+    "revision": "lock_b1b34a71-5ba3-464c-bd02-df3225790385",
+    "updatedAt": "2026-10-20T06:08:37.615Z"
   }
 }
