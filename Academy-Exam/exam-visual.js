@@ -1,18 +1,15 @@
-/* Shared appearance preferences and question navigation; no requests or grading. */
+/* Appearance for the current visit and question navigation; no requests or grading. */
 (function(){
  'use strict';
- const root=document.documentElement,key='academy-appearance-v1';
+ const root=document.documentElement;
  const valid=value=>value==='light'||value==='dark';
- let stored='';try{stored=localStorage.getItem(key)||'';}catch{}
- const media=window.matchMedia?.('(prefers-color-scheme:dark)');
- let mode=valid(root.dataset.academyTheme)?root.dataset.academyTheme:valid(stored)?stored:media?.matches?'dark':'light';
- let explicit=valid(stored),toggle;
+ // Each page opens in light mode. Only a sandbox preview inherits its editor's mode.
+ let mode=window.__ACADEMY_PREVIEW__&&valid(root.dataset.academyTheme)?root.dataset.academyTheme:'light',toggle;
  const sun='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>';
  const moon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20.5 14.3A8.5 8.5 0 0 1 9.7 3.5a8.5 8.5 0 1 0 10.8 10.8Z"/></svg>';
- function apply(value,persist=false){
+ function apply(value){
   if(!valid(value))return;
   mode=value;root.dataset.academyTheme=value;
-  if(persist){explicit=true;try{localStorage.setItem(key,value);}catch{}}
   if(toggle){
    toggle.innerHTML=(value==='dark'?moon:sun)+'<span class="academy-theme-label">'+(value==='dark'?'تاریک':'روشن')+'</span>';
    const label='فعال‌کردن حالت '+(value==='dark'?'روشن':'تاریک');
@@ -20,18 +17,16 @@
   }
   let color=document.querySelector('meta[name="theme-color"]');
   if(!color){color=document.createElement('meta');color.name='theme-color';document.head.append(color);}
-  color.content=value==='dark'?'#08251c':'#d1eee2';
+  color.content=value==='dark'?'#2b3430':'#f2faf5';
   window.dispatchEvent(new CustomEvent('academy-theme-change',{detail:{mode:value}}));
  }
- window.__ACADEMY_THEME__={get:()=>mode,set:value=>apply(value,true)};
+ window.__ACADEMY_THEME__={get:()=>mode,set:apply};
  if(!window.__ACADEMY_PREVIEW__){
   const host=document.querySelector('.topbar .actions')||document.querySelector('.top');
   if(host&&!document.getElementById('academyThemeToggle')){
    toggle=document.createElement('button');toggle.id='academyThemeToggle';toggle.className='academy-theme-toggle';toggle.type='button';
-   toggle.onclick=()=>apply(mode==='dark'?'light':'dark',true);host.append(toggle);
+   toggle.onclick=()=>apply(mode==='dark'?'light':'dark');host.append(toggle);
   }
-  window.addEventListener('storage',event=>{if(event.key!==key)return;explicit=valid(event.newValue);apply(explicit?event.newValue:media?.matches?'dark':'light');});
-  media?.addEventListener?.('change',event=>{if(!explicit)apply(event.matches?'dark':'light');});
  }else{
   window.addEventListener('message',event=>{
    if(event.source===parent&&event.origin===window.__ACADEMY_THEME_PARENT_ORIGIN__&&event.data?.kind==='academy-preview-theme'&&valid(event.data.mode))apply(event.data.mode);

@@ -3,8 +3,7 @@
 // Re-read the entry on each visit, even when the outer HTML came from browser cache.
 const loadStamp=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 function assetURL(path){const u=new URL(path,location.href);u.searchParams.set('academy_live',loadStamp);return u.href;}
-function preferredTheme(){try{const mode=localStorage.getItem('academy-appearance-v1');if(mode==='light'||mode==='dark')return mode;}catch{}return window.matchMedia?.('(prefers-color-scheme:dark)').matches?'dark':'light';}
-const appearance=preferredTheme();document.documentElement.dataset.academyTheme=appearance;
+const appearance='light';document.documentElement.dataset.academyTheme=appearance;
 if(!window.__ACADEMY_PUBLIC_ENTRY_REFRESHED__){
  try{
   const response=await fetch(assetURL('index.html'),{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(8000)});
@@ -56,8 +55,14 @@ function patchSubmissionRuntime(html) {
    'throw Error(ack?.accepted===false&&typeof ack.message==="string"?ack.message:"سرور ذخیرهٔ همین پاسخ را تأیید نکرد؛ با همان شناسه دوباره تلاش کنید.");');
   code=code.replace('submitted=true;done();',
    'submitted=true;try{sessionStorage.removeItem(pendingKey);}catch{}pendingPayload=null;done();');
-  // The authenticated test review waits for its admin session before repainting.
-  code=code.replace('sending=false;oldReview();','sending=false;await oldReview();');
+  // An expired attempt needs a retry action; its normal review is blocked by the timer.
+  code=code.replace('sending=false;oldReview();',`sending=false;
+   if(window.__ACADEMY_EXPIRED__){
+    step=exam.questions.length;chrome();
+    paint('<div class="center fade"><h1>زمان آزمون پایان یافته است</h1><p class="sub">پاسخ‌های شما حفظ شده‌اند؛ برای ثبت نهایی دوباره تلاش کنید.</p></div>',
+     '<div class="foot"><span class="hint">پس از پایان زمان، پاسخ‌ها قابل تغییر نیستند.</span><div class="btns"><button class="b p" id="send">تلاش مجدد برای ثبت پاسخ‌ها</button></div></div>');
+    document.getElementById('send').onclick=send;
+   }else{await oldReview();}`);
   return start+code+end;
  });
 }
@@ -237,7 +242,7 @@ intro=function(){
   if(!attempt&&!timingEnabled){oldIntro();gateUI();return;}
   if(attempt){
     name=attempt.name||'';answers=attempt.answers||{};
-    if(now()>=attempt.deadline){oldIntro();setTimeout(expire,0);return;}
+    if(now()>=attempt.deadline){attempt.expiring=false;oldIntro();setTimeout(expire,0);return;}
     const s=Math.max(0,Math.min(Number(attempt.step)||0,exam.questions.length));
     if(s>=exam.questions.length) oldReview(); else oldGo(s);
     ticker();return;

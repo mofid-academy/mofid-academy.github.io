@@ -12,8 +12,7 @@
 (async()=>{
 const loadStamp=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 function assetURL(path){const u=new URL(path,location.href);u.searchParams.set('academy_live',loadStamp);return u.href;}
-function preferredTheme(){try{const mode=localStorage.getItem('academy-appearance-v1');if(mode==='light'||mode==='dark')return mode;}catch{}return window.matchMedia?.('(prefers-color-scheme:dark)').matches?'dark':'light';}
-const appearance=preferredTheme();document.documentElement.dataset.academyTheme=appearance;
+const appearance='light';document.documentElement.dataset.academyTheme=appearance;
 if(!window.__ACADEMY_ADMIN_ENTRY_REFRESHED__){
  try{
   const response=await fetch(assetURL('secure.html'),{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(8000)});
