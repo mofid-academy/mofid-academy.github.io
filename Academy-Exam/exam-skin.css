@@ -301,3 +301,27 @@ html[data-academy-theme="dark"] .exam-timer.warn1 b{color:#ffb297}
 }
 @media(max-width:520px){.top .academy-theme-toggle{width:37px;min-height:37px;padding:8px;border-radius:11px}.top .academy-theme-label{display:none}}
 @media(prefers-reduced-motion:reduce){body::before,.academy-question-map-item,.academy-question-map-toggle::after{animation:none!important;transition:none!important}}
+
+/* Separate the question surface from the green background in both themes. */
+.card{
+ --ink:#161a18;--ink-2:#454d48;--ink-3:#6c7870;
+ background:#fff;color:var(--ink);border-color:#e1e8e3;backdrop-filter:none;-webkit-backdrop-filter:none;
+ box-shadow:0 24px 70px rgba(0,35,20,.14),0 2px 8px rgba(0,0,0,.025)
+}
+html[data-academy-theme="dark"] .card{
+ --ink:#f3f4f3;--ink-2:#c7cbc8;--ink-3:#a3aaa5;
+ background:#111413;border-color:#343b37;
+ box-shadow:0 24px 70px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.035)
+}
+html[data-academy-theme="dark"] .card .opts::before{background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.025),transparent 70%)}
+html[data-academy-theme="dark"] .card .opt{background:linear-gradient(150deg,#292e2b,#1c201e);border-color:#424a45;box-shadow:0 6px 20px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.035)}
+html[data-academy-theme="dark"] .card .opt:hover{background:linear-gradient(150deg,#343c37,#252d28);border-color:rgba(62,200,155,.55)}
+html[data-academy-theme="dark"] .card .opt .key{background:#2c3931;color:#b1e5cd;border-color:#4a6b56}
+html[data-academy-theme="dark"] .card .opt[aria-pressed="true"]{background:linear-gradient(150deg,#0e4035,#183a2e);border-color:#49c6a0;box-shadow:0 0 0 3px rgba(0,175,157,.12),0 8px 25px rgba(0,0,0,.2)}
+html[data-academy-theme="dark"] .card .opt[aria-pressed="true"] .key{background:#56d2aa;color:#063022;border-color:#56d2aa}
+html[data-academy-theme="dark"] .card input[type=text],html[data-academy-theme="dark"] .card textarea{background:#191f1b;border-color:#48574b;color:var(--ink)}
+html[data-academy-theme="dark"] .card input:focus,html[data-academy-theme="dark"] .card textarea:focus{background:#202923;border-color:var(--teal-600)}
+html[data-academy-theme="dark"] .card #foot>.foot{border-color:#363e38}
+html[data-academy-theme="dark"] .card .bar{background:#2c322e}
+html[data-academy-theme="dark"] .card .rev button{background:#1d2320;border-color:#3b463e;color:var(--ink-2)}
+html[data-academy-theme="dark"] .card button.b:not(.p){background:#202622;border-color:#4b574e;color:var(--ink)}
