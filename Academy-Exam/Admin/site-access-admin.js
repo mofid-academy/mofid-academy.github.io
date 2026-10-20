@@ -91,6 +91,7 @@
  function openTest(){
   const key=currentKey();
   if(!key){message('ابتدا وارد ادمین شوید؛ آزمایش فقط از همین پنل باز می‌شود.');return;}
+  testURL.searchParams.set('live',String(Date.now()));
   const win=window.open(testURL.href,'_blank');
   if(!win){message('مرورگر پنجرهٔ آزمایش را باز نکرد؛ اجازهٔ بازشدن پنجره را برای این سایت بدهید.');return;}
   sessions.set(win,{key,nonce:'',id:crypto.randomUUID()});
