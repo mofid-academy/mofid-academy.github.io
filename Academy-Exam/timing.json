@@ -1,13 +1,13 @@
 {
   "version": 1,
   "enabled": true,
-  "openAt": "2026-10-11T08:00",
-  "lastStartAt": "2026-10-21T17:00",
-  "durationMinutes": 60,
+  "openAt": "2026-10-20T08:00",
+  "lastStartAt": "2026-10-28T17:00",
+  "durationMinutes": 50,
   "timeZone": "Asia/Tehran",
   "timeEndpoint": "",
-  "serverEpoch": 1791699023905,
-  "updatedAt": "2026-10-11T07:22:33.337Z",
+  "serverEpoch": 1792474944000,
+  "updatedAt": "2026-10-20T05:52:45.173Z",
   "hiddenResults": {
     "version": 1,
     "keys": [
