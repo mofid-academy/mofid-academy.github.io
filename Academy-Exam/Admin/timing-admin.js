@@ -8,6 +8,10 @@ async function readLiveTiming(options={}){
 
 const initial={version:1,enabled:true,openAt:"",lastStartAt:"",durationMinutes:15,timeZone:"Asia/Tehran",timeEndpoint:"",...(window.__ACADEMY_TIMING__||{})};
 let cfg={...initial},previewRefreshTimer=0;
+window.addEventListener('academy-site-access-changed',event=>{
+ const value=event.detail;
+ if(value)cfg.accessLock={...value};else delete cfg.accessLock;
+});
 
 function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 function fa(v){return String(v).replace(/[0-9]/g,d=>"۰۱۲۳۴۵۶۷۸۹"[d]);}
@@ -64,21 +68,24 @@ async function saveTimingToGitHub(target,t){
    const meta=await request(apiPath+"?ref=main&live="+Date.now());
    const current=decode(meta);
    if(!current||typeof current!=="object"||Array.isArray(current))throw Error('ساختار تنظیمات سایت معتبر نیست.');
-   if(matches(current))return;
+   if(matches(current))return current;
    // The timing editor never owns the display-only result deletion registry.
    // Merge its latest value after each SHA conflict, instead of a stale preview copy.
    const document={...current,...target};
    if(Object.prototype.hasOwnProperty.call(current,'hiddenResults'))document.hiddenResults=current.hiddenResults;
    else delete document.hiddenResults;
+   // The access control owns this field; timing drafts must not undo a lock.
+   if(Object.prototype.hasOwnProperty.call(current,'accessLock'))document.accessLock=current.accessLock;
+   else delete document.accessLock;
    const bytes=new TextEncoder().encode(JSON.stringify(document,null,2)+"\n");
    let binary="";for(const byte of bytes)binary+=String.fromCharCode(byte);
    await request(apiPath,{method:"PUT",body:JSON.stringify({message:"Academy Studio: update exam timing",content:btoa(binary),sha:meta.sha,branch:"main"})});
-   return;
+   return document;
   }catch(error){
    lastError=error;
    if(error.httpStatus&&![408,409,429,500,502,503,504].includes(error.httpStatus))throw error;
    // Public reading can confirm a commit even if the API response was lost.
-   try{if(matches(await readLiveTiming()))return;}catch{}
+   try{const fresh=await readLiveTiming();if(matches(fresh))return fresh;}catch{}
   }
  }
  if(lastError&&lastError.httpStatus)throw lastError;
@@ -112,6 +119,8 @@ function install(){
   </div><div id="tm-summary" class="academy-time-summary"></div>
   <div class="academy-time-actions"><button id="tm-reset">پاک کردن ساعت‌های ورود</button><button class="primary" id="tm-save">ذخیره زمان‌بندی روی سایت</button></div><p id="tm-msg" class="tip"></p>`;
   fields.append(root);
+  const accessHost=el('section');accessHost.id='academy-site-access';root.prepend(accessHost);
+  window.__ACADEMY_SITE_ACCESS__?.mount(accessHost);
   const en=root.querySelector("#tm-enabled"),du=root.querySelector("#tm-duration"),op=root.querySelector("#tm-open"),la=root.querySelector("#tm-last"),ep=root.querySelector("#tm-endpoint"),sum=root.querySelector("#tm-summary"),msg=root.querySelector("#tm-msg");
   en.checked=!!cfg.enabled;du.value=cfg.durationMinutes||15;op.value=cfg.openAt||"";la.value=cfg.lastStartAt||"";ep.value=cfg.timeEndpoint||"";
   const sync=()=>{cfg.enabled=en.checked;cfg.durationMinutes=Math.max(1,Math.min(480,+du.value||15));cfg.openAt=op.value;cfg.lastStartAt=la.value;cfg.timeEndpoint=ep.value.trim();sum.innerHTML="<b>رفتار فعلی:</b><br>"+(cfg.enabled?"هر نفر "+fa(cfg.durationMinutes)+" دقیقه کامل از شروع خودش فرصت دارد.":"تایمر غیرفعال است.")+"<br>"+(cfg.openAt?"باز شدن: "+fa(cfg.openAt.replace("T"," — "))+" تهران":"شروع آزمون فعلاً باز است.")+"<br>"+(cfg.lastStartAt?"آخرین شروع مجاز: "+fa(cfg.lastStartAt.replace("T"," — "))+" تهران":"آخرین زمان شروع محدود نشده است.")+"<br>مرجع زمان: "+(cfg.timeEndpoint?"سرویس اختصاصی":"زمان سرور GitHub Pages");previewRefreshSoon();};
@@ -125,14 +134,15 @@ function install(){
    msg.textContent="در حال ذخیره و بررسی تنظیمات زنده…";
    try{
     const target={...cfg,version:1,timeZone:"Asia/Tehran",updatedAt:new Date().toISOString()};
-    await saveTimingToGitHub(target,t);
+    const saved=await saveTimingToGitHub(target,t);
     let verified=false;
     // Verify the exact version at the same source used by participants.
     for(let attempt=0;attempt<4;attempt++){
      if(attempt)await new Promise(resolve=>setTimeout(resolve,1200));
      try{const fresh=await readLiveTiming();verified=fresh.updatedAt===target.updatedAt&&fresh.enabled===target.enabled&&fresh.durationMinutes===target.durationMinutes&&fresh.openAt===target.openAt&&fresh.lastStartAt===target.lastStartAt;if(verified)break;}catch{}
     }
-    cfg={...target};window.__ACADEMY_TIMING__={...target};
+    cfg={...saved};window.__ACADEMY_TIMING__={...saved};
+    window.dispatchEvent(new CustomEvent('academy-site-access-changed',{detail:saved.accessLock||null}));
     try{localStorage.setItem('academy-timing-live',target.updatedAt);const c=new BroadcastChannel('academy-timing-live');c.postMessage({revision:target.updatedAt});c.close();}catch{}
     if(verified){msg.textContent='ذخیره و خواندن نسخه جدید تأیید شد؛ صفحات منتظر حداکثر در بررسی بعدی (۱۰ ثانیه) به‌روز می‌شوند. مهلت افراد شروع‌کرده ثابت می‌ماند.';setStatus('زمان‌بندی زنده به‌روز شد.','success');}
     else{msg.textContent='در GitHub ذخیره شد، اما خواندن نسخه تازه هنوز تأیید نشده است. انتشار Pages لازم نیست؛ کمی بعد سایت را دوباره بررسی کنید.';setStatus('ذخیره انجام شد؛ تأیید دسترسی به نسخه تازه در انتظار است.','warning');}
@@ -147,6 +157,7 @@ function install(){
 patchPreview();
 install();
 })();
+
 
 
 

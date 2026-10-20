@@ -1,5 +1,10 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمون آکادمی مفید</title><script src="public-network.js?v=n20261019"></script></head><body><p style="font-family:Tahoma;text-align:center;margin-top:12vh">در حال آماده‌سازی آزمون…</p><script>
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمون آکادمی مفید</title><script src="public-network.js?v=l20261020"></script></head><body><p style="font-family:Tahoma;text-align:center;margin-top:12vh">در حال آماده‌سازی آزمون…</p><script>
 (async()=>{
+let testSession=null;
+if(new URL(location.href).searchParams.get('academy-test')==='1'){
+ await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='private-test.js?v=l20261020';script.onload=resolve;script.onerror=()=>reject(Error('بخش آزمایش خصوصی بارگذاری نشد؛ آن را دوباره از پنل باز کنید.'));document.head.append(script);});
+ testSession=await window.__ACADEMY_ADMIN_TEST__.authorize();
+}
 function patchSubmissionRuntime(html) {
  return html.replace(/(<script id="academy-question-runtime"[^>]*>)([\s\S]*?)(<\/script>)/,(_,start,code,end)=>{
   if(code.includes('academy-pending-submission-v4:')||code.includes('academy-pending-submission-v5:'))return start+code+end;
@@ -66,8 +71,12 @@ async function readLiveTiming(options={}){
   base=base.split("https://miladmirsheriseyed.app.n8n.cloud").join("https://miladmirsheriam.app.n8n.cloud").split("https://miladmirsheriii.app.n8n.cloud").join("https://miladmirsheriam.app.n8n.cloud").split("https://miladmmirsheri.app.n8n.cloud").join("https://miladmirsheriam.app.n8n.cloud");
   base=base.replace(/(<script id="academy-question-bank"[^>]*>[\s\S]*?"submitApproved"\s*:\s*)false/, '$1true');
   base=patchArchiveRuntime(patchSubmissionRuntime(base));
+  // Test drafts never read or replace a real participant's pending submission.
+  base=base.replace(/const pendingKey=([^;\n]+);/,'const pendingKey=(window.__ACADEMY_TEST_SESSION__?"academy-test-pending-v1:":"")+$1;');
+  base=base.replace('  const id=()=>globalThis.crypto?.randomUUID?.()', '  if(window.__ACADEMY_TEST_SESSION__)return await window.__ACADEMY_TEST_SUBMIT__();\n  const id=()=>globalThis.crypto?.randomUUID?.()');
+  base=base.replace('async function send(){','async function send(){\n  if(window.__ACADEMY_TEST_SESSION__)return await window.__ACADEMY_TEST_SUBMIT__();');
   base=base.replace(/<link\b[^>]*\bhref=["']https:\/\/fonts\.(?:googleapis|gstatic)\.com[^"']*["'][^>]*>/gi,'');
-  const networkScript='<scr'+'ipt src="public-network.js?v=n20261019"></scr'+'ipt>';
+  const networkScript='<scr'+'ipt src="public-network.js?v=l20261020"></scr'+'ipt>';
   const cfg=tR;
   const liveReader=readLiveTiming;
   window.__ACADEMY_READ_TIMING__=liveReader;
@@ -78,6 +87,7 @@ async function readLiveTiming(options={}){
   .exam-timer.warn1{background:#fff0ee;border-color:#f0b6af;animation:timerPulse 1s ease-in-out infinite}.exam-timer.warn1 b{color:#b0392e}
   @keyframes timerPulse{50%{box-shadow:0 0 0 5px rgba(224,86,76,.10)}}
   .exam-gate{margin-top:16px}.exam-gate strong{display:block;color:var(--teal-800);margin-bottom:3px}.exam-gate.closed{background:#fff0ee;border-color:#f6d5d1;color:#8f3e37}.exam-gate.closed strong{color:#a43d34}.exam-gate-count{font:700 1rem/1.5 ui-monospace,Consolas,monospace;direction:ltr;display:inline-block}
+  .academy-admin-test-banner{max-width:1124px;box-sizing:border-box;margin:12px auto;padding:12px 18px;border:1px solid #eac69e;border-radius:14px;background:#fff8e8;color:#79551e;font-size:.85rem;line-height:1.9}.academy-admin-test-banner strong{display:block}.academy-admin-test-banner p{margin:0}
   @media(max-width:880px){.top{flex-wrap:wrap}.exam-timer{order:4;margin-inline-start:auto}.pill{margin-inline-start:0}}
   </style>
   <style id="academy-motion-effects">
@@ -139,10 +149,31 @@ async function readLiveTiming(options={}){
 ;(()=>{
 const cfg=${JSON.stringify(cfg).replace(/</g,'\\u003c')};
 cfg.durationMinutes=Math.max(1,Math.min(480,Number(cfg.durationMinutes)||15));
+const testSession=window.__ACADEMY_TEST_SESSION__;
 let timingEnabled=cfg.enabled!==false;
 let serverOffset=Number.isFinite(cfg.serverEpoch)?cfg.serverEpoch-Date.now():0;
 let attempt=null,timerId=0,gateId=0,expired=false,finished=false,startedUntimed=false,starting=false,refreshing=null,timingError='',lastCheck=Date.now();
 const oldIntro=intro,oldGo=go,oldReview=review,oldSend=send,oldDone=done;
+if(testSession){
+ testSession.attach();
+ const banner=document.createElement('aside');banner.id='academyAdminTest';banner.className='academy-admin-test-banner';banner.setAttribute('role','status');
+ banner.innerHTML='<strong>آزمایش خصوصی ادمین</strong><p>قفل و زمان ورود برای این پنجره کنار گذاشته شده‌اند. پاسخ‌ها در نتایج و شیت ثبت نمی‌شوند. پنل ادمین را باز نگه دارید.</p>';
+ document.querySelector('.top')?.insertAdjacentElement('afterend',banner);
+ testSession.onEnd(()=>{clearInterval(timerId);clearInterval(gateId);paint('<div class="center fade"><h1>جلسهٔ آزمایش پایان یافته است</h1><p class="sub">برای ادامه، از پنل ادمین دوباره «آزمایش خصوصی سایت» را باز کنید.</p></div>','');});
+ window.__ACADEMY_TEST_SUBMIT__=async function(){
+  if(sending||finished||!await testSession.ensure())return;
+  let questions=[];try{questions=JSON.parse(document.getElementById('academy-question-bank')?.textContent||'{}').questions||[];}catch{}
+  const missing=questions.findIndex((q,i)=>q.required&&!String(answers[i+1]??'').trim());
+  if(missing>=0&&!window.__ACADEMY_EXPIRED__){await go(missing);return;}
+  sending=true;done();
+  const title=document.querySelector('#view h1'),text=document.querySelector('#view .sub');
+  if(title)title.textContent='آزمایش پایان یافت';
+  if(text)text.textContent='پاسخ‌های آزمایشی فقط در همین پنجره بررسی شدند؛ هیچ پاسخی در سامانه یا شیت ثبت نشده است.';
+  const label=document.querySelector('#view .eyebrow'),chip=document.querySelector('#view .chip');
+  if(label)label.textContent='آزمایش تکمیل شد';
+  if(chip)chip.textContent='بدون ثبت در نتایج';
+ };
+}
 
 function parseTehran(v){
   if(!v)return 0;
@@ -154,11 +185,12 @@ function rawNow(){return Date.now()+serverOffset;}
 function now(){return attempt&&attempt.lastSeen?Math.max(rawNow(),attempt.lastSeen):rawNow();}
 function fmt(ms){try{return new Intl.DateTimeFormat('fa-IR',{timeZone:'Asia/Tehran',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(ms));}catch(e){return new Date(ms).toLocaleString('fa-IR');}}
 function cd(ms){const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),x=s%60;return(h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');}
-function storageKey(){let run='';try{run=JSON.parse(document.getElementById('academy-publication')?.textContent||'{}').run_id||'';}catch{}const id=run||(exam&&(exam.examId||exam.formId||exam.examTitle)||location.pathname);return 'academy-attempt-v4::'+String(id).replace(/[^a-zA-Z0-9_\\-آ-ی]/g,'_').slice(0,160);}
-function readAttempt(){try{const x=JSON.parse(localStorage.getItem(storageKey())||'null');return x&&x.v===4&&x.deadline?x:null;}catch(e){return null;}}
-function persist(){if(!attempt)return;attempt.name=name;attempt.answers=answers;attempt.step=step;attempt.lastSeen=Math.max(attempt.lastSeen||0,rawNow());try{localStorage.setItem(storageKey(),JSON.stringify(attempt));}catch(e){}}
-function clearAttempt(){try{localStorage.removeItem(storageKey());}catch(e){}attempt=null;}
-function gate(){if(timingError)return{ok:false,type:'unavailable'};const n=now(),o=parseTehran(cfg.openAt),l=parseTehran(cfg.lastStartAt);if(!timingEnabled)return{ok:true};if(o&&n<o)return{ok:false,type:'early',at:o};if(l&&n>l&&!attempt)return{ok:false,type:'late',at:l};return{ok:true};}
+function storageKey(){let run='';try{run=JSON.parse(document.getElementById('academy-publication')?.textContent||'{}').run_id||'';}catch{}const id=run||(exam&&(exam.examId||exam.formId||exam.examTitle)||location.pathname);return (testSession?'academy-test-attempt-v1::'+testSession.id+'::':'academy-attempt-v4::')+String(id).replace(/[^a-zA-Z0-9_\\-آ-ی]/g,'_').slice(0,160);}
+function attemptStorage(){return testSession?sessionStorage:localStorage;}
+function readAttempt(){try{const x=JSON.parse(attemptStorage().getItem(storageKey())||'null');return x&&x.v===4&&x.deadline?x:null;}catch(e){return null;}}
+function persist(){if(!attempt)return;attempt.name=name;attempt.answers=answers;attempt.step=step;attempt.lastSeen=Math.max(attempt.lastSeen||0,rawNow());try{attemptStorage().setItem(storageKey(),JSON.stringify(attempt));}catch(e){}}
+function clearAttempt(){try{attemptStorage().removeItem(storageKey());}catch(e){}attempt=null;}
+function gate(){if(testSession)return{ok:testSession.isActive(),type:'test-ended'};if(timingError)return{ok:false,type:'unavailable'};if(cfg.accessLock?.locked===true&&!attempt&&!startedUntimed)return{ok:false,type:'locked'};const n=now(),o=parseTehran(cfg.openAt),l=parseTehran(cfg.lastStartAt);if(!timingEnabled)return{ok:true};if(o&&n<o)return{ok:false,type:'early',at:o};if(l&&n>l&&!attempt)return{ok:false,type:'late',at:l};return{ok:true};}
 function badgeTick(){
   if(!attempt)return;
   const e=document.getElementById('examTimer'),v=document.getElementById('examTimerValue');
@@ -171,15 +203,16 @@ function badgeTick(){
 function ticker(){clearInterval(timerId);badgeTick();timerId=setInterval(badgeTick,1000);}
 function gateUI(){
   clearInterval(gateId);document.getElementById('academyGate')?.remove();
-  if(!timingEnabled&&!timingError){const b=document.getElementById('go');if(b){b.disabled=false;b.textContent='شروع آزمون ←';}return;}
   const s=gate(),b=document.getElementById('go');
   if(s.ok){if(b){b.disabled=false;b.textContent='شروع آزمون ←';}return;}
-  const d=document.createElement('div');d.id='academyGate';d.className='note exam-gate'+(s.type==='late'?' closed':'');
+  const d=document.createElement('div');d.id='academyGate';d.className='note exam-gate'+(['late','locked','test-ended'].includes(s.type)?' closed':'');
   if(s.type==='unavailable'){d.textContent=timingError+' — در حال بررسی دوباره؛ پاسخ‌ها محفوظ هستند.';}
+  else if(s.type==='locked')d.innerHTML='<div><strong>ورود به آزمون موقتاً بسته است</strong><span>برگزارکننده در حال آماده‌سازی آزمون است. این صفحه پس از بازشدن ورود، خودکار به‌روز می‌شود.</span></div>';
+  else if(s.type==='test-ended')d.textContent='جلسهٔ آزمایش ادمین پایان یافته است؛ آزمایش را دوباره از پنل باز کنید.';
   else if(s.type==='early') d.innerHTML='<div><strong>آزمون هنوز باز نشده است</strong><span>زمان باز شدن: '+fmt(s.at)+' (تهران)</span><br><span>زمان باقی‌مانده: <b class="exam-gate-count" id="gateCountdown"></b></span></div>';
   else d.innerHTML='<div><strong>مهلت شروع آزمون به پایان رسیده است</strong><span>آخرین زمان مجاز برای شروع: '+fmt(s.at)+' (تهران)</span></div>';
   document.querySelector('#view .fade')?.append(d);
-  if(b){b.disabled=true;b.textContent=s.type==='unavailable'?'زمان‌بندی در دسترس نیست':s.type==='early'?'آزمون هنوز باز نشده':'مهلت شروع پایان یافته';}
+  if(b){b.disabled=true;b.textContent=s.type==='locked'?'ورود موقتاً بسته است':s.type==='test-ended'?'آزمایش پایان یافته':s.type==='unavailable'?'زمان‌بندی در دسترس نیست':s.type==='early'?'آزمون هنوز باز نشده':'مهلت شروع پایان یافته';}
   if(s.type==='early') gateId=setInterval(()=>{const x=document.getElementById('gateCountdown');if(x)x.textContent=cd(s.at-now());if(now()>=s.at){clearInterval(gateId);oldIntro();gateUI();}},1000);
 }
 
@@ -210,7 +243,8 @@ async function refreshTiming(){
 setInterval(()=>{if(!document.hidden&&!attempt&&!startedUntimed&&!finished)refreshTiming();},10000);
 setTimeout(()=>refreshTiming(),0);
 go=async function(i){
- if(!attempt&&!startedUntimed){if(starting)return;starting=true;const ok=await refreshTiming();starting=false;if(!ok)return;if(!timingEnabled)startedUntimed=true;}
+ if(testSession&&!await testSession.ensure())return;
+ if(!attempt&&!startedUntimed){if(starting)return;starting=true;const ok=await refreshTiming();starting=false;if(!ok&&!testSession)return;const g=gate();if(!g.ok){oldIntro();gateUI();return;}if(!timingEnabled)startedUntimed=true;}
 
   if(timingEnabled&&!attempt){
     const g=gate();
@@ -223,7 +257,8 @@ go=async function(i){
   if(attempt){attempt.step=i;persist();ticker();}
 };
 
-review=function(){
+review=async function(){
+  if(testSession&&!await testSession.ensure())return;
   if(attempt&&now()>=attempt.deadline){expire();return;}
   if(attempt)persist();
   oldReview();
@@ -254,9 +289,10 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(attemp
   const i=html.lastIndexOf(marker);
   if(i<0) throw new Error('boot marker not found');
   html=html.slice(0,i)+runtime+html.slice(i);
-  document.open();window.__ACADEMY_READ_TIMING__=liveReader;document.write(html);document.close();
+  document.open();window.__ACADEMY_READ_TIMING__=liveReader;window.__ACADEMY_TEST_SESSION__=testSession;document.write(html);document.close();
 })().catch(e=>{document.body.innerHTML='<div style="font-family:Tahoma;text-align:center;margin:12vh auto;max-width:650px"><h2>آزمون در دسترس نیست</h2><p>'+String(e.message||e)+'</p></div>';console.error(e);});
 </script></body></html>
+
 
 
 

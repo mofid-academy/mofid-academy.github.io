@@ -1,7 +1,7 @@
 /* Academy pages use public HTTPS services and never require access to a LAN. */
 (function () {
   "use strict";
-  if (window.__ACADEMY_PUBLIC_NETWORK__?.version === 1) return;
+  if (window.__ACADEMY_PUBLIC_NETWORK__?.version === 2) return;
   const nativeFetch = window.fetch.bind(window);
   const assetBase = new URL(".", document.currentScript.src);
   const localTimingURL = new URL("timing.json", assetBase);
@@ -29,6 +29,11 @@
           !Number.isFinite(Date.parse(config[key] + ":00+03:30")))) {
         throw Error("تاریخ زمان‌بندی معتبر نیست.");
       }
+    }
+    if (Object.prototype.hasOwnProperty.call(config, "accessLock") &&
+        (!config.accessLock || typeof config.accessLock !== "object" || Array.isArray(config.accessLock) ||
+         config.accessLock.version !== 1 || typeof config.accessLock.locked !== "boolean")) {
+      throw Error("وضعیت قفل آزمون معتبر نیست؛ دوباره تلاش کنید.");
     }
     return { ...config, durationMinutes: Number(config.durationMinutes) };
   }
@@ -75,5 +80,6 @@
     return timedConfig(source, local.status === "fulfilled" ? local.value : source);
   }
 
-  window.__ACADEMY_PUBLIC_NETWORK__ = Object.freeze({ version: 1, readTiming });
+  window.__ACADEMY_PUBLIC_NETWORK__ = Object.freeze({ version: 2, readTiming });
 })();
+
