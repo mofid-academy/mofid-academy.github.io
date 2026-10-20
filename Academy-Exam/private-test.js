@@ -7,7 +7,7 @@
   if(typeof window.__ACADEMY_ADMIN_REQUEST__==='function')return Promise.resolve();
   return new Promise((resolve,reject)=>{
    const script=document.createElement('script');
-   script.src=new URL('Admin/admin-bridge.js?v=h20261019b',assets).href;
+   const url=new URL('Admin/admin-bridge.js',assets);url.searchParams.set('academy_live',Date.now()+'-'+Math.random().toString(36).slice(2));script.src=url.href;
    script.onload=resolve;script.onerror=()=>reject(Error('مسیر بررسی ورود ادمین بارگذاری نشد.'));
    document.head.append(script);
   });

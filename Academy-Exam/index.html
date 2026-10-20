@@ -1,8 +1,27 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمون آکادمی مفید</title><script src="public-network.js?v=l20261020"></script></head><body><p style="font-family:Tahoma;text-align:center;margin-top:12vh">در حال آماده‌سازی آزمون…</p><script>
+<!doctype html><html lang="fa" dir="rtl" data-academy-entry="3"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمون آکادمی مفید</title></head><body><p style="font-family:Tahoma;text-align:center;margin-top:12vh">در حال آماده‌سازی آزمون…</p><script>
 (async()=>{
+// Re-read the entry on each visit, even when the outer HTML came from browser cache.
+const loadStamp=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+function assetURL(path){const u=new URL(path,location.href);u.searchParams.set('academy_live',loadStamp);return u.href;}
+if(!window.__ACADEMY_PUBLIC_ENTRY_REFRESHED__){
+ try{
+  const response=await fetch(assetURL('index.html'),{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(8000)});
+  if(response.ok){const fresh=await response.text();if(fresh.includes('data-academy-entry="3"')){document.open();window.__ACADEMY_PUBLIC_ENTRY_REFRESHED__=true;document.write(fresh);document.close();return;}}
+ }catch{}
+ window.__ACADEMY_PUBLIC_ENTRY_REFRESHED__=true;
+}
+await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=assetURL('public-network.js');script.onload=resolve;script.onerror=()=>reject(Error('مسیر عمومی اتصال بارگذاری نشد؛ صفحه را دوباره باز کنید.'));document.head.append(script);});
+async function visualAssets(){
+ try{
+  const options={cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(8000)};
+  const responses=await Promise.all([fetch(assetURL('exam-skin.css'),options),fetch(assetURL('exam-visual.js'),options)]);
+  if(responses.some(r=>!r.ok))throw Error('visual-assets');
+  const [css,script]=await Promise.all(responses.map(r=>r.text()));return {css,script};
+ }catch{return {css:'',script:''};}
+}
 let testSession=null;
 if(new URL(location.href).searchParams.get('academy-test')==='1'){
- await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='private-test.js?v=r20261020';script.onload=resolve;script.onerror=()=>reject(Error('بخش آزمایش خصوصی بارگذاری نشد؛ آن را دوباره از پنل باز کنید.'));document.head.append(script);});
+ await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=assetURL('private-test.js');script.onload=resolve;script.onerror=()=>reject(Error('بخش آزمایش خصوصی بارگذاری نشد؛ آن را دوباره از پنل باز کنید.'));document.head.append(script);});
  testSession=await window.__ACADEMY_ADMIN_TEST__.authorize();
 }
 function patchSubmissionRuntime(html) {
@@ -64,9 +83,10 @@ async function readLiveTiming(options={}){
  return window.__ACADEMY_PUBLIC_NETWORK__.readTiming(options);
 }
 
-  const [baseR,tR]=await Promise.all([
+  const [baseR,tR,visual]=await Promise.all([
     fetch('base.html?v='+Date.now(),{cache:'no-store'}),
-    readLiveTiming({localOnly:true})
+    readLiveTiming({localOnly:true}),
+    visualAssets()
   ]);
   if(!baseR.ok) throw new Error('base '+baseR.status);
   let base=await baseR.text();
@@ -78,7 +98,7 @@ async function readLiveTiming(options={}){
   base=base.replace('  const id=()=>globalThis.crypto?.randomUUID?.()', '  if(window.__ACADEMY_TEST_SESSION__&&!await window.__ACADEMY_TEST_SESSION__.ensure())return;\n  const id=()=>globalThis.crypto?.randomUUID?.()');
   base=base.replace('async function send(){','async function send(){\n  if(window.__ACADEMY_TEST_SESSION__&&!await window.__ACADEMY_TEST_SESSION__.ensure())return;');
   base=base.replace(/<link\b[^>]*\bhref=["']https:\/\/fonts\.(?:googleapis|gstatic)\.com[^"']*["'][^>]*>/gi,'');
-  const networkScript='<scr'+'ipt src="public-network.js?v=l20261020"></scr'+'ipt>';
+  const networkScript='<scr'+'ipt src="'+assetURL('public-network.js')+'"></scr'+'ipt>';
   const cfg=tR;
   const liveReader=readLiveTiming;
   window.__ACADEMY_READ_TIMING__=liveReader;
@@ -271,13 +291,17 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(attemp
 `;
 
   const networkPolicy='<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; base-uri \'self\'; object-src \'none\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; font-src \'self\' data:; img-src \'self\' data:; connect-src \'self\' https://raw.githubusercontent.com https://miladmirsheriam.app.n8n.cloud; form-action \'self\'">';
-  let html=base.replace('<head>','<head>'+networkPolicy+networkScript).replace('</head>',css+'</head>');
+  const skin='<style id="academy-exam-skin">'+visual.css.replace(/<\/style/gi,'<\\/style')+'</style>';
+  const customStyle=base.match(/<style\b[^>]*\bid=["']academy-studio-overrides["'][^>]*>[\s\S]*?<\/style>/i)?.[0]||'';
+  if(customStyle)base=base.replace(customStyle,'');
+  let html=base.replace('<head>','<head>'+networkPolicy+networkScript).replace('</head>',css+skin+customStyle+'</head>');
   html=html.replace('<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>','<div class="pill"><i></i><span id="pillTxt">در حال بارگذاری…</span></div>'+badge);
   html=html.replace('$("fM").textContent = toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3));','$("fM").textContent = '+(cfg.enabled!==false?'toFa('+Number(cfg.durationMinutes||15)+') + " دقیقه"':'toFa(Math.max(5, Math.round(n*1.5))) + " تا " + toFa(Math.max(10, n*3))')+';');
   const marker='\nboot();';
   const i=html.lastIndexOf(marker);
   if(i<0) throw new Error('boot marker not found');
   html=html.slice(0,i)+runtime+html.slice(i);
+  html=html.replace('</body>','<scr'+'ipt>'+visual.script.replace(/<\/script/gi,'<\\/script')+'</scr'+'ipt></body>');
   document.open();window.__ACADEMY_READ_TIMING__=liveReader;window.__ACADEMY_TEST_SESSION__=testSession;document.write(html);document.close();
 })().catch(e=>{document.body.innerHTML='<div style="font-family:Tahoma;text-align:center;margin:12vh auto;max-width:650px"><h2>آزمون در دسترس نیست</h2><p>'+String(e.message||e)+'</p></div>';console.error(e);});
 </script></body></html>
