@@ -93,8 +93,8 @@
   if(!key){message('ابتدا وارد ادمین شوید؛ آزمایش فقط از همین پنل باز می‌شود.');return;}
   const win=window.open(testURL.href,'_blank');
   if(!win){message('مرورگر پنجرهٔ آزمایش را باز نکرد؛ اجازهٔ بازشدن پنجره را برای این سایت بدهید.');return;}
-  sessions.set(win,{key,nonce:''});
-  message('آزمایش خصوصی در پنجرهٔ جدا باز شد. پنل ادمین را باز نگه دارید؛ پاسخ آزمایشی در نتایج و شیت ثبت نمی‌شود.');
+  sessions.set(win,{key,nonce:'',id:crypto.randomUUID()});
+  message('آزمایش ادمین در پنجرهٔ جدا باز شد. پنل را باز نگه دارید؛ پاسخ مانند آزمون اصلی ثبت و تصحیح می‌شود. پس از بررسی می‌توانید آن را از نتایج حذف کنید.');
  }
  window.addEventListener('message',event=>{
   const data=event.data,session=sessions.get(event.source);
@@ -104,7 +104,7 @@
   }
   if(data.action==='ready'&&/^[0-9a-f-]{36}$/.test(data.nonce||'')){
    session.nonce=data.nonce;
-   event.source.postMessage({type,action:'grant',nonce:data.nonce,key:session.key},origin);
+   event.source.postMessage({type,action:'grant',nonce:data.nonce,key:session.key,id:session.id},origin);
   }else if(data.nonce===session.nonce&&data.action==='ping'){
    event.source.postMessage({type,action:'pong',nonce:session.nonce,request:data.request,active:true},origin);
   }else if(data.nonce===session.nonce&&data.action==='closed')sessions.delete(event.source);

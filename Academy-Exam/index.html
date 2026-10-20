@@ -2,7 +2,7 @@
 (async()=>{
 let testSession=null;
 if(new URL(location.href).searchParams.get('academy-test')==='1'){
- await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='private-test.js?v=l20261020';script.onload=resolve;script.onerror=()=>reject(Error('بخش آزمایش خصوصی بارگذاری نشد؛ آن را دوباره از پنل باز کنید.'));document.head.append(script);});
+ await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='private-test.js?v=r20261020';script.onload=resolve;script.onerror=()=>reject(Error('بخش آزمایش خصوصی بارگذاری نشد؛ آن را دوباره از پنل باز کنید.'));document.head.append(script);});
  testSession=await window.__ACADEMY_ADMIN_TEST__.authorize();
 }
 function patchSubmissionRuntime(html) {
@@ -35,6 +35,8 @@ function patchSubmissionRuntime(html) {
    'throw Error(ack?.accepted===false&&typeof ack.message==="string"?ack.message:"سرور ذخیرهٔ همین پاسخ را تأیید نکرد؛ با همان شناسه دوباره تلاش کنید.");');
   code=code.replace('submitted=true;done();',
    'submitted=true;try{sessionStorage.removeItem(pendingKey);}catch{}pendingPayload=null;done();');
+  // The authenticated test review waits for its admin session before repainting.
+  code=code.replace('sending=false;oldReview();','sending=false;await oldReview();');
   return start+code+end;
  });
 }
@@ -73,8 +75,8 @@ async function readLiveTiming(options={}){
   base=patchArchiveRuntime(patchSubmissionRuntime(base));
   // Test drafts never read or replace a real participant's pending submission.
   base=base.replace(/const pendingKey=([^;\n]+);/,'const pendingKey=(window.__ACADEMY_TEST_SESSION__?"academy-test-pending-v1:":"")+$1;');
-  base=base.replace('  const id=()=>globalThis.crypto?.randomUUID?.()', '  if(window.__ACADEMY_TEST_SESSION__)return await window.__ACADEMY_TEST_SUBMIT__();\n  const id=()=>globalThis.crypto?.randomUUID?.()');
-  base=base.replace('async function send(){','async function send(){\n  if(window.__ACADEMY_TEST_SESSION__)return await window.__ACADEMY_TEST_SUBMIT__();');
+  base=base.replace('  const id=()=>globalThis.crypto?.randomUUID?.()', '  if(window.__ACADEMY_TEST_SESSION__&&!await window.__ACADEMY_TEST_SESSION__.ensure())return;\n  const id=()=>globalThis.crypto?.randomUUID?.()');
+  base=base.replace('async function send(){','async function send(){\n  if(window.__ACADEMY_TEST_SESSION__&&!await window.__ACADEMY_TEST_SESSION__.ensure())return;');
   base=base.replace(/<link\b[^>]*\bhref=["']https:\/\/fonts\.(?:googleapis|gstatic)\.com[^"']*["'][^>]*>/gi,'');
   const networkScript='<scr'+'ipt src="public-network.js?v=l20261020"></scr'+'ipt>';
   const cfg=tR;
@@ -157,22 +159,9 @@ const oldIntro=intro,oldGo=go,oldReview=review,oldSend=send,oldDone=done;
 if(testSession){
  testSession.attach();
  const banner=document.createElement('aside');banner.id='academyAdminTest';banner.className='academy-admin-test-banner';banner.setAttribute('role','status');
- banner.innerHTML='<strong>آزمایش خصوصی ادمین</strong><p>قفل و زمان ورود برای این پنجره کنار گذاشته شده‌اند. پاسخ‌ها در نتایج و شیت ثبت نمی‌شوند. پنل ادمین را باز نگه دارید.</p>';
+ banner.innerHTML='<strong>آزمایش ادمین با ثبت پاسخ</strong><p>قفل و زمان ورود برای این پنجره کنار گذاشته شده‌اند. پاسخ‌ها مانند آزمون اصلی ثبت و برای تصحیح و همگام‌سازی شیت ارسال می‌شوند. برای تشخیص در نتایج، نام آزمایشی مشخصی وارد کنید و پنل ادمین را باز نگه دارید.</p>';
  document.querySelector('.top')?.insertAdjacentElement('afterend',banner);
  testSession.onEnd(()=>{clearInterval(timerId);clearInterval(gateId);paint('<div class="center fade"><h1>جلسهٔ آزمایش پایان یافته است</h1><p class="sub">برای ادامه، از پنل ادمین دوباره «آزمایش خصوصی سایت» را باز کنید.</p></div>','');});
- window.__ACADEMY_TEST_SUBMIT__=async function(){
-  if(sending||finished||!await testSession.ensure())return;
-  let questions=[];try{questions=JSON.parse(document.getElementById('academy-question-bank')?.textContent||'{}').questions||[];}catch{}
-  const missing=questions.findIndex((q,i)=>q.required&&!String(answers[i+1]??'').trim());
-  if(missing>=0&&!window.__ACADEMY_EXPIRED__){await go(missing);return;}
-  sending=true;done();
-  const title=document.querySelector('#view h1'),text=document.querySelector('#view .sub');
-  if(title)title.textContent='آزمایش پایان یافت';
-  if(text)text.textContent='پاسخ‌های آزمایشی فقط در همین پنجره بررسی شدند؛ هیچ پاسخی در سامانه یا شیت ثبت نشده است.';
-  const label=document.querySelector('#view .eyebrow'),chip=document.querySelector('#view .chip');
-  if(label)label.textContent='آزمایش تکمیل شد';
-  if(chip)chip.textContent='بدون ثبت در نتایج';
- };
 }
 
 function parseTehran(v){
