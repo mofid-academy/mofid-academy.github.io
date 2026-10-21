@@ -26,8 +26,8 @@
   },
   "accessLock": {
     "version": 1,
-    "locked": false,
-    "revision": "lock_3b9f80d8-80e8-49bf-b639-0ae573a430db",
-    "updatedAt": "2026-10-21T06:39:04.340Z"
+    "locked": true,
+    "revision": "lock_ff024071-77ff-4714-a1d9-af7fcd8ec0ce",
+    "updatedAt": "2026-10-21T06:40:18.048Z"
   }
 }
