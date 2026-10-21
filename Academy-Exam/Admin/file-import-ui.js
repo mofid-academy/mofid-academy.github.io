@@ -1,8 +1,8 @@
 /* Academy Admin importer v3 - confirmed imports are loaded without a second upload. */
 (function(){
 "use strict";
-const IMPORT_URL="https://miladmirsheriam.app.n8n.cloud/webhook/exam-import-file";
-const QUESTIONS_URL="https://miladmirsheriam.app.n8n.cloud/webhook/exam-questions";
+const IMPORT_URL="https://azmoon.app.n8n.cloud/webhook/exam-import-file";
+const QUESTIONS_URL="https://azmoon.app.n8n.cloud/webhook/exam-questions";
 const MAX_FILE_BYTES=10*1024*1024;
 const QUESTIONS_TIMEOUT_MS=60000;
 const PENDING_KEY="academy-pending-question-import-v3";
@@ -46,7 +46,7 @@ function applyQuestions(data,expected){
 async function refreshQuestions({url=QUESTIONS_URL,expected=pendingImport(),fromImport=false}={}){
   if(importInProgress&&!fromImport)throw Error("فایل در حال پردازش است؛ سؤال‌ها پس از پایان ساخت به‌صورت خودکار دریافت می‌شوند.");
   const u=new URL(url);
-  if(u.protocol!=="https:"||u.username||u.password||!["https://miladmirsheriam.app.n8n.cloud","https://mofid-academy.github.io"].includes(u.origin))throw Error("آدرس دریافت سؤال‌ها در فهرست امن پنل نیست.");
+  if(u.protocol!=="https:"||u.username||u.password||!["https://azmoon.app.n8n.cloud","https://mofid-academy.github.io"].includes(u.origin))throw Error("آدرس دریافت سؤال‌ها در فهرست امن پنل نیست.");
   const key=u.href+"::"+(expected?.examId||"")+"::"+(expected?.count||"");
   if(activeRead){if(activeRead.key===key)return activeRead.promise;throw Error("یک درخواست دریافت سؤال در حال انجام است؛ تا پایان آن صبر کنید.");}
   const serial=++readSerial,controller=new AbortController();

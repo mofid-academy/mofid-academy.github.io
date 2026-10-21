@@ -59,7 +59,7 @@
     const method=String(options.method||(input instanceof Request?input.method:'GET')).toUpperCase();
     if(!['GET','HEAD'].includes(method)){
      const url=new URL(input instanceof Request?input.url:String(input),location.href);
-     if(method!=='POST'||url.href!=='https://miladmirsheriam.app.n8n.cloud/webhook/academy-submit-v5')throw Error('این مسیر ارسال در آزمایش ادمین مجاز نیست.');
+     if(method!=='POST'||url.href!=='https://azmoon.app.n8n.cloud/webhook/academy-submit-v5')throw Error('این مسیر ارسال در آزمایش ادمین مجاز نیست.');
      if(!await ensure())throw Error('جلسهٔ آزمایش پایان یافته است؛ پاسخ‌ها حفظ شده‌اند.');
     }
     return original(input,options);

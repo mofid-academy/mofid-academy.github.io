@@ -2,7 +2,7 @@
 (function(){
  'use strict';
  const nativeFetch=window.fetch.bind(window);
- const endpoint='https://miladmirsheriam.app.n8n.cloud/webhook/academy-admin-api';
+ const endpoint='https://azmoon.app.n8n.cloud/webhook/academy-admin-api';
  async function requestViaBridge({method='GET',path,body,key,accept='application/vnd.github+json',signal}={}){
    method=String(method).toUpperCase();
    if(!['GET','PUT'].includes(method)||typeof path!=='string'||!path.startsWith('/')||path.length>1000||/[\\#\r\n]/.test(path))throw Error('درخواست مدیریت معتبر نیست.');
