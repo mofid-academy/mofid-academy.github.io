@@ -1,6 +1,7 @@
 /* Challenge content inside the original Zero Repeat site frame. */
 html{scroll-behavior:auto}
 .workspace{min-width:0}
+@media(min-width:1100px){.workspace>.card{width:calc(100% + 40px);max-width:none;margin-inline-start:0;margin-inline-end:-40px;position:relative;left:calc(-1 * clamp(0px,calc((100vw - 1600px)/2 + 8px),80px))}}
 .reader{background:none;border:0;box-shadow:none;min-width:0}
 .reading-heading h2{font-size:24px;margin:0 0 8px;color:var(--ink)}
 .reading-heading .step-number{display:none}
