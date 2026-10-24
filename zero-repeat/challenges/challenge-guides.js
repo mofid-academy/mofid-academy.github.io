@@ -47,7 +47,8 @@
     ids.forEach(id => {
       if (get(`guide-${id}`).hidden) return;
       const rect = get(`guide-end-${id}`).getBoundingClientRect();
-      if (rect.height > 0 && rect.top >= 0 && rect.bottom <= window.innerHeight) markReached(id);
+      const panel = get(`guide-${id}`).getBoundingClientRect();
+      if (rect.height > 0 && rect.top >= Math.max(0, panel.top) && rect.bottom <= Math.min(window.innerHeight, panel.bottom)) markReached(id);
     });
   }
 
@@ -103,6 +104,7 @@
   } else {
     window.addEventListener('scroll', checkVisibleEnds, { passive: true });
     window.addEventListener('resize', checkVisibleEnds);
+    panels.forEach(panel => panel.addEventListener('scroll', checkVisibleEnds, { passive: true }));
     checkVisibleEnds();
   }
 
@@ -127,6 +129,7 @@
   // Loaded after register.js, so this runs after its existing new-registration reset.
   get('new-registration').addEventListener('click', () => {
     reached.clear();
+    panels.forEach(panel => { panel.scrollTop = 0; });
     ids.forEach(id => {
       get(`read-guide-${id}`).checked = false;
       get(`read-guide-${id}`).disabled = true;

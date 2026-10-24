@@ -9,33 +9,32 @@
   <meta name="description" content="اعلام آمادگی برای شرکت در چالش‌های Zero Repeat مفید آکادمی">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src https://siwmzffadbbhcyyppwzn.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>چالش‌های Zero Repeat | مفید آکادمی</title>
-  <link rel="stylesheet" href="challenges.css?v=20261024">
-  <link rel="stylesheet" href="challenge-guides.css?v=20261024-split">
+  <link rel="stylesheet" href="challenge-frame.css?v=20261024-reference">
+  <link rel="stylesheet" href="challenge-guides.css?v=20261024-reference">
   <script src="config.js?v=20261024" defer></script>
   <script src="api.js?v=20261024" defer></script>
   <script src="register.js?v=20261024" defer></script>
-  <script src="challenge-guides.js?v=20261024-full" defer></script>
+  <script src="challenge-guides.js?v=20261024-reference" defer></script>
 </head>
-<body class="challenge-reading-page">
+<body class="challenge-reading-page" data-scene="night-sign">
   <a class="skip-link" href="#main">رفتن به محتوای اصلی</a>
-  <div class="page-shell">
+  <div class="scene" aria-hidden="true"><div class="scene-photo scene-night-sign"></div><div class="scene-light"></div></div>
+  <div class="diagonal" aria-hidden="true"></div>
+  <div class="site-wrap">
     <header class="site-header">
-      <a class="brand" href="./" aria-label="صفحه چالش‌های Zero Repeat">
-        <span class="logo-box"><img src="../brand/logo.webp" alt="مفید آکادمی" width="62" height="62"></span>
-        <span><strong dir="ltr">ZERO REPEAT</strong><small>چالش‌های مفید آکادمی</small></span>
+      <a class="brand" href="./" aria-label="صفحه نخست طرح تکرار صفر">
+        <span class="logo-box"><img src="../brand/logo.webp" width="78" height="78" alt="لوگوی مفید آکادمی"></span>
+        <span class="brand-text"><span class="brand-name">مفید آکادمی</span><span class="brand-sub">Zero Repeat</span></span>
       </a>
-      <a class="header-link" href="admin.html">ورود مدیر <span aria-hidden="true">↗</span></a>
+      <nav class="header-nav" aria-label="منوی اصلی">
+        <a class="nav-button" href="admin.html">ورود مدیر</a>
+        <a class="nav-button" href="#challenge-guides"><span class="question-mark">؟</span> راهنمای ثبت</a>
+      </nav>
     </header>
-    <main id="main">
-      <section class="page-intro" aria-label="مراحل شرکت در چالش">
-        <ol class="page-stages" aria-label="مراحل شرکت در چالش">
-          <li><span>۱</span>مطالعهٔ راهنماها</li>
-          <li><span>۲</span>انتخاب چالش</li>
-          <li><span>۳</span>اعلام آمادگی</li>
-        </ol>
-      </section>
-
-            <section class="reading-section" id="challenge-guides" aria-labelledby="reading-title">
+    <main id="main" class="layout">
+      <aside class="story" aria-hidden="true"></aside>
+      <section class="workspace" id="workspace" aria-label="چالش‌ها">
+        <section class="card event-guide reading-section" id="challenge-guides" aria-labelledby="reading-title">
         <div class="reading-heading"><h2 id="reading-title"><span class="step-number">۱</span> راهنمای چالش‌ها</h2></div>
         <div class="reader">
           <div class="reader-tabs" id="guide-tabs" role="tablist" aria-label="راهنماهای چالش" hidden>
@@ -43,7 +42,7 @@
             <button type="button" id="guide-tab-2" role="tab" aria-controls="guide-2" aria-selected="false" tabindex="-1"><span class="tab-number" aria-hidden="true">۰۲</span><span><small>چالش دوم</small><strong>هیچ کاری رو فراموش نکن!</strong></span><span class="tab-state" id="guide-state-2">برای مطالعه</span></button>
           </div>
 
-          <article class="guide-panel" id="guide-1" aria-labelledby="guide-title-1" tabindex="-1">
+          <article class="guide-panel event-guide-scroll" id="guide-1" aria-labelledby="guide-title-1" tabindex="-1">
             <header class="guide-header">
               <div class="guide-meta"><span>آشنایی با چالش ۱</span><span dir="ltr">ZERO REPEAT / CHALLENGE 01</span></div>
               <h2 id="guide-title-1">دیگه کپی‌پیست نکن!</h2>
@@ -82,7 +81,7 @@
             <div class="guide-confirmation"><label><input type="checkbox" id="read-guide-1" disabled aria-describedby="read-hint-1"><span>راهنمای کامل «دیگه کپی‌پیست نکن!» را خوانده‌ام.</span></label><p id="read-hint-1" role="status">برای فعال شدن تأیید مطالعه، راهنما را تا انتها مرور کنید.</p><button type="button" class="button secondary" data-open-guide="2">مطالعهٔ چالش دوم <span aria-hidden="true">←</span></button></div>
           </article>
 
-          <article class="guide-panel" id="guide-2" aria-labelledby="guide-title-2" tabindex="-1">
+          <article class="guide-panel event-guide-scroll" id="guide-2" aria-labelledby="guide-title-2" tabindex="-1">
             <header class="guide-header">
               <div class="guide-meta"><span>آشنایی با چالش ۲</span><span dir="ltr">ZERO REPEAT / CHALLENGE 02</span></div>
               <h2 id="guide-title-2">هیچ کاری رو فراموش نکن!</h2>
@@ -127,8 +126,12 @@
           </div>
         </div>
       </section>
-
-      <form id="registration-form" class="registration-form" hidden inert>
+        <form id="registration-form" class="card form-card registration-form" hidden inert>
+        <ol class="stepper" aria-label="مراحل شرکت در چالش">
+          <li class="complete"><span class="step-button"><span class="step-number">۱</span><span>مطالعهٔ راهنماها</span></span></li>
+          <li class="current"><span class="step-button"><span class="step-number">۲</span><span>انتخاب چالش</span></span></li>
+          <li><span class="step-button"><span class="step-number">۳</span><span>اعلام آمادگی</span></span></li>
+        </ol>
         <fieldset class="challenge-fieldset">
           <legend><span class="step-number">۲</span> چالش خود را انتخاب کنید</legend>
           <div class="challenge-grid">
@@ -145,7 +148,7 @@
           </div>
         </fieldset>
 
-        <section class="card registration-card" aria-labelledby="registration-title">
+        <section class="question-panel registration-card" aria-labelledby="registration-title">
           <div class="section-heading"><h2 id="registration-title"><span class="step-number">۳</span> برای شرکت اعلام آمادگی کنید</h2></div>
           <a class="review-link" href="#challenge-guides">مرور دوبارهٔ راهنماهای چالش</a>
           <div class="fields-grid">
@@ -159,8 +162,7 @@
           <div class="form-actions"><button class="button primary" id="submit-button" type="submit">ثبت اعلام آمادگی <span aria-hidden="true">←</span></button><span id="connection-status" class="connection-status" role="status">در حال بررسی ارتباط…</span></div>
         </section>
       </form>
-
-      <section id="registration-success" class="card success-card" role="status" tabindex="-1" hidden>
+        <section id="registration-success" class="card success-card" role="status" tabindex="-1" hidden>
         <span class="success-symbol" aria-hidden="true">✓</span>
         <div class="eyebrow dark">ثبت با موفقیت انجام شد</div>
         <h2>اعلام آمادگی ثبت شد</h2>
@@ -168,9 +170,9 @@
         <dl class="receipt"><div><dt>کد ثبت</dt><dd id="receipt-id" dir="ltr"></dd></div><div><dt>زمان ثبت</dt><dd id="receipt-time"></dd></div></dl>
         <button type="button" class="button secondary" id="new-registration">ثبت برای فرد یا چالش دیگر</button>
       </section>
+      </section>
     </main>
-    <footer class="site-footer"><span>مفید آکادمی</span><span dir="ltr">ZERO REPEAT / CHALLENGES</span></footer>
   </div>
-  <noscript><div class="noscript">برای ثبت‌نام در چالش‌ها، جاوااسکریپت مرورگر را فعال کنید.</div></noscript>
+  <noscript><div class="no-script">برای ثبت‌نام در چالش‌ها، جاوااسکریپت مرورگر را فعال کنید.</div></noscript>
 </body>
 </html>
