@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#102c32">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="اعلام آمادگی برای شرکت در چالش‌های Zero Repeat مفید آکادمی">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src https://siwmzffadbbhcyyppwzn.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>چالش‌های Zero Repeat | مفید آکادمی</title>
+  <link rel="stylesheet" href="challenges.css?v=20261024">
+  <script src="config.js?v=20261024" defer></script>
+  <script src="api.js?v=20261024" defer></script>
+  <script src="register.js?v=20261024" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">رفتن به محتوای اصلی</a>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="صفحه چالش‌های Zero Repeat">
+        <span class="logo-box"><img src="../brand/logo.webp" alt="مفید آکادمی" width="62" height="62"></span>
+        <span><strong dir="ltr">ZERO REPEAT</strong><small>چالش‌های مفید آکادمی</small></span>
+      </a>
+      <a class="header-link" href="admin.html">ورود مدیر <span aria-hidden="true">↗</span></a>
+    </header>
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="eyebrow"><span class="status-dot"></span> یک قدم از تکرار فاصله بگیر</div>
+        <h1 id="hero-title">وقتت رو پس بگیر.<br><em>از یک چالش شروع کن.</em></h1>
+        <p>دو مسئلهٔ آشنا از روزهای کاری؛ دو فرصت برای ساختن راه‌حل. توضیحات را بخوانید، یکی از چالش‌ها را انتخاب کنید و برای شرکت اعلام آمادگی کنید.</p>
+        <div class="hero-foot"><span>۲ چالش کاربردی</span><span>ثبت‌نام با نام سازمانی</span></div>
+      </section>
+
+      <form id="registration-form" class="registration-form">
+        <fieldset class="challenge-fieldset">
+          <legend><span class="step-number">۱</span> چالش خود را انتخاب کنید</legend>
+          <div class="challenge-grid">
+            <label class="challenge-card">
+              <span class="challenge-top"><span class="challenge-tag">چالش اول / گزارش‌ها</span><input type="radio" name="challenge_id" value="1" required aria-label="انتخاب چالش دیگه کپی‌پیست نکن"></span>
+              <span class="challenge-symbol" aria-hidden="true">↗</span>
+              <strong class="challenge-title">دیگه کپی‌پیست نکن!</strong>
+              <span class="challenge-intro">فایل‌های پراکنده را به یک گزارش قابل اتکا تبدیل کن.</span>
+              <span class="card-divider"></span>
+              <span class="challenge-description">راه‌حلی بسازید که چند فایل اکسل را تجمیع کند، خطاها و موارد تکراری را تشخیص دهد و گزارش نهایی ارائه کند.</span>
+              <span class="challenge-outcome"><span>خروجی مورد انتظار</span><b>تجمیع فایل‌ها · تشخیص خطا · گزارش نهایی</b></span>
+              <span class="select-label">انتخاب این چالش <span aria-hidden="true">←</span></span>
+            </label>
+            <label class="challenge-card">
+              <span class="challenge-top"><span class="challenge-tag">چالش دوم / پیگیری‌ها</span><input type="radio" name="challenge_id" value="2" required aria-label="انتخاب چالش هیچ کاری رو فراموش نکن"></span>
+              <span class="challenge-symbol" aria-hidden="true">↻</span>
+              <strong class="challenge-title">هیچ کاری رو فراموش نکن!</strong>
+              <span class="challenge-intro">پیگیری کارها را از حافظه به یک روند منظم بسپار.</span>
+              <span class="card-divider"></span>
+              <span class="challenge-description">راه‌حلی بسازید که موعد انجام کارها را بررسی کند و برای کارهای نیازمند پیگیری، بدون ارسال یادآوری تکراری، یادآوری بفرستد.</span>
+              <span class="challenge-outcome"><span>خروجی مورد انتظار</span><b>بررسی سررسید · یادآوری به‌موقع · حذف تکرار</b></span>
+              <span class="select-label">انتخاب این چالش <span aria-hidden="true">←</span></span>
+            </label>
+          </div>
+        </fieldset>
+
+        <section class="card registration-card" aria-labelledby="registration-title">
+          <div class="section-heading"><h2 id="registration-title"><span class="step-number">۲</span> برای شرکت اعلام آمادگی کنید</h2><p>مشخصات خود را وارد کنید؛ ثبت‌نام شما برای چالش انتخابی ذخیره می‌شود.</p></div>
+          <div class="fields-grid">
+            <label class="field"><span>نام و نام خانوادگی <span class="required-mark" aria-hidden="true">*</span></span><input name="full_name" id="full-name" maxlength="120" autocomplete="name" required placeholder="نام و نام خانوادگی شما"></label>
+            <label class="field"><span>نام سازمانی <span class="required-mark" aria-hidden="true">*</span></span><input name="username" id="username" maxlength="64" dir="ltr" autocomplete="off" autocapitalize="none" spellcheck="false" pattern="[A-Za-z][A-Za-z0-9._-]{0,63}" required placeholder="M.mirsheri" aria-describedby="username-hint"><small id="username-hint">نام سازمانی را بدون نشانی ایمیل وارد کنید.</small></label>
+            <label class="field"><span>واحد سازمانی <span class="required-mark" aria-hidden="true">*</span></span><input name="department" id="department" maxlength="100" required placeholder="مثلاً پشتیبانی"></label>
+            <label class="field"><span>سمت شغلی <small>(اختیاری)</small></span><input name="job_title" id="job-title" maxlength="100" autocomplete="organization-title" placeholder="مثلاً کارشناس"></label>
+          </div>
+          <label class="consent"><input type="checkbox" name="accepted" id="accepted" required><span>توضیحات چالش انتخابی را خوانده‌ام و مایل به شرکت در آن هستم.</span></label>
+          <div id="form-error" class="notice error" role="alert" hidden></div>
+          <div class="form-actions"><button class="button primary" id="submit-button" type="submit">ثبت اعلام آمادگی <span aria-hidden="true">←</span></button><span id="connection-status" class="connection-status" role="status">در حال بررسی ارتباط…</span></div>
+        </section>
+      </form>
+
+      <section id="registration-success" class="card success-card" role="status" tabindex="-1" hidden>
+        <span class="success-symbol" aria-hidden="true">✓</span>
+        <div class="eyebrow dark">ثبت با موفقیت انجام شد</div>
+        <h2>آمادهٔ شروع یک تغییر!</h2>
+        <p id="success-message"></p>
+        <dl class="receipt"><div><dt>کد ثبت</dt><dd id="receipt-id" dir="ltr"></dd></div><div><dt>زمان ثبت</dt><dd id="receipt-time"></dd></div></dl>
+        <button type="button" class="button secondary" id="new-registration">ثبت برای فرد یا چالش دیگر</button>
+      </section>
+    </main>
+    <footer class="site-footer"><span>مفید آکادمی</span><span dir="ltr">ZERO REPEAT / CHALLENGES</span></footer>
+  </div>
+  <noscript><div class="noscript">برای ثبت‌نام در چالش‌ها، جاوااسکریپت مرورگر را فعال کنید.</div></noscript>
+</body>
+</html>

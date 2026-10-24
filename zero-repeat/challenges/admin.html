@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#102c32">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src https://siwmzffadbbhcyyppwzn.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>مدیریت چالش‌ها | Zero Repeat</title>
+  <link rel="stylesheet" href="challenges.css?v=20261024">
+  <script src="config.js?v=20261024" defer></script>
+  <script src="api.js?v=20261024" defer></script>
+  <script src="tools.js?v=20261024" defer></script>
+  <script src="admin.js?v=20261024" defer></script>
+</head>
+<body class="admin-page">
+  <a class="skip-link" href="#main">رفتن به پنل مدیریت</a>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="./"><span class="logo-box"><img src="../brand/logo.webp" width="62" height="62" alt="مفید آکادمی"></span><span><strong dir="ltr">ZERO REPEAT</strong><small>مدیریت چالش‌ها</small></span></a>
+      <nav class="admin-actions" aria-label="مدیریت"><a class="header-link" href="./">صفحهٔ چالش‌ها ↗</a><button class="button secondary" id="logout-button" type="button" hidden>خروج از مدیریت</button></nav>
+    </header>
+    <main class="admin-main" id="main">
+      <section class="card admin-login" id="login-panel" aria-labelledby="login-title">
+        <div class="eyebrow dark"><span class="status-dot"></span> دسترسی مدیر</div>
+        <h1 id="login-title">مدیریت ثبت‌نام چالش‌ها</h1>
+        <p>با نام سازمانی و رمز فعلی مدیریت Zero Repeat وارد شوید.</p>
+        <form id="login-form">
+          <label class="field"><span>نام سازمانی مدیر</span><input id="admin-username" name="username" dir="ltr" maxlength="64" required autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+          <label class="field"><span>رمز مدیریت</span><span class="password-control"><input id="admin-secret" name="password" type="password" dir="ltr" required maxlength="256" autocomplete="current-password"><button class="password-toggle" type="button" id="toggle-password" aria-pressed="false" aria-label="نمایش رمز مدیریت">نمایش</button></span></label>
+          <div class="notice error" id="login-error" role="alert" hidden></div>
+          <button type="submit" class="button primary" id="login-button">ورود به مدیریت چالش‌ها ←</button>
+        </form>
+      </section>
+
+      <section class="card admin-panel" id="admin-panel" aria-labelledby="admin-title" hidden>
+        <div class="admin-top"><div><div class="eyebrow dark"><span class="status-dot"></span> پنل مستقل چالش‌ها</div><h1 id="admin-title">از اعلام آمادگی تا شروع چالش</h1><p>ثبت‌نام‌های دو چالش، در یک نمای قابل جست‌وجو</p></div><div class="admin-actions"><button class="button secondary" type="button" id="refresh-button">به‌روزرسانی ↻</button><button class="button secondary" type="button" id="export-all" disabled>اکسل همه ↓</button><button class="button primary" type="button" id="export-filtered" disabled>اکسل همین نما ↓</button></div></div>
+        <div class="stats" aria-label="آمار ثبت‌نام‌ها"><div class="stat"><span>کل ثبت‌نام‌ها</span><strong id="stat-total">—</strong></div><div class="stat"><span>دیگه کپی‌پیست نکن!</span><strong id="stat-one">—</strong></div><div class="stat"><span>هیچ کاری رو فراموش نکن!</span><strong id="stat-two">—</strong></div><div class="stat"><span>واحدهای شرکت‌کننده</span><strong id="stat-departments">—</strong></div></div>
+        <div class="notice" id="admin-status" role="status" hidden></div>
+        <div class="notice error" id="admin-error" role="alert" hidden></div>
+        <div class="filters">
+          <label>جست‌وجو<input id="search-filter" class="filter-input" type="search" placeholder="نام یا نام سازمانی…"></label>
+          <label>چالش<select id="challenge-filter" class="filter-select"><option value="">همهٔ چالش‌ها</option><option value="1">دیگه کپی‌پیست نکن!</option><option value="2">هیچ کاری رو فراموش نکن!</option></select></label>
+          <label>واحد سازمانی<select id="department-filter" class="filter-select"><option value="">همهٔ واحدها</option></select></label>
+          <label>سمت شغلی<select id="job-filter" class="filter-select"><option value="">همهٔ سمت‌ها</option></select></label>
+          <button type="button" class="button secondary" id="clear-filters">حذف فیلترها</button>
+        </div>
+        <div class="table-scroll" role="region" aria-label="فهرست ثبت‌نام چالش‌ها" tabindex="0"><table><thead><tr><th scope="col">ردیف</th><th scope="col">نام و نام خانوادگی</th><th scope="col">نام سازمانی</th><th scope="col">واحد</th><th scope="col">سمت</th><th scope="col">چالش</th><th scope="col">زمان ثبت (تهران)</th></tr></thead><tbody id="entry-rows"></tbody></table><div class="empty-state" id="empty-state" hidden>در این نما ثبت‌نامی وجود ندارد.</div></div>
+        <div class="table-foot"><span id="table-count" role="status"></span><span>هر ردیف یک ثبت مستقل است؛ نام‌های سازمانی یکسان هم حفظ می‌شوند.</span></div>
+      </section>
+    </main>
+    <footer class="site-footer"><span>مفید آکادمی</span><span dir="ltr">ZERO REPEAT / CHALLENGES ADMIN</span></footer>
+  </div>
+  <noscript><div class="noscript">برای استفاده از پنل مدیریت، جاوااسکریپت مرورگر را فعال کنید.</div></noscript>
+</body>
+</html>
