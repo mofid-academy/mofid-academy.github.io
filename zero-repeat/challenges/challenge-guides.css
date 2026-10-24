@@ -1,79 +1,110 @@
-/* This stylesheet is loaded only by the challenges registration page. */
+/* Compact, translucent styling for the challenges page only. */
 html{scroll-behavior:auto}
-.challenge-reading-page{background:#0a2336}
-.challenge-reading-page:before{background:linear-gradient(105deg,#071b324f 0%,#071d35b3 45%,#071d35eb 100%),url('../brand/building-night.webp') center 36%/cover no-repeat}
-.challenge-reading-page .hero{padding:58px 0 46px;max-width:780px;min-height:350px}
-.challenge-reading-page h1{font-size:46px}
-.hero-action{display:inline-flex;gap:16px;align-items:center;margin-top:23px;color:#d0f9ed;font-weight:650;font-size:13px;border-bottom:1px solid #7cc5b399;padding-bottom:5px}
-.reading-section{margin-bottom:38px;scroll-margin-top:22px}
-.reading-heading{color:white;display:flex;align-items:flex-end;gap:30px;justify-content:space-between;margin-bottom:21px}
-.reading-heading h2{margin:7px 0 0;font-size:21px;font-weight:750;line-height:1.9}
-.reading-heading p{max-width:340px;font-size:12px;line-height:2.1;color:#d0dedf;margin:0 0 4px}
-.reading-heading .step-number{color:#7ae6d3;background:#ffffff1a}
-.reader{background:#fff;border-radius:24px;box-shadow:0 22px 70px #03182d40;overflow:hidden}
-.reader-tabs{display:grid;grid-template-columns:1fr 1fr;gap:0;background:#eef4f4;border-bottom:1px solid #d7e4e3}
-.reader-tabs button{display:flex;align-items:center;text-align:right;gap:14px;color:#5f737a;background:transparent;border:0;border-bottom:3px solid transparent;padding:22px 28px;min-width:0;line-height:1.8;position:relative}
-.reader-tabs button[aria-selected=true]{background:white;border-bottom-color:#008a7a;color:#17353b}
-.reader-tabs button:hover{background:#fafdfc}
-.reader-tabs button:focus-visible{z-index:1;outline-offset:-5px}
-.tab-number{font-size:28px;font-weight:650;color:#9bb5b8;line-height:1;font-variant-numeric:tabular-nums}
-.reader-tabs button[aria-selected=true] .tab-number{color:#008376}
-.reader-tabs small{display:block;font-size:10px;font-weight:400}
-.reader-tabs strong{display:block;font-size:16px;font-weight:750}
-.tab-state{margin-right:auto;font-size:10px;white-space:nowrap;border:1px solid #d4e2df;border-radius:30px;padding:3px 10px}
-.tab-state.is-read{color:#006a5e;background:#e3f5ef;border-color:#a9d7c8}
-.guide-panel{padding:42px 64px 30px;outline:none;scroll-margin-top:20px}
-.guide-header{padding-bottom:28px;margin-bottom:29px;border-bottom:1px solid #e0e8e7}
-.guide-meta{display:flex;align-items:center;gap:15px;justify-content:space-between;color:#668085;font-size:11px}
-.guide-meta [dir=ltr]{font:10px/1.5 Tahoma,sans-serif;letter-spacing:1px}
-.guide-header h2{color:#007f76;font-size:34px;letter-spacing:-.8px;margin:15px 0 1px;line-height:1.8;font-weight:850}
-.guide-subtitle{font-size:16px;font-weight:600;margin:0 0 19px}
-.document-links{display:flex;gap:12px 22px;align-items:center;flex-wrap:wrap;font-size:11px}
-.document-links a{color:#006e64;font-weight:650;display:inline-flex;gap:10px;align-items:center;min-height:32px;border-bottom:1px solid #9ecbc1}
-.document-links a:hover{color:#004f48;border-color:currentColor}
-.document-links>span{margin-right:auto;color:#778a8c;font-size:10px}
-.guide-content{font-size:16px;line-height:2.35;overflow-wrap:break-word}
-.guide-content p{margin:0 0 18px}
-.guide-content h3{font-size:20px;line-height:1.9;color:#007c70;margin:31px 0 13px;font-weight:750}
-.guide-note{background:#f1f7f6;border-radius:13px;padding:17px 22px;font-size:14px;line-height:2.25}
-.guide-callout{border-right:3px solid #00af9d;padding:13px 21px;background:#f6faf9;border-radius:10px 0 0 10px}
+.challenge-reading-page{background:#0d282e;font-size:13px;line-height:1.9}
+.challenge-reading-page:before{background-color:#0d282e;background-image:linear-gradient(180deg,#08253257 0%,#0b282b99 65%,#0d282e 100%),url('../brand/building-night-sign.webp');background-size:100% 100%,min(100vw,1672px) auto;background-position:center,center top;background-repeat:no-repeat}
+.challenge-reading-page .page-shell{width:min(800px,calc(100% - 40px));margin:24px auto;padding:22px 26px 0;background:#cee4e1d9;border:1px solid #eeffffd9;border-radius:24px;box-shadow:0 18px 64px #00151d55;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.challenge-reading-page .site-header{padding:0 0 15px;color:#173b3f;border-bottom-color:#4b838b30}
+.challenge-reading-page .brand{gap:10px}
+.challenge-reading-page .logo-box{width:44px;height:44px;border-radius:12px;padding:3px;background:#f1faf7}
+.challenge-reading-page .brand strong{font-size:17px;letter-spacing:1px}
+.challenge-reading-page .brand small{font-size:9px;color:#5e7e80}
+.challenge-reading-page .header-link{font-size:10px;color:#007d71;gap:8px}
+.page-intro{padding:20px 0 8px}
+.page-intro h1{font-size:22px;line-height:1.8;letter-spacing:-.5px;margin:0 0 20px;color:#006e65;font-weight:800}
+.page-stages{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;position:relative;list-style:none;margin:0 0 14px;padding:0;text-align:center;color:#658180;font-size:10px}
+.page-stages:before{content:'';position:absolute;top:13px;right:16%;left:16%;height:1px;background:#7da6a366}
+.page-stages li{display:flex;flex-direction:column;align-items:center;gap:7px;position:relative}
+.page-stages span{display:grid;place-items:center;min-width:27px;height:27px;border-radius:50%;background:#f1f9f5;color:#00877b;box-shadow:0 0 0 4px #cde3df;font-size:11px}
+.reading-section{margin-bottom:24px;scroll-margin-top:18px}
+.reading-heading{margin:0 0 12px;color:#21494b}
+.reading-heading h2{font-size:15px;font-weight:700;line-height:1.9;margin:0}
+.challenge-reading-page .step-number{width:24px;height:24px;font-size:12px;background:#008b7b12;color:#007e70;margin-left:6px}
+.reader{background:#f0f8f6b8;border:1px solid #f4ffffbd;border-radius:20px;box-shadow:0 10px 32px #285d6510;overflow:hidden}
+.reader-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:7px;background:#b8d9d466;border-bottom:1px solid #76a7a533}
+.reader-tabs button{display:flex;align-items:center;text-align:right;gap:10px;min-width:0;padding:13px 14px;border:1px solid transparent;border-radius:14px;color:#547470;background:transparent;line-height:1.9;position:relative}
+.reader-tabs button[aria-selected=true]{background:#f6fcf5a6;border-color:#f3ffffd1;color:#173e3d;box-shadow:0 4px 14px #35646010}
+.reader-tabs button:hover{background:#f5fcf487}
+.reader-tabs button:focus-visible{z-index:1;outline-offset:-3px}
+.tab-number{font-size:21px;font-weight:650;color:#7faaa6;line-height:1}
+.reader-tabs button[aria-selected=true] .tab-number{color:#008a7b}
+.reader-tabs small{display:block;font-size:9px;font-weight:400}
+.reader-tabs strong{display:block;font-size:12px;font-weight:750}
+.tab-state{margin-right:auto;white-space:nowrap;font-size:8px;border:1px solid #80b6a94d;border-radius:20px;padding:2px 7px;color:#64847a}
+.tab-state.is-read{color:#006b5d;background:#cbede2aa;border-color:#7fbcaa77}
+.guide-panel{padding:24px 26px 22px;outline:none;scroll-margin-top:16px}
+.guide-header{padding:0 0 17px;margin-bottom:20px;border-bottom:1px solid #6eaba333}
+.guide-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#6d8888;font-size:9px}
+.guide-meta [dir=ltr]{font:8px/1.5 Tahoma,sans-serif;letter-spacing:.6px}
+.guide-header h2{font-size:23px;line-height:1.9;letter-spacing:-.5px;margin:10px 0 0;font-weight:800;color:#007e73}
+.guide-subtitle{font-size:12px;line-height:2;font-weight:600;margin:2px 0 0;color:#335b59}
+.guide-content{font-size:13px;line-height:2.1;overflow-wrap:break-word;color:#24494b}
+.guide-content p{margin:0 0 13px}
+.guide-content h3{font-size:15px;line-height:1.9;font-weight:750;color:#007b70;margin:23px 0 10px}
+.guide-note{background:#d4eae5a3;border:1px solid #8bc0b328;border-radius:12px;padding:12px 15px;font-size:12px;line-height:2.1}
+.guide-callout{border-right:3px solid #00ad9b;padding:11px 15px;background:#e4f3ecc2;border-radius:10px 0 0 10px;font-size:12px}
 .guide-callout strong{font-weight:750}
-.example-table-wrap{border:1px solid #d4e3df;border-radius:13px;overflow:hidden;margin:15px 0 25px}
-.example-table{width:100%;min-width:0;font-size:14px;table-layout:fixed;line-height:2.05}
-.example-table thead{position:static}
-.example-table th{font-size:13px;font-weight:700;white-space:normal;color:#006e64;background:#eaf5f2}
-.example-table td,.example-table th{padding:13px 18px;overflow-wrap:anywhere;width:50%}
-.example-table tbody tr:nth-child(even){background:#f8fbfa}
-.guide-page-break{margin-top:36px;padding-top:27px;border-top:1px solid #dbe7e4}
-.guide-page-break>span{font-size:10px;color:#748b8b}
-.guide-page-break h3{font-size:27px;color:#17353b;margin-top:8px}
+.example-table-wrap{border:1px solid #8cbcb34d;border-radius:12px;overflow:hidden;margin:12px 0 19px;background:#f6fff71f}
+.example-table{width:100%;min-width:0;font-size:12px;table-layout:fixed;line-height:2}
+.example-table thead{position:static;background:#bfdfd480}
+.example-table th{font-size:11px;font-weight:700;white-space:normal;color:#216a61;background:transparent}
+.example-table td,.example-table th{width:50%;padding:10px 13px;overflow-wrap:anywhere;border-bottom-color:#8db8b143}
+.example-table tbody tr:nth-child(even){background:#d7ebe740}
+.example-table tbody tr:hover{background:#c7e7dd70}
+.guide-page-break{margin-top:25px;padding-top:17px;border-top:1px solid #80b7ac44}
+.guide-page-break h3{font-size:18px;margin-top:0;color:#244e4c}
 .guide-steps{list-style:none;padding:0;margin:0;counter-reset:guide-step}
-.guide-steps li{counter-increment:guide-step;position:relative;padding-right:43px;margin-bottom:24px}
-.guide-steps li:before{content:counter(guide-step,persian);position:absolute;right:0;top:3px;width:29px;height:29px;display:grid;place-items:center;border-radius:50%;background:#e6f3ee;color:#007b6e;font-size:14px;line-height:1}
-.guide-steps h4{font-size:17px;color:#12685f;font-weight:700;line-height:2;margin:0 0 7px}
+.guide-steps li{counter-increment:guide-step;position:relative;padding-right:32px;margin-bottom:18px}
+.guide-steps li:before{content:counter(guide-step,persian);position:absolute;right:0;top:3px;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:#bedfd398;color:#087b69;font-size:11px;line-height:1}
+.guide-steps h4{font-size:13px;line-height:2;font-weight:750;color:#1a6d60;margin:0 0 5px}
 .guide-steps p{margin:0}
-.guide-closing{margin-top:22px!important;padding-top:19px;border-top:1px solid #e2ebe7;font-size:15px}
-.guide-end{color:#7d9391;font-size:10px;text-align:center;padding:15px 0;line-height:1.7}
-.guide-confirmation{margin-top:12px;border:1px solid #c9ded7;background:#f1f8f5;padding:23px 24px;border-radius:15px}
-.guide-confirmation label{display:flex;align-items:flex-start;gap:11px;font-size:14px;font-weight:600;cursor:pointer}
-.guide-confirmation input{margin:5px 0 0}
+.guide-closing{margin-top:17px!important;padding-top:14px;border-top:1px solid #80b7ac44;font-size:12px}
+.guide-end{height:10px;margin:4px 0}
+.guide-confirmation{margin-top:5px;background:#cde8df8c;border:1px solid #8cc4b055;border-radius:13px;padding:16px 17px}
+.guide-confirmation label{display:flex;align-items:flex-start;gap:9px;font-size:12px;font-weight:600;cursor:pointer}
+.guide-confirmation input{margin:3px 0 0}
 .guide-confirmation input:disabled{cursor:not-allowed}
-.guide-confirmation label:has(input:disabled){color:#6a7f7c}
-.guide-confirmation p{margin:7px 31px 15px;font-size:11px;color:#607b73}
-.guide-confirmation .button{font-size:11px;min-height:40px;padding:7px 15px;margin-right:30px}
-.reading-gate{display:flex;align-items:center;justify-content:space-between;gap:26px;padding:26px 36px;background:#eef5f2;border-top:1px solid #dce8e2}
-.reading-status{display:flex;gap:15px;align-items:center;flex-wrap:wrap;font-size:11px}
-.reading-status strong{font-size:13px;color:#16685f}
-.reading-status>span{color:#617c74}
-.reading-progress{display:flex;gap:6px;margin-top:12px;width:110px}
-.reading-progress span{height:4px;background:#d1e2db;border-radius:5px;flex:1}
-.reading-progress span.complete{background:#00877a}
-.reading-gate .button:disabled{cursor:not-allowed;opacity:1;background:#d7e3de;color:#536e63}
-.reading-gate .button{flex-shrink:0}
-.registration-form{scroll-margin-top:30px}
-.review-link{display:inline-block;color:#00796b;font-size:11px;margin:0 0 16px;border-bottom:1px solid #b0d2c6}
+.guide-confirmation label:has(input:disabled){color:#66857c}
+.guide-confirmation p{margin:5px 28px 12px;font-size:10px;color:#607f73}
+.guide-confirmation .button{font-size:10px;min-height:36px;padding:6px 13px;margin-right:28px}
+.reading-gate{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px 24px;background:#c8e4dca6;border-top:1px solid #8ab7ac44}
+.reading-status{display:flex;align-items:center;gap:11px;flex-wrap:wrap;font-size:10px}
+.reading-status strong{font-size:11px;color:#286d5f}
+.reading-status>span{color:#5c7e70}
+.reading-progress{display:flex;gap:5px;margin-top:9px;width:90px}
+.reading-progress span{height:3px;background:#adcfc1;border-radius:5px;flex:1}
+.reading-progress span.complete{background:#008a78}
+.reading-gate .button{flex-shrink:0;font-size:10px;gap:14px;min-height:39px;padding:8px 15px}
+.reading-gate .button:disabled{opacity:1;cursor:not-allowed;background:#b7d4c7;color:#4f7765}
+.challenge-reading-page .button{border-radius:22px}
+.challenge-reading-page .button.primary{background:#00aa98;box-shadow:0 6px 18px #00a99520;color:#fff}
+.challenge-reading-page .button.primary:hover:not(:disabled){background:#008e7c}
+.challenge-reading-page .reading-gate .button:disabled{background:#b7d4c7;color:#4f7765;box-shadow:none}
+.challenge-reading-page .button.secondary{background:#edf8f3a6;border-color:#95beb048}
+.challenge-reading-page input[type=radio],.challenge-reading-page input[type=checkbox]{width:17px;height:17px}
+.challenge-reading-page .challenge-fieldset{margin-bottom:18px}
+.challenge-reading-page .challenge-fieldset legend{font-size:15px;color:#214e4b;margin-bottom:12px}
+.challenge-reading-page .challenge-grid{gap:12px}
+.challenge-reading-page .challenge-card{padding:17px 18px 14px;border-radius:17px;background:#eff8f3a6;box-shadow:none}
+.challenge-reading-page .challenge-card:hover{transform:translateY(-1px)}
+.challenge-reading-page .challenge-card.selected{background:#e7f6ecdc;border-color:#00ad94;box-shadow:0 0 0 2px #00af9d14}
+.challenge-reading-page .challenge-title{font-size:16px;letter-spacing:-.4px;margin-top:8px}
+.challenge-reading-page .challenge-tag{font-size:9px}
+.challenge-reading-page .select-label{font-size:10px;margin-top:12px}
+.registration-form{scroll-margin-top:24px;padding-bottom:25px}
+.challenge-reading-page .card{border:1px solid #f4ffffaf;background:#eff8f4c4;padding:20px 22px;border-radius:20px}
+.challenge-reading-page .section-heading h2{font-size:15px;margin-bottom:12px}
+.challenge-reading-page .fields-grid{gap:5px 16px}
+.challenge-reading-page .field{font-size:11px;gap:5px;margin-bottom:13px}
+.challenge-reading-page .field input{min-height:42px;font-size:11px;border-radius:14px;border-color:#95c7be70;background:#f7fcf9a8;padding:8px 11px}
+.challenge-reading-page .field>small{font-size:9px}
+.challenge-reading-page .consent{font-size:11px;gap:9px;margin-bottom:17px}
+.challenge-reading-page .form-actions .button{font-size:11px;min-height:40px;padding:8px 18px}
+.review-link{display:inline-block;color:#0b8170;font-size:10px;margin:0 0 15px;border-bottom:1px solid #99bfb0}
+.challenge-reading-page .success-card{margin:10px auto 25px}
+.challenge-reading-page .success-card h2{font-size:21px}
+.challenge-reading-page .success-card p{font-size:12px}
+.challenge-reading-page .site-footer{font-size:9px;color:#648483;border-top-color:#4b838b30;padding:16px 0 20px}
 .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.preview-notice{padding:14px 18px;background:#fff0d1;color:#5c481a;border:1px solid #d9c78f;border-radius:12px;font-size:12px;margin:18px 0}
-@media(max-width:1000px){.guide-panel{padding:32px 38px 27px}.reading-heading{align-items:start;gap:22px}.reading-heading h2{font-size:19px}.reading-heading p{max-width:290px}.reader-tabs button{padding:20px}.tab-state{font-size:9px;padding:3px 7px}.reader-tabs strong{font-size:14px}.reading-gate{padding:24px 28px;gap:16px}}
-@media(max-width:650px){.challenge-reading-page:before{background:linear-gradient(0deg,#071d35ed 0%,#071d35a8 55%,#071d35b3 100%),url('../brand/building-night.webp') 48% top/auto 100vh no-repeat}.challenge-reading-page .hero{min-height:0;padding:35px 0 32px}.challenge-reading-page h1{font-size:32px}.hero-action{font-size:12px;margin-top:17px}.reading-heading{display:block;margin-bottom:17px}.reading-heading h2{font-size:17px}.reading-heading p{max-width:none;font-size:11px;margin-top:9px}.reader{border-radius:18px}.reader-tabs button{padding:14px 12px;gap:7px;align-items:flex-start;flex-wrap:wrap}.tab-number{font-size:20px;padding-top:5px}.reader-tabs strong{font-size:11px;line-height:1.9;letter-spacing:-.15px}.reader-tabs small{font-size:9px}.tab-state{font-size:8px;margin:0 27px 0 0;line-height:1.7}.guide-panel{padding:25px 20px 20px}.guide-header{padding-bottom:21px;margin-bottom:23px}.guide-meta{display:block;font-size:10px}.guide-meta [dir=ltr]{display:block;font-size:8px;margin-top:7px;letter-spacing:.65px;text-align:right}.guide-header h2{font-size:25px;line-height:1.85;margin-top:11px}.guide-subtitle{font-size:13px;line-height:2}.document-links{gap:8px 18px;font-size:10px}.document-links>span{display:block;flex-basis:100%;font-size:9px}.guide-content{font-size:14px;line-height:2.25}.guide-content h3{font-size:17px;margin-top:26px}.guide-note{padding:14px 15px;font-size:13px}.guide-callout{padding:12px 15px;font-size:13px}.example-table{font-size:12px;line-height:2}.example-table th{font-size:11px}.example-table td,.example-table th{padding:10px}.guide-page-break h3{font-size:22px}.guide-steps li{padding-right:34px}.guide-steps li:before{width:24px;height:24px;font-size:12px;top:4px}.guide-steps h4{font-size:15px}.guide-closing{font-size:13px}.guide-confirmation{padding:17px 15px}.guide-confirmation label{font-size:12px;line-height:2}.guide-confirmation p{font-size:10px;margin-right:31px}.guide-confirmation .button{margin-right:0;font-size:10px;width:100%}.reading-gate{display:block;padding:21px 20px}.reading-status{gap:8px;font-size:10px}.reading-status strong{font-size:12px}.reading-gate .button{width:100%;margin-top:19px;font-size:11px}.reading-section{margin-bottom:28px}}
-@media print{.challenge-reading-page{background:#fff}.challenge-reading-page:before,.site-header,.hero,.reader-tabs,.reading-gate,.guide-confirmation,.site-footer,.registration-form,.success-card,.document-links,.guide-end{display:none!important}.page-shell{width:100%}.reader{box-shadow:none;overflow:visible}.guide-panel[hidden],.guide-panel{display:block!important;padding:0;break-before:page}.reading-heading{color:#17353b}.reading-heading p{color:#17353b}.guide-content{font-size:11pt}.guide-content h3{break-after:avoid}.guide-steps li,.example-table-wrap{break-inside:avoid}.guide-page-break{break-before:page}}
+@media(max-width:650px){.challenge-reading-page .page-shell{width:calc(100% - 24px);margin:12px auto;padding:17px 14px 0;border-radius:21px;background:#cee4e1df}.challenge-reading-page .site-header{gap:9px;padding-bottom:13px}.challenge-reading-page .logo-box{width:38px;height:38px;border-radius:10px}.challenge-reading-page .brand strong{font-size:14px}.challenge-reading-page .brand small{font-size:8px}.challenge-reading-page .header-link{font-size:9px}.page-intro{padding-top:17px}.page-intro h1{font-size:19px;margin-bottom:18px}.page-stages{font-size:9px;margin-bottom:12px}.page-stages span{width:25px;height:25px;min-width:25px}.page-stages:before{top:12px}.reading-heading h2{font-size:13px}.reader{border-radius:17px}.reader-tabs{padding:5px;gap:3px}.reader-tabs button{padding:11px 8px;gap:6px;flex-wrap:wrap;align-items:flex-start}.reader-tabs strong{font-size:10px;line-height:1.9}.reader-tabs small{font-size:8px}.tab-number{font-size:17px;padding-top:5px}.tab-state{font-size:7px;margin:0 23px 0 0;padding:1px 6px}.guide-panel{padding:19px 16px 17px}.guide-meta{display:block;font-size:8px}.guide-meta [dir=ltr]{display:block;font-size:7px;text-align:right;margin-top:5px}.guide-header{padding-bottom:14px;margin-bottom:17px}.guide-header h2{font-size:20px}.guide-subtitle{font-size:11px}.guide-content{font-size:12.5px;line-height:2.1}.guide-content h3{font-size:14px;margin-top:19px}.guide-note,.guide-callout{font-size:11.5px;padding:11px 12px}.example-table{font-size:10.5px}.example-table th{font-size:10px}.example-table td,.example-table th{padding:8px 9px}.guide-page-break h3{font-size:16px}.guide-steps li{padding-right:28px}.guide-steps li:before{width:20px;height:20px;font-size:10px;top:4px}.guide-steps h4{font-size:12px}.guide-closing{font-size:11.5px}.guide-confirmation{padding:13px 12px}.guide-confirmation label{font-size:11px}.guide-confirmation p{font-size:9px;margin-right:26px}.guide-confirmation .button{width:100%;margin-right:0;font-size:9px}.reading-gate{display:block;padding:17px 16px}.reading-status{font-size:9px;gap:8px}.reading-status strong{font-size:10px}.reading-gate .button{width:100%;margin-top:15px}.challenge-reading-page .challenge-grid{grid-template-columns:1fr 1fr;gap:8px}.challenge-reading-page .challenge-card{padding:13px 11px 11px;border-radius:14px}.challenge-reading-page .challenge-title{font-size:13px;line-height:1.9}.challenge-reading-page .challenge-tag{font-size:8px}.challenge-reading-page .select-label{font-size:9px}.challenge-reading-page .challenge-fieldset legend{font-size:13px}.challenge-reading-page .card{padding:18px 16px;border-radius:17px}.challenge-reading-page .section-heading h2{font-size:13px}.challenge-reading-page .fields-grid{grid-template-columns:1fr;gap:0}.challenge-reading-page .form-actions .button{width:100%}.challenge-reading-page .site-footer{font-size:8px}.challenge-reading-page .site-footer span[dir=ltr]{font-size:7px;letter-spacing:.3px}}
+@media(max-width:360px){.challenge-reading-page .challenge-grid{grid-template-columns:1fr}.reader-tabs strong{font-size:9px}.reading-heading h2{font-size:12px}}
+@media print{.challenge-reading-page{background:#fff}.challenge-reading-page:before,.site-header,.page-intro,.reader-tabs,.reading-gate,.guide-confirmation,.site-footer,.registration-form,.success-card,.guide-end{display:none!important}.challenge-reading-page .page-shell{width:100%;margin:0;padding:0;background:#fff;border:0;box-shadow:none;backdrop-filter:none}.reader{box-shadow:none;background:#fff;overflow:visible}.guide-panel[hidden],.guide-panel{display:block!important;padding:0;break-before:page}.guide-content{font-size:11pt}.guide-content h3{break-after:avoid}.guide-steps li,.example-table-wrap{break-inside:avoid}.guide-page-break{break-before:page}}
