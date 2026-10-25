@@ -8,11 +8,11 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src https://siwmzffadbbhcyyppwzn.supabase.co https://siwmzffadbbhcyyppwzn.functions.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>مدیریت چالش‌ها | Zero Repeat</title>
-  <link rel="stylesheet" href="challenges.css?v=20261024">
+  <link rel="stylesheet" href="challenges.css?v=20261025-admin-delete">
   <script src="config.js?v=20261024" defer></script>
   <script src="api.js?v=20261025-dual-route" defer></script>
   <script src="tools.js?v=20261024" defer></script>
-  <script src="admin.js?v=20261024" defer></script>
+  <script src="admin.js?v=20261025-admin-delete" defer></script>
 </head>
 <body class="admin-page">
   <a class="skip-link" href="#main">رفتن به پنل مدیریت</a>
@@ -46,7 +46,7 @@
           <label>سمت شغلی<select id="job-filter" class="filter-select"><option value="">همهٔ سمت‌ها</option></select></label>
           <button type="button" class="button secondary" id="clear-filters">حذف فیلترها</button>
         </div>
-        <div class="table-scroll" role="region" aria-label="فهرست ثبت‌نام چالش‌ها" tabindex="0"><table><thead><tr><th scope="col">ردیف</th><th scope="col">نام و نام خانوادگی</th><th scope="col">نام سازمانی</th><th scope="col">واحد</th><th scope="col">سمت</th><th scope="col">چالش</th><th scope="col">زمان ثبت (تهران)</th></tr></thead><tbody id="entry-rows"></tbody></table><div class="empty-state" id="empty-state" hidden>در این نما ثبت‌نامی وجود ندارد.</div></div>
+        <div class="table-scroll" role="region" aria-label="فهرست ثبت‌نام چالش‌ها" tabindex="0"><table><thead><tr><th scope="col">ردیف</th><th scope="col">نام و نام خانوادگی</th><th scope="col">نام سازمانی</th><th scope="col">واحد</th><th scope="col">سمت</th><th scope="col">چالش</th><th scope="col">زمان ثبت (تهران)</th><th scope="col">عملیات</th></tr></thead><tbody id="entry-rows"></tbody></table><div class="empty-state" id="empty-state" hidden>در این نما ثبت‌نامی وجود ندارد.</div></div>
         <div class="table-foot"><span id="table-count" role="status"></span><span>هر ردیف یک ثبت مستقل است؛ نام‌های سازمانی یکسان هم حفظ می‌شوند.</span></div>
       </section>
     </main>
@@ -55,3 +55,4 @@
   <noscript><div class="noscript">برای استفاده از پنل مدیریت، جاوااسکریپت مرورگر را فعال کنید.</div></noscript>
 </body>
 </html>
+

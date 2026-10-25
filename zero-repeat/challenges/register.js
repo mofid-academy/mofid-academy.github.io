@@ -84,7 +84,7 @@
       $('#registration-success').focus();
       $('#registration-success').scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch (error) {
-      if (error.code === 'REQUEST_CONFLICT') clearPending();
+      if (['REQUEST_CONFLICT', 'ENTRY_DELETED'].includes(error.code)) clearPending();
       showError(error.message);
     } finally { setBusy(false); }
   });
@@ -99,3 +99,4 @@
     $('#connection-status').classList.toggle('ready', Boolean(result.ready));
   }).catch(() => { $('#connection-status').textContent = 'ارتباط موقتاً برقرار نیست؛ هنگام ثبت دوباره بررسی می‌شود.'; });
 })();
+

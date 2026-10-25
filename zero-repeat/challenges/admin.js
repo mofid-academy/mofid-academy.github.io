@@ -12,11 +12,12 @@
   let complete = false;
   let generation = 0;
   let loading = false;
+  let deleting = '';
 
   function showError(target, message) { $(target).textContent = message; $(target).hidden = !message; }
   function updateExportButtons() {
-    $('#export-all').disabled = !complete || loading || entries.length === 0;
-    $('#export-filtered').disabled = !complete || loading || filtered.length === 0;
+    $('#export-all').disabled = !complete || loading || Boolean(deleting) || entries.length === 0;
+    $('#export-filtered').disabled = !complete || loading || Boolean(deleting) || filtered.length === 0;
   }
   function filters() { return { query: $('#search-filter').value, challenge: $('#challenge-filter').value, department: $('#department-filter').value, jobTitle: $('#job-filter').value }; }
   function buildOptions(id, values, defaultLabel, emptyOption = false) {
@@ -41,6 +42,14 @@
         else cell.textContent = value;
         row.append(cell);
       });
+      const actions = document.createElement('td');
+      const remove = document.createElement('button');
+      remove.type = 'button'; remove.className = 'button secondary delete-entry';
+      remove.dataset.deleteEntry = entry.id;
+      remove.textContent = deleting === entry.id ? 'در حال حذف…' : 'حذف';
+      remove.setAttribute('aria-label', `حذف ثبت ${entry.full_name} (${entry.username}) برای چالش ${tools.challengeNames[entry.challenge_id] || ''}`);
+      remove.disabled = !complete || loading || Boolean(deleting);
+      actions.append(remove); row.append(actions);
       fragment.append(row);
     });
     body.replaceChildren(fragment);
@@ -55,7 +64,7 @@
     $('#stat-departments').textContent = fa(new Set(entries.map(entry => tools.normalize(entry.department)).filter(Boolean)).size);
   }
   function logout(message = '') {
-    generation++; token = ''; entries = []; filtered = []; complete = false; loading = false;
+    generation++; token = ''; entries = []; filtered = []; complete = false; loading = false; deleting = '';
     $('#entry-rows').replaceChildren();
     $('#admin-panel').hidden = true; $('#login-panel').hidden = false; $('#logout-button').hidden = true;
     $('#login-form').reset(); $('#admin-secret').type = 'password';
@@ -64,7 +73,7 @@
     $('#admin-username').focus();
   }
   async function loadEntries() {
-    if (!token || loading) return;
+    if (!token || loading || deleting) return;
     const current = ++generation;
     loading = true; complete = false;
     entries = []; filtered = []; $('#entry-rows').replaceChildren();
@@ -92,8 +101,36 @@
       }
     }
   }
+  async function deleteEntry(id) {
+    if (!token || !complete || loading || deleting) return;
+    const entry = entries.find(item => item.id === id);
+    if (!entry) return;
+    const challenge = tools.challengeNames[entry.challenge_id] || '';
+    if (!window.confirm(`ثبت «${entry.full_name}» با نام سازمانی «${entry.username}» برای چالش «${challenge}» حذف شود؟\nاین ردیف از فهرست ثبت‌نام‌ها و خروجی‌های اکسل بعدی حذف می‌شود.`)) return;
+    const current = generation;
+    deleting = id; $('#refresh-button').disabled = true;
+    showError('#admin-error', '');
+    $('#admin-status').textContent = 'در حال حذف ثبت انتخاب‌شده…'; $('#admin-status').hidden = false;
+    render();
+    try {
+      const result = await call({ action: 'admin_delete', token, id });
+      if (current !== generation) return;
+      if (result.deleted?.id !== id || !Number.isFinite(Date.parse(result.deleted?.deleted_at))) throw new Error('حذف تأیید نشد؛ فهرست را به‌روزرسانی و دوباره تلاش کنید.');
+      entries = entries.filter(item => item.id !== id);
+      buildOptions('#department-filter', entries.map(item => item.department), 'همهٔ واحدها');
+      buildOptions('#job-filter', entries.map(item => item.job_title), 'همهٔ سمت‌ها', entries.some(item => !item.job_title));
+      updateStats();
+      $('#admin-status').textContent = `ثبت ${entry.full_name} حذف شد.`;
+    } catch (error) {
+      if (current !== generation) return;
+      if (error.status === 401) { logout('نشست مدیریت پایان یافته است؛ دوباره وارد شوید.'); return; }
+      $('#admin-status').hidden = true; showError('#admin-error', error.message);
+    } finally {
+      if (current === generation) { deleting = ''; $('#refresh-button').disabled = false; render(); }
+    }
+  }
   function exportRows(all) {
-    if (!complete || loading) return;
+    if (!complete || loading || deleting) return;
     const rows = all ? entries : filtered;
     if (!rows.length) return;
     const currentFilters = filters();
@@ -125,6 +162,10 @@
   });
   $('#logout-button').addEventListener('click', () => logout());
   $('#refresh-button').addEventListener('click', loadEntries);
+  $('#entry-rows').addEventListener('click', event => {
+    const button = event.target.closest('button[data-delete-entry]');
+    if (button && $('#entry-rows').contains(button)) deleteEntry(button.dataset.deleteEntry);
+  });
   $('#export-all').addEventListener('click', () => exportRows(true));
   $('#export-filtered').addEventListener('click', () => exportRows(false));
   $('#search-filter').addEventListener('input', render);
@@ -138,3 +179,4 @@
     $('#toggle-password').setAttribute('aria-label', show ? 'پنهان کردن رمز مدیریت' : 'نمایش رمز مدیریت');
   });
 })();
+
