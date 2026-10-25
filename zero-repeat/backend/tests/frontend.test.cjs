@@ -7,6 +7,8 @@ const document={body:{dataset:{},classList:{add(){},remove(){},toggle(){}}},quer
 const requests=[],historyUrls=[];let respond=async()=>new Response(JSON.stringify({ok:false,code:'DATABASE_UNAVAILABLE',message:'offline'}),{status:503,headers:{'Content-Type':'application/json'}});
 const sandbox={document,window:{ZERO_REPETITION_CONFIG:{apiUrl:'https://database.invalid/functions/v1/zero-repetition-api'},ZERO_REPETITION_TOOLS:tools,addEventListener(){}},location:{origin:'https://mofid-academy.github.io',hash:'',pathname:'/zero-repetition/',search:''},history:{replaceState(a,b,url){historyUrls.push(url);}},URL,URLSearchParams,AbortController,Blob,Uint8Array,crypto:crypto.webcrypto,setTimeout,clearTimeout,FormData:class{},confirm:()=>true,
  requestAnimationFrame:fn=>fn(),fetch:async(url,options)=>{const body=JSON.parse(options.body);requests.push(body);return respond(body);}};
+// Load the same shared connection dependency as the browser, with this fixture's network.
+sandbox.window.ZERO_REPEAT_CONNECTION={call:(url,body,options)=>require('../../connection.js').call(url,body,{...options,fetchImpl:sandbox.fetch,xhrFactory:null})};
 let source=fs.readFileSync('../app-live.js','utf8');
 source=source.replace('  initialize();','  globalThis.app={initialize,state,renderForm,renderAdmin,renderRows,getMatches:()=>currentMatches,loadAccounts};');
 vm.createContext(sandbox);vm.runInContext(source,sandbox);
