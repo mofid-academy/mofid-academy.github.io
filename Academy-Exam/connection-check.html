@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>بررسی اتصال آزمون</title>
+<style>body{font:16px/1.9 system-ui,sans-serif;background:#f2f8f5;color:#153d32;margin:0;padding:24px}main{max-width:900px;margin:auto;background:white;border:1px solid #c9dfd4;border-radius:16px;padding:24px}button{font:inherit;background:#087e70;color:white;border:0;border-radius:8px;padding:9px 15px;margin:6px;cursor:pointer}button:disabled{opacity:.5}pre,textarea{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.5 monospace;background:#f3f6f5;padding:12px;box-sizing:border-box;width:100%}textarea{height:240px}h1{font-size:24px}</style></head>
+<body><main><h1>بررسی اتصال آزمون</h1>
+<p>این ابزار اتصال به همان وب‌هوک فعلی را بررسی می‌کند. بررسی اولیه فقط درخواست خالی می‌فرستد و پاسخ شرکت‌کننده ثبت نمی‌کند.</p>
+<button id="normal">بررسی با تنظیم عادی مرورگر</button><button id="public">بررسی با تنظیم فعلی سایت</button>
+<pre id="result" role="status">آمادهٔ بررسی</pre>
+<section id="replay" hidden><h2>ارسال مصنوعیِ آزمایش فنی</h2><p>فقط درخواستِ دارای نام «آزمایش فنی اتصال - ۲۵ اکتبر» نمایش داده می‌شود. شناسه و محتوای همان درخواست حفظ می‌شود.</p>
+<button id="replay-normal">بررسی همان ارسال با تنظیم عادی</button><button id="replay-public">بررسی همان ارسال با تنظیم فعلی</button>
+<details><summary>جزئیات درخواست مصنوعی</summary><textarea id="payload" readonly aria-label="درخواست مصنوعی"></textarea></details></section>
+</main><script>
+(function(){
+ 'use strict';
+ const endpoint='https://azmoon.app.n8n.cloud/webhook/academy-submit-v5';
+ const out=document.getElementById('result'),buttons=[...document.querySelectorAll('button')];
+ let replay=null;
+ try{
+  for(let i=0;i<sessionStorage.length;i++){
+   const key=sessionStorage.key(i);if(!key.startsWith('academy-pending-submission-v5:'))continue;
+   const text=sessionStorage.getItem(key),data=JSON.parse(text);
+   if(data.fields?.find(field=>field.id==='name')?.answer==='آزمایش فنی اتصال - ۲۵ اکتبر'){
+    replay=text;document.getElementById('payload').value=text;document.getElementById('replay').hidden=false;break;
+   }
+  }
+ }catch{}
+ async function check(hint,body='{}'){
+  for(const b of buttons)b.disabled=true;
+  out.textContent='در حال بررسی…';const started=performance.now();
+  const status={mode:hint?'targetAddressSpace: public':'browser default',request:body==='{}'?'empty diagnostic':'existing synthetic submission',endpoint};
+  try{
+   const options={method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body,credentials:'omit',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(30000)};
+   if(hint)options.targetAddressSpace='public';
+   const response=await fetch(endpoint,options);status.http=response.status;status.type=response.headers.get('Content-Type');status.body=await response.text();
+  }catch(e){status.error_name=e.name;status.error=e.message;}
+  status.elapsed_ms=Math.round(performance.now()-started);out.textContent=JSON.stringify(status,null,2);
+  for(const b of buttons)b.disabled=false;
+ }
+ document.getElementById('normal').onclick=()=>check(false);
+ document.getElementById('public').onclick=()=>check(true);
+ document.getElementById('replay-normal').onclick=()=>{if(replay)check(false,replay);};
+ document.getElementById('replay-public').onclick=()=>{if(replay)check(true,replay);};
+})();
+</script></body></html>
