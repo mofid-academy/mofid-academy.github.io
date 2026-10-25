@@ -14,6 +14,7 @@
   let toastTimer;
   let apiToken='',inviteToken='',loginMode='participant',apiReady=false,pendingSave=null,pendingStart=null;
   const config=window.ZERO_REPETITION_CONFIG || {};
+  let preferredApiUrl='';
   const tools=window.ZERO_REPETITION_TOOLS;
   let currentMatches=[];
   let guideAccepted=false;
@@ -53,33 +54,82 @@
   }
   function surveyHours(s) { return s.tasks?.every(t => 'count' in t && 'minutes' in t) ? hours(s.tasks) : Number(s.monthly_hours || 0); }
   async function apiCall(body,{binary=false}={}) {
-    if(!config.apiUrl)throw new Error('اتصال سامانه هنوز فعال نشده است');
-    const url=new URL(config.apiUrl);
-    if(url.protocol!=='https:')throw new Error('آدرس اتصال سامانه معتبر نیست');
-    // Cold starts may load private settings (10s) and query storage (15s).
-    // Retry only connection checks, administrator login and read operations.
-    const retryable=['health','admin_login','responses_list','response_get','invites_list'].includes(body.action);
-    const timeout=retryable||body.action==='sheets_sync'?45000:15000;
-    for(let attempt=0;attempt<(retryable?2:1);attempt++){
-      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
-      try{
-        const res=await fetch(url.href,{method:'POST',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',signal:controller.signal,headers:{'Content-Type':'text/plain;charset=UTF-8',Accept:binary?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'application/json'},body:JSON.stringify(body)});
-        const type=res.headers.get('Content-Type') || '';
-        if(binary && res.ok && !type.includes('application/json')){
-          const blob=await res.blob(),signature=new Uint8Array(await blob.slice(0,4).arrayBuffer());
-          if(signature[0]!==80||signature[1]!==75||signature[2]!==3||signature[3]!==4)throw new Error('فایل اکسل معتبر دریافت نشد');
+    const address = config.apiUrl;
+    if (!address) throw new Error('اتصال سامانه هنوز فعال نشده است');
+    const url = new URL(address);
+    if (url.protocol !== 'https:') throw new Error('آدرس اتصال سامانه معتبر نیست');
+    
+    const endpoints = [url.href];
+    // Supabase serves both hostnames from the same project and database.
+    const project = /^([a-z]{20})\.supabase\.co$/.exec(url.hostname);
+    const route = /^\/functions\/v1\/([a-z0-9-]+)$/.exec(url.pathname);
+    if (project && route && !url.port && !url.username && !url.password && !url.search && !url.hash) {
+      endpoints.push('https://' + project[1] + '.functions.supabase.co/' + route[1]);
+    }
+    if (endpoints.includes(preferredApiUrl)) {
+      endpoints.splice(endpoints.indexOf(preferredApiUrl), 1);
+      endpoints.unshift(preferredApiUrl);
+    }
+    const payload = JSON.stringify(body);
+    const readActions = ['health', 'admin_login', 'invite_login', 'survey_get', 'responses_list', 'response_get', 'invites_list'];
+    const canReadAgain = readActions.includes(body.action);
+    const hasRequestId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.request_id || '');
+    // A second write uses the exact same ID and payload. The server deduplicates it.
+    const canFailOver = canReadAgain || (hasRequestId && ['participant_start', 'survey_save'].includes(body.action));
+    const temporary = error => error.name === 'AbortError' || error.name === 'TypeError' || [502, 503, 504].includes(error.status);
+    async function send(endpoint, controller) {
+      const timer = setTimeout(() => controller.abort(), 45000);
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST', mode: 'cors', credentials: 'omit', cache: 'no-store',
+          redirect: 'error', referrerPolicy: 'no-referrer', signal: controller.signal,
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8', Accept: binary ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/json' },
+          body: payload
+        });
+        const type = response.headers.get('Content-Type') || '';
+        if (binary && response.ok && !type.includes('application/json')) {
+          const blob = await response.blob();
+          const signature = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+          if (signature[0] !== 80 || signature[1] !== 75 || signature[2] !== 3 || signature[3] !== 4) throw new Error('فایل اکسل معتبر دریافت نشد');
           return blob;
         }
-        let result;try{result=await res.json();}catch{const e=new Error('پاسخ معتبر از سامانه دریافت نشد. دوباره تلاش کنید');e.status=res.status;throw e;}
-        if(!res.ok || result.ok!==true){const e=new Error(result.message || 'درخواست انجام نشد');e.status=res.status;e.code=result.code;throw e;}
+        let result;
+        try { result = await response.json(); }
+        catch { const error = new Error('پاسخ معتبر از سامانه دریافت نشد؛ دوباره تلاش کنید'); error.status = response.status; throw error; }
+        if (!response.ok || result?.ok !== true) {
+          const error = new Error(result?.message || 'درخواست انجام نشد؛ دوباره تلاش کنید');
+          error.status = response.status; error.code = result?.code; throw error;
+        }
         return result;
-      }catch(e){
-        const temporary=e.name==='AbortError'||e.name==='TypeError'||[502,503,504].includes(e.status);
-        if(retryable&&attempt===0&&temporary)continue;
-        if(e.name==='AbortError')throw new Error('پاسخ سرور دیر رسید. اطلاعات واردشده حفظ شده است؛ دوباره تلاش کنید');
-        if(e.name==='TypeError')throw new Error('ارتباط با سرور برقرار نشد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید؛ اطلاعات واردشده حفظ شده است');
-        throw e;
-      }finally{clearTimeout(timer);}
+      } finally { clearTimeout(timer); }
+    }
+    try {
+      if (body.action === 'health' && endpoints.length > 1) {
+        // Probe both routes without participant data; use the first healthy route.
+        const controllers = endpoints.map(() => new AbortController());
+        try {
+          const winner = await Promise.any(endpoints.map(async (endpoint, i) => ({ endpoint, result: await send(endpoint, controllers[i]) })));
+          preferredApiUrl = winner.endpoint;
+          return winner.result;
+        } catch (error) {
+          throw error.errors.find(item => !temporary(item)) || error.errors[0];
+        } finally { controllers.forEach(controller => controller.abort()); }
+      }
+      const attempts = endpoints.length > 1 ? (canFailOver ? endpoints : [endpoints[0]]) : (canReadAgain ? [endpoints[0], endpoints[0]] : endpoints);
+      for (let i = 0; i < attempts.length; i++) {
+        try {
+          const result = await send(attempts[i], new AbortController());
+          preferredApiUrl = attempts[i];
+          return result;
+        } catch (error) {
+          if (i + 1 < attempts.length && temporary(error)) continue;
+          throw error;
+        }
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') throw new Error('پاسخ سرور دیر رسید. اطلاعات واردشده حفظ شده است؛ دوباره تلاش کنید');
+      if (error.name === 'TypeError') throw new Error('ارتباط با سرور برقرار نشد. اطلاعات واردشده حفظ شده است؛ اتصال اینترنت را بررسی و دوباره تلاش کنید');
+      throw error;
     }
   }
   async function request(path,method='GET',data) {
