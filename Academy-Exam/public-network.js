@@ -1,22 +1,15 @@
 /* Academy pages use public HTTPS services and never require access to a LAN. */
 (function () {
   "use strict";
-  if (window.__ACADEMY_PUBLIC_NETWORK__?.version === 2) return;
+  if (window.__ACADEMY_PUBLIC_NETWORK__?.version === 3) return;
   const nativeFetch = window.fetch.bind(window);
   const assetBase = new URL(".", document.currentScript.src);
   const localTimingURL = new URL("timing.json", assetBase);
   const rawTimingURL = "https://raw.githubusercontent.com/mofid-academy/mofid-academy.github.io/main/Academy-Exam/timing.json";
   let clockAnchor = null;
 
-  function publicFetch(input, init) {
-    const url = new URL(input instanceof Request ? input.url : String(input), location.href);
-    const options = { ...init };
-    // Browsers that support LNA reject a non-public destination without asking
-    // for permission. Same-origin resources keep the page's own address space.
-    if (url.origin !== location.origin) options.targetAddressSpace = "public";
-    return nativeFetch(input, options);
-  }
-  window.fetch = publicFetch;
+  // Preserve the browser's normal fetch and proxy handling. An explicit
+  // targetAddressSpace can reject valid HTTPS requests routed through a proxy.
 
   function validateTiming(config) {
     if (!config || typeof config !== "object" || Array.isArray(config) ||
@@ -41,7 +34,7 @@
   async function readConfig(url, timeout) {
     const requestURL = new URL(url);
     requestURL.searchParams.set("live", Date.now() + "-" + Math.random().toString(36).slice(2));
-    const response = await publicFetch(requestURL.href, {
+    const response = await nativeFetch(requestURL.href, {
       cache: "no-store", credentials: "omit", referrerPolicy: "no-referrer",
       signal: AbortSignal.timeout(timeout)
     });
@@ -80,6 +73,7 @@
     return timedConfig(source, local.status === "fulfilled" ? local.value : source);
   }
 
-  window.__ACADEMY_PUBLIC_NETWORK__ = Object.freeze({ version: 2, readTiming });
+  window.__ACADEMY_PUBLIC_NETWORK__ = Object.freeze({ version: 3, readTiming });
 })();
+
 
