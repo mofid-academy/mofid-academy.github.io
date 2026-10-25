@@ -56,20 +56,31 @@
     if(!config.apiUrl)throw new Error('اتصال سامانه هنوز فعال نشده است');
     const url=new URL(config.apiUrl);
     if(url.protocol!=='https:')throw new Error('آدرس اتصال سامانه معتبر نیست');
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),body.action==='sheets_sync'?45000:15000);
-    try{
-      const res=await fetch(url.href,{method:'POST',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',signal:controller.signal,headers:{'Content-Type':'text/plain;charset=UTF-8',Accept:binary?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'application/json'},body:JSON.stringify(body)});
-      const type=res.headers.get('Content-Type') || '';
-      if(binary && res.ok && !type.includes('application/json')){
-        const blob=await res.blob(),signature=new Uint8Array(await blob.slice(0,4).arrayBuffer());
-        if(signature[0]!==80||signature[1]!==75||signature[2]!==3||signature[3]!==4)throw new Error('فایل اکسل معتبر دریافت نشد');
-        return blob;
-      }
-      let result;try{result=await res.json();}catch{throw new Error('پاسخ معتبر از سامانه دریافت نشد. دوباره تلاش کنید');}
-      if(!res.ok || result.ok!==true){const e=new Error(result.message || 'درخواست انجام نشد');e.status=res.status;e.code=result.code;throw e;}
-      return result;
-    }catch(e){if(e.name==='AbortError')throw new Error('پاسخ سرور دیر رسید. اطلاعات واردشده حفظ شده است؛ دوباره تلاش کنید');throw e;}
-    finally{clearTimeout(timer);}
+    // Cold starts may load private settings (10s) and query storage (15s).
+    // Retry only connection checks, administrator login and read operations.
+    const retryable=['health','admin_login','responses_list','response_get','invites_list'].includes(body.action);
+    const timeout=retryable||body.action==='sheets_sync'?45000:15000;
+    for(let attempt=0;attempt<(retryable?2:1);attempt++){
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
+      try{
+        const res=await fetch(url.href,{method:'POST',credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer',signal:controller.signal,headers:{'Content-Type':'text/plain;charset=UTF-8',Accept:binary?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'application/json'},body:JSON.stringify(body)});
+        const type=res.headers.get('Content-Type') || '';
+        if(binary && res.ok && !type.includes('application/json')){
+          const blob=await res.blob(),signature=new Uint8Array(await blob.slice(0,4).arrayBuffer());
+          if(signature[0]!==80||signature[1]!==75||signature[2]!==3||signature[3]!==4)throw new Error('فایل اکسل معتبر دریافت نشد');
+          return blob;
+        }
+        let result;try{result=await res.json();}catch{const e=new Error('پاسخ معتبر از سامانه دریافت نشد. دوباره تلاش کنید');e.status=res.status;throw e;}
+        if(!res.ok || result.ok!==true){const e=new Error(result.message || 'درخواست انجام نشد');e.status=res.status;e.code=result.code;throw e;}
+        return result;
+      }catch(e){
+        const temporary=e.name==='AbortError'||e.name==='TypeError'||[502,503,504].includes(e.status);
+        if(retryable&&attempt===0&&temporary)continue;
+        if(e.name==='AbortError')throw new Error('پاسخ سرور دیر رسید. اطلاعات واردشده حفظ شده است؛ دوباره تلاش کنید');
+        if(e.name==='TypeError')throw new Error('ارتباط با سرور برقرار نشد. اتصال اینترنت را بررسی کنید و دوباره تلاش کنید؛ اطلاعات واردشده حفظ شده است');
+        throw e;
+      }finally{clearTimeout(timer);}
+    }
   }
   async function request(path,method='GET',data) {
     if(path==='/api/logout')return {ok:true};
@@ -380,12 +391,25 @@
     if(loginMode==='participant'&&!inviteToken&&!guideAccepted){$('#login-submit').disabled=false;updateGuideGate();return;}
     try{
       const data=await request('/api/login','POST',{username:$('#login-username').value.trim().toLowerCase(),password:$('#login-password').value});
+      $('#connection-status').hidden=true;$('#connection-retry').hidden=true;
       if(loginMode==='admin')apiToken=data.token;
       else{inviteToken=data.token||inviteToken;apiToken=inviteToken;pendingStart=null;history.replaceState(null,'',location.pathname+location.search+'#invite='+inviteToken);}
       $('#login-password').value='';await afterLogin(data.user,data.survey);
     }catch(ex){errorBox(ex.message,'login-error');}finally{$('#login-submit').disabled=!apiReady;}
   };
   window.addEventListener('beforeunload',e=>{if(state.dirty){e.preventDefault();e.returnValue='';}});
+  async function checkConnection(){
+    const status=$('#connection-status'),retry=$('#connection-retry');
+    status.hidden=false;retry.hidden=true;retry.disabled=true;
+    status.textContent='در حال اتصال به سامانه…';
+    try{
+      const data=await apiCall({action:'health'});
+      if(data.apiVersion!=='zero-repetition/3'||data.ready!==true)throw new Error('تنظیمات اتصال سامانه کامل نیست');
+      status.hidden=true;
+    }catch(e){status.textContent=e.message;retry.hidden=false;}
+    finally{retry.disabled=false;}
+  }
+  $('#connection-retry').onclick=checkConnection;
   async function initialize() {
     const fragment=new URLSearchParams(location.hash.slice(1));
     inviteToken=fragment.get('invite') || '';
@@ -397,13 +421,9 @@
     apiReady=Boolean(config.apiUrl);setLoginMode(loginMode);updateHeader();
     const status=$('#connection-status');
     if(!config.apiUrl){status.textContent='اتصال ثبت پاسخ‌ها در حال آماده‌سازی است';return;}
-    status.textContent='در حال اتصال به سامانه…';
-    try{
-      const data=await apiCall({action:'health'});
-      if(data.apiVersion!=='zero-repetition/3'||data.ready!==true)throw new Error('تنظیمات اتصال سامانه کامل نیست');
-      status.hidden=true;
-      if(inviteToken&&loginMode==='participant')$('#login-username').focus({preventScroll:true});
-    }catch(e){status.textContent='بررسی اتصال انجام نشد. می‌توانید ورود را دوباره امتحان کنید';}
+    await checkConnection();
+    if(inviteToken&&loginMode==='participant')$('#login-username').focus({preventScroll:true});
   }
   initialize();
 })();
+
