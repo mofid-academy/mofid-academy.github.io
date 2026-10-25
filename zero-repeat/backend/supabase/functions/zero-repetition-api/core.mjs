@@ -189,7 +189,7 @@ export function createHttpHandler(api,origin){
       const reader=request.body?.getReader();if(!reader)fail('INVALID_JSON','درخواست معتبر نیست.');
       const chunks=[];let bytes=0;
       try{while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.length;if(bytes>262144){await reader.cancel();fail('PAYLOAD_TOO_LARGE','حجم درخواست بیش از حد مجاز است.',413);}chunks.push(part.value);}}finally{reader.releaseLock();}
-      let body;try{body=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{fail('INVALID_JSON','درخواست معتبر نیست.');}
+      let body;try{body=parseRequestBody(Buffer.concat(chunks).toString('utf8'), request.headers.get('content-type'));}catch{fail('INVALID_JSON','درخواست معتبر نیست.');}
       const result=await api.handle(body,{origin:request.headers.get('origin'),ip:request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown'});
       return new Response(JSON.stringify(result),{status:200,headers});
     }catch(error){
@@ -197,4 +197,14 @@ export function createHttpHandler(api,origin){
       return new Response(JSON.stringify({ok:false,code:known?error.code:'SERVER_UNAVAILABLE',message:known?error.message:'ارتباط با سامانه برقرار نشد؛ دوباره تلاش کنید.'}),{status:known?error.status:503,headers});
     }
   };
+}
+
+// Accept ordinary browser form posts as well as the existing JSON transport.
+export function parseRequestBody(raw, contentType = '') {
+  if ((contentType || '').split(';', 1)[0].trim().toLowerCase() === 'application/x-www-form-urlencoded') {
+    const fields = new URLSearchParams(raw);
+    if ([...fields.keys()].length !== 1 || !fields.has('payload')) throw new Error('Invalid form payload');
+    raw = fields.get('payload');
+  }
+  return JSON.parse(raw);
 }

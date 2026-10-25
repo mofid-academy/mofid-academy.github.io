@@ -110,7 +110,7 @@ export function createHttpHandler(api,siteOrigin){
       const chunks=[];let size=0;
       while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>16384){await reader.cancel();fail('PAYLOAD_TOO_LARGE','حجم درخواست بیش از حد مجاز است.',413);}chunks.push(value);}
       const bytes=new Uint8Array(size);let pos=0;for(const chunk of chunks){bytes.set(chunk,pos);pos+=chunk.byteLength;}
-      let body;try{body=JSON.parse(new TextDecoder().decode(bytes));}catch{fail('INVALID_JSON','درخواست معتبر نیست.');}
+      let body;try{body=parseRequestBody(new TextDecoder().decode(bytes), request.headers.get('content-type'));}catch{fail('INVALID_JSON','درخواست معتبر نیست.');}
       const ip=request.headers.get('cf-connecting-ip')||request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown';
       const result=await api.handle(body,{origin:request.headers.get('origin')||'',ip});
       return Response.json(result,{headers:base});
@@ -121,3 +121,13 @@ export function createHttpHandler(api,siteOrigin){
   };
 }
 
+
+// Accept ordinary browser form posts as well as the existing JSON transport.
+export function parseRequestBody(raw, contentType = '') {
+  if ((contentType || '').split(';', 1)[0].trim().toLowerCase() === 'application/x-www-form-urlencoded') {
+    const fields = new URLSearchParams(raw);
+    if ([...fields.keys()].length !== 1 || !fields.has('payload')) throw new Error('Invalid form payload');
+    raw = fields.get('payload');
+  }
+  return JSON.parse(raw);
+}
