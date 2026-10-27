@@ -24,7 +24,9 @@
   const name = document.createElement('strong');
   name.textContent = 'آکادمی مفید';
   const caption = document.createElement('small');
-  caption.textContent = 'یادگیری و سنجش، در یک مسیر';
+  caption.textContent = 'MOFID ACADEMY';
+  caption.lang = 'en';
+  caption.dir = 'ltr';
   label.append(name, caption);
   brand.append(logo, label);
   const nav = document.createElement('nav');
