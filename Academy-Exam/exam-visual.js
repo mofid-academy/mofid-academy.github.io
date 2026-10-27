@@ -97,10 +97,3 @@
  draw();
 })();
 
-
-/* Optional academy navigation is isolated from the examination runtime. */
-;(function(){
- if(window.__ACADEMY_PREVIEW__||/^\/Academy-Exam\/Admin(?:\/|$)/i.test(location.pathname))return;
- const style=document.createElement('link');style.rel='stylesheet';style.href='/academy-assets/navigation.css?v=20261027-7';document.head.append(style);
- const script=document.createElement('script');script.src='/academy-assets/navigation.js?v=20261027-7';script.dataset.academySection='exam';script.async=true;document.head.append(script);
-})();
