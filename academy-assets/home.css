@@ -1,0 +1,35 @@
+@font-face{font-family:"Pinar VF";src:url('/Academy-Exam/assets/Pinar-VF.woff') format('woff');font-weight:300 900;font-display:swap}
+*{box-sizing:border-box}
+:root{color-scheme:light;background:#f2faf5;color:#164d3b;font-family:"Pinar VF",Tahoma,sans-serif}
+body{margin:0;min-height:100svh;background:radial-gradient(ellipse at 0% 0%,#fffffffa,transparent 49%),radial-gradient(ellipse at 100% 100%,#ffffffd9,transparent 47%),linear-gradient(155deg,#f2faf5,#e7f4ec 55%,#f0f9f3);font-size:15px;line-height:2}
+.academy-home{max-width:1220px;margin:0 auto;padding:58px 30px 22px}
+.academy-home-intro{display:grid;grid-template-columns:1.2fr 1fr;align-items:center;gap:30px;min-height:340px;margin-bottom:46px}
+.academy-home-kicker{display:inline-flex;align-items:center;gap:9px;font-size:11px;color:#397a62;border:1px solid #cce6d7;background:#ffffff91;padding:5px 12px;border-radius:999px}
+.academy-home-kicker i{width:6px;height:6px;background:#17a18c;border-radius:50%}
+.academy-home h1{font-size:clamp(32px,4.1vw,49px);font-weight:800;line-height:1.9;letter-spacing:-1.5px;margin:18px 0 14px;color:#164d3b}
+.academy-home h1 em{font-style:normal;color:#0f8b77}
+.academy-home-copy>p{max-width:460px;color:#607a6b;font-size:14px;line-height:2.2;margin:0}
+.academy-home-tags{display:flex;gap:10px;margin-top:24px}
+.academy-home-tags span{font-size:10px;padding:4px 12px;border:1px solid #d9e9df;border-radius:8px;background:#ffffff7a;color:#5e7c6c}
+.academy-home-art{height:320px;position:relative;display:grid;place-items:center;isolation:isolate}
+.academy-art-halo{position:absolute;width:320px;height:280px;border-radius:50%;background:radial-gradient(ellipse,#b7e4d270,transparent 70%);z-index:-1}
+.academy-art-sheet{position:absolute;width:198px;height:249px;padding:27px 24px;border:1px solid #c8e0d3;border-radius:20px;background:#fff;box-shadow:0 24px 50px #164d3b13}
+.academy-art-back{transform:rotate(13deg) translate(-31px,0);background:linear-gradient(130deg,#e0f0e8,#f9fefb)}
+.academy-art-back span{display:block;width:100%;height:5px;margin:13px 0;background:#bbd9ca;border-radius:5px}
+.academy-art-front{transform:rotate(-7deg) translate(12px,3px)}
+.academy-art-mark{font-size:29px;font-weight:900;color:#0c7c69;line-height:1.5;margin-bottom:19px}.academy-art-mark span{display:block;font-size:10px;font-weight:500;color:#8aa394;letter-spacing:3px}
+.academy-art-front i{display:block;height:4px;border-radius:4px;background:#d9e9df;margin:8px 0;width:90%}.academy-art-front i:nth-of-type(2){width:56%;margin-bottom:20px}
+.academy-art-front b{position:relative;display:block;height:23px;margin:8px 0;border:1px solid #dfebe3;border-radius:6px;background:#fafdfb}.academy-art-front b:first-of-type{background:#e2f4e9;border-color:#a9d2bd}.academy-art-front b::after{content:"";position:absolute;right:30px;left:12px;top:9px;height:3px;background:#d4e7dc;border-radius:3px}.academy-art-front small{position:absolute;right:9px;top:-3px;font-size:16px;color:#0b8c74}
+.academy-art-note{position:absolute;bottom:7px;padding:8px 19px;border:1px solid #ffffffeb;background:#ffffffb8;box-shadow:0 8px 22px #164d3b08;border-radius:10px;color:#5c7d69;font-size:11px;transform:rotate(3deg)}
+.academy-home-modules{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.academy-module{position:relative;display:flex;flex-direction:column;padding:28px 30px 26px;border:1px solid #deebe2;border-radius:24px;box-shadow:0 18px 50px #0a4d470a;text-decoration:none;color:#163b2d;background:#fff;transition:border-color .2s,box-shadow .2s,transform .2s;overflow:hidden;min-width:0}
+.academy-module::before{content:"";position:absolute;top:0;right:30px;left:30px;height:3px;background:linear-gradient(90deg,#e0564c 0 15%,#12968a 15% 100%);border-radius:0 0 5px 5px}
+.academy-module-top{display:flex;justify-content:space-between;align-items:center}.academy-module-number{font-size:11px;color:#6a8777;letter-spacing:.5px}.academy-module-symbol{display:grid;place-items:center;background:#eff8f2;border:1px solid #dbebe0;border-radius:14px;width:52px;height:52px;color:#0f7c72}.academy-module-symbol svg{width:29px;height:29px}
+.academy-module h2{font-size:23px;font-weight:800;margin:18px 0 9px;line-height:1.8;color:#164d3b}.academy-module p{font-size:13px;line-height:2.2;margin:0 0 26px;color:#677e70;max-width:410px}
+.academy-module-bottom{border-top:1px solid #e7eee9;padding-top:20px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:auto}.academy-module-pills{font-size:10px;color:#7a9182}.academy-module strong{font-size:12px;color:#0b7c68;font-weight:700;display:flex;align-items:center;gap:13px}.academy-module strong>span{font-size:19px}
+.academy-module:hover{border-color:#92c7b1;box-shadow:0 20px 50px #0b70591a;transform:translateY(-3px)}.academy-module:focus-visible{outline:3px solid #139a80;outline-offset:5px}
+.academy-home-help{font-size:11px;text-align:center;color:#7c9283;margin:26px 0 8px}.academy-home-footer{max-width:1160px;margin:0 auto;padding:22px 0 28px;border-top:1px solid #dfece3;display:flex;justify-content:space-between;font-size:10px;color:#84978a}
+@media(max-width:850px){.academy-home{padding-top:35px}.academy-home-intro{gap:5px;grid-template-columns:1.2fr 1fr}.academy-art-sheet{scale:.85}.academy-home-modules{gap:18px}.academy-module{padding:25px 24px}.academy-module h2{font-size:21px}.academy-home-footer{margin:0 30px}}
+@media(max-width:600px){.academy-home{padding:25px 18px 15px}.academy-home-intro{grid-template-columns:1fr;margin-bottom:25px;gap:4px}.academy-home h1{font-size:34px;letter-spacing:-.8px;line-height:1.8}.academy-home-copy>p{font-size:12px;max-width:340px}.academy-home-art{height:240px}.academy-art-sheet{scale:.7}.academy-art-halo{width:280px;height:220px}.academy-art-note{bottom:0;font-size:10px}.academy-home-tags{margin-top:17px}.academy-home-modules{grid-template-columns:1fr;gap:18px}.academy-module{padding:24px}.academy-module p{font-size:12px}.academy-home-help{font-size:10px;margin-top:23px}.academy-home-footer{margin:0 20px;font-size:9px}.academy-home-kicker{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.academy-module{transition:none;transform:none}}
+.academy-home-footer a{color:#557d65;text-decoration:none}.academy-home-footer a:hover{color:#0f7c72;text-decoration:underline}.academy-home-footer a:focus-visible{outline:2px solid #139a80;outline-offset:4px}
