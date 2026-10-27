@@ -24,7 +24,7 @@
   const name = document.createElement('strong');
   name.textContent = 'آکادمی مفید';
   const caption = document.createElement('small');
-  caption.textContent = 'MOFID ACADEMY';
+  caption.textContent = 'ACADEMY MOFID';
   caption.lang = 'en';
   caption.dir = 'ltr';
   label.append(name, caption);
