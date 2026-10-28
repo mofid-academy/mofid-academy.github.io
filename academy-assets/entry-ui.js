@@ -61,7 +61,7 @@
   function mountLogin(card) {
     if(!card)return ()=>{};
     if(mounted.has(card))return mounted.get(card);
-    const cleanupBackground=mountBackground('login'),cleanupMetal=mountMetal(card.querySelector('.mofid-entry-submit'));
+    const cleanupBackground=mountBackground('login');
     const reset=()=>{card.style.setProperty('--card-rx','0deg');card.style.setProperty('--card-ry','0deg');};
     const tilt=event=>{
       if(reduced.matches||!fine.matches||card.matches(':focus-within')){reset();return;}
@@ -69,7 +69,7 @@
       card.style.setProperty('--card-rx',(-y*7).toFixed(2)+'deg');card.style.setProperty('--card-ry',(x*7).toFixed(2)+'deg');
     };
     card.addEventListener('pointermove',tilt,{passive:true});card.addEventListener('pointerleave',reset);card.addEventListener('focusin',reset);
-    const cleanup=()=>{cleanupBackground();cleanupMetal();card.removeEventListener('pointermove',tilt);card.removeEventListener('pointerleave',reset);card.removeEventListener('focusin',reset);mounted.delete(card);};
+    const cleanup=()=>{cleanupBackground();card.removeEventListener('pointermove',tilt);card.removeEventListener('pointerleave',reset);card.removeEventListener('focusin',reset);mounted.delete(card);};
     mounted.set(card,cleanup);return cleanup;
   }
   function initHome() {
@@ -78,7 +78,7 @@
     main.querySelectorAll('.mofid-metal').forEach(surface=>cleanups.push(mountMetal(surface,surface.closest('a')||surface)));
     mounted.set(main,()=>cleanups.forEach(cleanup=>cleanup()));
   }
-  window.MofidEntryUI=Object.freeze({mountLogin,initHome,version:'20261028-5'});
+  window.MofidEntryUI=Object.freeze({mountLogin,initHome,version:'20261028-6'});
   if(script?.dataset.entrySurface==='home'){
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initHome,{once:true});else initHome();
   }
