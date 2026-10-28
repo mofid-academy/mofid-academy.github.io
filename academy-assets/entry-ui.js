@@ -38,7 +38,7 @@
           u_fit:0,u_rotation:0,u_originX:.5,u_originY:.5,u_worldWidth:0,u_worldHeight:0,u_isImage:false,u_colorBack:[0,0,0,0],u_colorTint:[.7,.94,.79,.6]
         },{alpha:true,antialias:false,powerPreference:'low-power'},reduced.matches?0:.6,0,1.5,250000);
         surface.dataset.metalRenderer='webgl';
-      }catch{surface.dataset.metalRenderer='css';}
+      }catch(error){surface.dataset.metalRenderer='css';console.warn('Mofid liquid metal: '+String(error?.message||'WebGL is unavailable'));}
     }).catch(()=>{surface.dataset.metalRenderer='css';});
     return ()=>{closed=true;clearTimeout(boostTimer);mount?.dispose();trigger.removeEventListener('pointerenter',enter);trigger.removeEventListener('pointerleave',leave);trigger.removeEventListener('pointerdown',down);trigger.removeEventListener('pointerup',up);trigger.removeEventListener('pointercancel',leave);reduced.removeEventListener('change',preference);};
   }
@@ -78,7 +78,7 @@
     main.querySelectorAll('.mofid-metal').forEach(surface=>cleanups.push(mountMetal(surface,surface.closest('a')||surface)));
     mounted.set(main,()=>cleanups.forEach(cleanup=>cleanup()));
   }
-  window.MofidEntryUI=Object.freeze({mountLogin,initHome,version:'20261028-2'});
+  window.MofidEntryUI=Object.freeze({mountLogin,initHome,version:'20261028-3'});
   if(script?.dataset.entrySurface==='home'){
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initHome,{once:true});else initHome();
   }
