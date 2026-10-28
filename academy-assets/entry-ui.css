@@ -66,6 +66,15 @@ html[data-mofid-entry="home"] .academy-module strong.mofid-metal>span{font-size:
 html[data-mofid-entry="home"] .academy-home-help{color:#5d7e6b}
 html[data-mofid-entry="home"] .academy-home-footer{border-color:#d5e8dc;color:#668774}
 /* Native sign-in form; its card and submit button have static borders. */
+/* Spotlight Card adaptation: mint fill and a teal border follow pointer coordinates. */
+.mofid-spotlight-card{position:relative;isolation:isolate;--mofid-spot-x:50%;--mofid-spot-y:50%}
+.mofid-spotlight-card>:not(.mofid-spotlight-glow):not(.mofid-spotlight-edge){position:relative;z-index:1}
+.mofid-spotlight-glow,.mofid-spotlight-edge{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .25s ease;animation:none!important}
+.mofid-spotlight-glow{z-index:0;background:radial-gradient(340px circle at var(--mofid-spot-x) var(--mofid-spot-y),rgba(18,150,138,.14),rgba(174,236,255,.065) 48%,transparent 74%)}
+.mofid-spotlight-edge{z-index:2;padding:1.5px;background:radial-gradient(230px circle at var(--mofid-spot-x) var(--mofid-spot-y),rgba(15,124,114,.88),rgba(52,168,141,.4) 45%,rgba(168,220,210,.08) 76%,transparent);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.mofid-spotlight-card[data-spotlight-active="true"]>.mofid-spotlight-glow,.mofid-spotlight-card[data-spotlight-active="true"]>.mofid-spotlight-edge{opacity:1}
+.mofid-spotlight-card:focus-visible>.mofid-spotlight-edge{opacity:.8}
+@media(prefers-reduced-motion:reduce),(hover:none),(pointer:coarse){.mofid-spotlight-glow,.mofid-spotlight-edge{display:none;transition:none}}
 html[data-mofid-entry="login"] #root{position:relative;z-index:1;min-height:calc(100svh - var(--academy-navigation-height,0px));display:grid;place-items:center;padding:44px 18px 58px;perspective:1500px}
 html[data-mofid-entry="login"] #root>section.mofid-entry-card.panel{position:relative;isolation:isolate;margin:0!important;max-width:440px!important;width:min(100%,440px);padding:33px 32px 26px!important;border:1px solid rgba(255,255,255,.96)!important;border-radius:24px!important;background:linear-gradient(145deg,rgba(255,255,255,.9),rgba(238,249,244,.82))!important;box-shadow:0 28px 75px rgba(22,77,59,.1),inset 0 1px #fff!important;color:var(--entry-ink);backdrop-filter:blur(26px);overflow:hidden;transform:rotateX(var(--card-rx,0deg)) rotateY(var(--card-ry,0deg));transform-style:preserve-3d;transition:transform .35s cubic-bezier(.22,1,.36,1),border-color .4s;animation:entry-card-arrive .7s cubic-bezier(.16,1,.3,1) both}
 html[data-mofid-entry="login"] #root>section.mofid-entry-card.panel:before,html[data-mofid-entry="login"] #root>section.mofid-entry-card.panel:after{display:none!important;animation:none!important}

@@ -58,10 +58,36 @@
     document.addEventListener('pointermove',move,{passive:true});window.addEventListener('resize',resize,{passive:true});document.addEventListener('visibilitychange',visibility);reduced.addEventListener('change',preference);draw();
     return ()=>{cancelAnimationFrame(frame);document.removeEventListener('pointermove',move);window.removeEventListener('resize',resize);document.removeEventListener('visibilitychange',visibility);reduced.removeEventListener('change',preference);background.remove();if(previous===null)root.removeAttribute('data-mofid-entry');else root.setAttribute('data-mofid-entry',previous);};
   }
+  function mountSpotlights(container,cards) {
+    if(!container||!cards.length)return ()=>{};
+    let active;
+    const layers=cards.flatMap(card=>{
+      card.classList.add('mofid-spotlight-card');
+      return ['glow','edge'].map(kind=>{
+        const layer=document.createElement('span');layer.className='mofid-spotlight-'+kind;layer.setAttribute('aria-hidden','true');card.append(layer);return layer;
+      });
+    });
+    const reset=()=>{if(active)active.removeAttribute('data-spotlight-active');active=undefined;};
+    const move=event=>{
+      if(reduced.matches||!fine.matches||event.pointerType==='touch'){reset();return;}
+      const card=event.target.closest?.('.mofid-spotlight-card');
+      if(!cards.includes(card)){reset();return;}
+      if(active!==card){reset();active=card;}
+      const rect=card.getBoundingClientRect();
+      card.style.setProperty('--mofid-spot-x',(event.clientX-rect.left).toFixed(2)+'px');
+      card.style.setProperty('--mofid-spot-y',(event.clientY-rect.top).toFixed(2)+'px');
+      card.setAttribute('data-spotlight-active','true');
+    };
+    container.addEventListener('pointermove',move,{passive:true});container.addEventListener('pointerleave',reset);window.addEventListener('blur',reset);document.addEventListener('visibilitychange',reset);reduced.addEventListener('change',reset);fine.addEventListener('change',reset);
+    return ()=>{
+      reset();container.removeEventListener('pointermove',move);container.removeEventListener('pointerleave',reset);window.removeEventListener('blur',reset);document.removeEventListener('visibilitychange',reset);reduced.removeEventListener('change',reset);fine.removeEventListener('change',reset);
+      layers.forEach(layer=>layer.remove());cards.forEach(card=>{card.classList.remove('mofid-spotlight-card');card.style.removeProperty('--mofid-spot-x');card.style.removeProperty('--mofid-spot-y');});
+    };
+  }
   function mountLogin(card) {
     if(!card)return ()=>{};
     if(mounted.has(card))return mounted.get(card);
-    const cleanupBackground=mountBackground('login');
+    const cleanupBackground=mountBackground('login'),cleanupSpotlight=mountSpotlights(card,[card]);
     const reset=()=>{card.style.setProperty('--card-rx','0deg');card.style.setProperty('--card-ry','0deg');};
     const tilt=event=>{
       if(reduced.matches||!fine.matches||card.matches(':focus-within')){reset();return;}
@@ -69,16 +95,16 @@
       card.style.setProperty('--card-rx',(-y*7).toFixed(2)+'deg');card.style.setProperty('--card-ry',(x*7).toFixed(2)+'deg');
     };
     card.addEventListener('pointermove',tilt,{passive:true});card.addEventListener('pointerleave',reset);card.addEventListener('focusin',reset);
-    const cleanup=()=>{cleanupBackground();card.removeEventListener('pointermove',tilt);card.removeEventListener('pointerleave',reset);card.removeEventListener('focusin',reset);mounted.delete(card);};
+    const cleanup=()=>{cleanupSpotlight();cleanupBackground();card.removeEventListener('pointermove',tilt);card.removeEventListener('pointerleave',reset);card.removeEventListener('focusin',reset);mounted.delete(card);};
     mounted.set(card,cleanup);return cleanup;
   }
   function initHome() {
     const main=document.getElementById('academyHome');if(!main||mounted.has(main))return;
-    const cleanups=[mountBackground('home')];
+    const cleanups=[mountBackground('home'),mountSpotlights(main.querySelector('.academy-home-modules'),[...main.querySelectorAll('.academy-module')])];
     main.querySelectorAll('.mofid-metal').forEach(surface=>cleanups.push(mountMetal(surface,surface.closest('a')||surface)));
     mounted.set(main,()=>cleanups.forEach(cleanup=>cleanup()));
   }
-  window.MofidEntryUI=Object.freeze({mountLogin,initHome,version:'20261028-6'});
+  window.MofidEntryUI=Object.freeze({mountLogin,initHome,version:'20261028-7'});
   if(script?.dataset.entrySurface==='home'){
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initHome,{once:true});else initHome();
   }
