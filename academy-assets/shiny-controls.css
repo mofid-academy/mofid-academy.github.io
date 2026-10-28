@@ -1,0 +1,17 @@
+/* Mofid adaptation of Shiny Borders Button's inner glow and green-white hover light.
+   Reference: https://21st.dev/@muhammad-binsalman/components/shiny-borders-button */
+:root{--mofid-shine-rgb:15,124,114;--mofid-shine-white:255,255,255}
+html[data-academy-theme="dark"],html[data-academy-app="studio"][data-theme="dark"]{--mofid-shine-rgb:155,208,174;--mofid-shine-white:223,248,229}
+:is(#view .opt,#view #prev,#view #next,html[data-academy-app="studio"] .quiz-option,html[data-academy-app="studio"] .quiz-nav .btn){position:relative;isolation:isolate;overflow:hidden;border-radius:16px;box-shadow:inset 0 1px 0 rgba(var(--mofid-shine-white),.55),inset 0 0 18px rgba(var(--mofid-shine-rgb),.065),0 7px 19px rgba(5,77,45,.08);transition:border-color .2s,box-shadow .2s,background .2s,transform .2s}
+:is(#view .opt,#view #prev,#view #next,html[data-academy-app="studio"] .quiz-option,html[data-academy-app="studio"] .quiz-nav .btn)::after{content:"";position:absolute;inset:0;padding:1.3px;border-radius:inherit;background:linear-gradient(115deg,rgba(var(--mofid-shine-rgb),.13) 0%,rgba(var(--mofid-shine-rgb),.18) 23%,rgba(var(--mofid-shine-white),.92) 43%,rgba(var(--mofid-shine-rgb),.78) 54%,rgba(var(--mofid-shine-rgb),.13) 73%);background-size:230% 100%;background-position:100% 50%;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.7;pointer-events:none;transition:opacity .25s;animation:mofid-border-light 6s ease-in-out infinite}
+:is(#view .opt,#view #prev,#view #next,html[data-academy-app="studio"] .quiz-option,html[data-academy-app="studio"] .quiz-nav .btn):not(:disabled):hover{box-shadow:inset 0 1px 0 rgba(var(--mofid-shine-white),.8),inset 0 0 24px rgba(var(--mofid-shine-rgb),.13),0 0 0 1px rgba(var(--mofid-shine-rgb),.2),0 9px 23px rgba(5,77,45,.12)}
+:is(#view .opt,#view #prev,#view #next,html[data-academy-app="studio"] .quiz-option,html[data-academy-app="studio"] .quiz-nav .btn):is(:hover,:focus-visible)::after{opacity:1;animation-duration:2.8s}
+:is(#view .opt,html[data-academy-app="studio"] .quiz-option):is([aria-pressed="true"],:has([data-state="checked"])){box-shadow:0 0 0 3px rgba(var(--mofid-shine-rgb),.16),inset 0 1px 0 rgba(var(--mofid-shine-white),.8),inset 0 0 24px rgba(var(--mofid-shine-rgb),.11),0 8px 22px rgba(5,77,45,.11)}
+:is(#view .opt,html[data-academy-app="studio"] .quiz-option):is([aria-pressed="true"],:has([data-state="checked"]))::after{opacity:1}
+html[data-academy-app="studio"] .quiz-option.incorrect{--mofid-shine-rgb:184,78,62}
+html[data-academy-app="studio"] .quiz-option.correct{--mofid-shine-rgb:43,139,85}
+:is(#view #prev,#view #next,html[data-academy-app="studio"] .quiz-nav .btn){border-radius:999px;min-height:43px;padding-inline:20px}
+:is(#view #prev,#view #next,html[data-academy-app="studio"] .quiz-nav .btn):disabled::after{animation:none;opacity:.18}
+html[data-academy-app="studio"] .quiz-option:has(button:disabled)::after{animation:none;opacity:.45}
+@keyframes mofid-border-light{0%,100%{background-position:100% 50%}50%{background-position:0% 50%}}
+@media(prefers-reduced-motion:reduce){:is(#view .opt,#view #prev,#view #next,html[data-academy-app="studio"] .quiz-option,html[data-academy-app="studio"] .quiz-nav .btn){transition:none!important}:is(#view .opt,#view #prev,#view #next,html[data-academy-app="studio"] .quiz-option,html[data-academy-app="studio"] .quiz-nav .btn)::after{animation:none!important}}
