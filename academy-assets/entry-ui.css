@@ -12,7 +12,7 @@ html[data-mofid-entry] body{margin:0;min-height:100svh;position:relative;isolati
 .gradient-3{bottom:-24%;left:-7%;background:radial-gradient(ellipse,rgba(17,150,135,.55),transparent 68%);transform-origin:85% 20%;animation:entry-move-circle 42s linear -17s infinite}
 .gradient-4{top:24%;right:-18%;background:radial-gradient(ellipse,rgba(53,127,66,.53),transparent 68%);animation:entry-move-horizontal 40s ease-in-out -13s infinite}
 .gradient-5{bottom:-38%;right:0;background:radial-gradient(ellipse,rgba(143,204,123,.36),transparent 68%);transform-origin:50% 20%;animation:entry-move-circle 34s linear -8s infinite}
-.mofid-gradient-pointer{position:absolute;top:0;left:0;width:65vmax;height:65vmax;margin:-32.5vmax 0 0 -32.5vmax;background:radial-gradient(circle,rgba(103,218,151,.39),rgba(31,169,125,.16) 28%,transparent 62%);mix-blend-mode:screen;border-radius:50%;opacity:0;transition:opacity 1s;will-change:transform}
+.mofid-gradient-pointer{position:absolute;top:0;left:0;width:65vmax;height:65vmax;margin:-32.5vmax 0 0 -32.5vmax;background:radial-gradient(circle,rgba(103,218,151,.39),rgba(31,169,125,.16) 28%,transparent 62%);mix-blend-mode:screen;border-radius:50%;filter:blur(35px);opacity:0;transition:opacity 1s;will-change:transform}
 .mofid-gradient-pointer.pointer-visible{opacity:1}
 @keyframes entry-move-vertical{0%,100%{transform:translateY(-8%)}50%{transform:translateY(28%)}}
 @keyframes entry-move-circle{to{transform:rotate(360deg)}}

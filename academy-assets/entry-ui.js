@@ -48,7 +48,7 @@
     const background=document.createElement('div');background.className='mofid-entry-background';background.setAttribute('aria-hidden','true');background.inert=true;
     const blobs=document.createElement('div');blobs.className='mofid-gradient-blobs';
     for(let i=0;i<5;i++){const blob=document.createElement('i');blob.className='mofid-gradient-blob gradient-'+(i+1);blobs.append(blob);}
-    const pointer=document.createElement('i');pointer.className='mofid-gradient-pointer';blobs.append(pointer);background.append(blobs);document.body.prepend(background);
+    const pointer=document.createElement('i');pointer.className='mofid-gradient-pointer';background.append(blobs,pointer);document.body.prepend(background);
     let frame=0,currentX=innerWidth*.5,currentY=innerHeight*.45,targetX=currentX,targetY=currentY;
     const draw=()=>{frame=0;currentX+=(targetX-currentX)*.065;currentY+=(targetY-currentY)*.065;pointer.style.transform='translate3d('+currentX.toFixed(2)+'px,'+currentY.toFixed(2)+'px,0)';if(Math.abs(targetX-currentX)+Math.abs(targetY-currentY)>.2&&!document.hidden)frame=requestAnimationFrame(draw);};
     const move=event=>{if(!fine.matches||reduced.matches||event.pointerType==='touch')return;targetX=event.clientX;targetY=event.clientY;pointer.classList.add('pointer-visible');if(!frame)frame=requestAnimationFrame(draw);};
@@ -78,7 +78,7 @@
     main.querySelectorAll('.mofid-metal').forEach(surface=>cleanups.push(mountMetal(surface,surface.closest('a')||surface)));
     mounted.set(main,()=>cleanups.forEach(cleanup=>cleanup()));
   }
-  window.MofidEntryUI=Object.freeze({mountLogin,initHome,version:'20261028-1'});
+  window.MofidEntryUI=Object.freeze({mountLogin,initHome,version:'20261028-2'});
   if(script?.dataset.entrySurface==='home'){
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initHome,{once:true});else initHome();
   }
