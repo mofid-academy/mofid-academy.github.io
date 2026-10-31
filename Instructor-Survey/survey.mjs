@@ -5,6 +5,7 @@ initTheme();
 const $=s=>document.querySelector(s),view=$('#view'),actions=$('#formActions'),params=new URL(location.href).searchParams;
 const preview=params.get('preview')==='1';
 const initialAcademy=document.body.dataset.surveyAcademy||'call-center';
+const freeEntry=document.body.dataset.entryMode==='free-text';
 const KEY='mofid-instructor-v2:'+location.pathname+':'+initialAcademy+(preview?':preview':'');
 let state={id:crypto.randomUUID(),academy:initialAcademy,organizational_name:'',instructor_name:'',course_title:'',answers:{},started_at:0,updated_at:Date.now()};
 let step=-1,pending=null,receipt=null,settings=null,loading=false,sending=false,returnToReview=false,timer=0,version=0,cleanup=()=>{},storageOK=true;
@@ -37,10 +38,11 @@ function render(){
 function intro(){
   const c=selected(),closed=settings&&(!settings.is_open||!c.is_open),lock=!!pending,classRequired=c.class_required!==false;
   const options=(values,current,placeholder)=>'<option value="" '+(!values.includes(current)?'selected':'')+' disabled>'+placeholder+'</option>'+values.map(value=>'<option value="'+esc(value)+'" '+(value===current?'selected':'')+'>'+esc(value)+'</option>').join('');
-  view.innerHTML='<p class="intro-description">بازخورد شما، به بهبود کیفیت آموزش‌ها کمک می‌کند. نام سازمانی برای ثبت نتیجه الزامی است.</p><form id="identityForm" class="context-fields">'+
+  const textField=(id,max,placeholder,required)=>'<input type="text" id="'+id+'" autocomplete="off" maxlength="'+max+'" placeholder="'+placeholder+'" value="'+esc(state[id])+'" '+(required?'required ':'')+(lock?'disabled':'')+'>';
+  view.innerHTML='<p class="intro-description">'+(freeEntry?'نام مدرس و عنوان کلاس را خودتان بنویسید و بازخوردتان را ثبت کنید.':'بازخورد شما، به بهبود کیفیت آموزش‌ها کمک می‌کند. نام سازمانی برای ثبت نتیجه الزامی است.')+'</p><form id="identityForm" class="context-fields">'+
     '<div class="identity-name"><label for="organizational_name">نام سازمانی <span class="req">*</span></label><input id="organizational_name" dir="auto" autocomplete="username" maxlength="120" placeholder="m.mirsheri" value="'+esc(state.organizational_name)+'" required '+(lock?'disabled':'')+'></div>'+
-    '<div><label for="instructor_name">نام مدرس <span class="req">*</span></label><select id="instructor_name" required '+(lock?'disabled':'')+'>'+options(c.instructors,state.instructor_name,'نام مدرس را انتخاب کنید')+'</select></div>'+
-    '<div><label for="course_title">عنوان کلاس '+(classRequired?'<span class="req">*</span>':'<small>(اختیاری)</small>')+'</label><select id="course_title" '+(classRequired?'required ':'')+(lock?'disabled':'')+'>'+(!classRequired?'<option value="">انتخاب عنوان کلاس (اختیاری)</option>':'')+options(c.classes,state.course_title,'عنوان کلاس را انتخاب کنید')+'</select></div></form>';
+    '<div><label for="instructor_name">نام مدرس <span class="req">*</span></label>'+(freeEntry?textField('instructor_name',140,'نام مدرس را بنویسید',true):'<select id="instructor_name" required '+(lock?'disabled':'')+'>'+options(c.instructors,state.instructor_name,'نام مدرس را انتخاب کنید')+'</select>')+'</div>'+
+    '<div><label for="course_title">عنوان کلاس '+(classRequired?'<span class="req">*</span>':'<small>(اختیاری)</small>')+'</label>'+(freeEntry?textField('course_title',200,'عنوان کلاس را بنویسید',classRequired):'<select id="course_title" '+(classRequired?'required ':'')+(lock?'disabled':'')+'>'+(!classRequired?'<option value="">انتخاب عنوان کلاس (اختیاری)</option>':'')+options(c.classes,state.course_title,'عنوان کلاس را انتخاب کنید')+'</select>')+'</div></form>';
   for(const k of ['organizational_name','instructor_name','course_title'])$('#'+k).oninput=e=>{state[k]=e.target.value;save();};
   actions.innerHTML='<button type="submit" form="identityForm" class="button primary" id="start" '+(!settings||closed?'disabled':'')+'>'+(!settings?'در حال اتصال…':closed?'پاسخ‌گویی بسته است':pending?'بازگشت به ارسال':state.started_at?'ادامهٔ پاسخ‌گویی':'شروع نظرسنجی')+icons.arrow+'</button>';
   $('#identityForm').onsubmit=e=>{e.preventDefault();if(!settings||closed)return;if(!pending){for(const k of ['organizational_name','instructor_name','course_title']){state[k]=$('#'+k).value.trim();if(!state[k]&&(k!=='course_title'||classRequired)){error('لطفاً همهٔ مشخصات الزامی را تکمیل کنید.');$('#'+k).focus();return;}}state.started_at=state.started_at||Date.now();}go(pending||missing()===-1?QUESTIONS.length:missing());};
