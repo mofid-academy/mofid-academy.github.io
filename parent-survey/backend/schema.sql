@@ -69,7 +69,7 @@ declare v_existing public.ps_responses; v_open boolean; v_answers jsonb; v_first
 begin
   v_first:=btrim(coalesce(p_payload->>'first_name',''));
   v_last:=btrim(coalesce(p_payload->>'last_name',''));
-  if v_first='' or v_last='' or length(v_first)>80 or length(v_last)>80 then raise exception 'NAME_REQUIRED'; end if;
+  if length(v_first)>80 or length(v_last)>80 then raise exception 'NAME_TOO_LONG'; end if;
   select * into v_existing from public.ps_responses where id=p_id for update;
   if found then
     if v_existing.payload_hash<>p_hash then raise exception 'ID_CONFLICT'; end if;

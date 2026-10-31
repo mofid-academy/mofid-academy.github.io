@@ -1,5 +1,5 @@
 import {createApi,createStore,createHandler} from './core.mjs';
-import {REPORT_TEMPLATE} from './report-template.mjs';
+import {REPORT_TEMPLATE,LEGACY_REPORT_TEMPLATE} from './report-template.mjs';
 
 const url=Deno.env.get('SUPABASE_URL')!;
 const key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}').default;
@@ -12,7 +12,7 @@ async function handler(){
   const r=await fetch(url+'/rest/v1/rpc/zr_runtime_config',{method:'POST',headers,body:'{}',signal:AbortSignal.timeout(10000)});
   if(!r.ok)throw Error('Management configuration unavailable');
   const config=await r.json();
-  const h=createHandler(createApi({db:createStore({url,key}),config,templateBase64:REPORT_TEMPLATE}),{origins});
+  const h=createHandler(createApi({db:createStore({url,key}),config,templateBase64:REPORT_TEMPLATE,legacyTemplateBase64:LEGACY_REPORT_TEMPLATE}),{origins});
   cached={handler:h,expires:Date.now()+60000};return h;
 }
 Deno.serve(async(req:Request)=>{

@@ -2,12 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {createApi,createHandler,createStore,normalizeSubmission,normalizeFilters,submissionFingerprint} from '../backend/core.mjs';
-import {QUESTIONS,SURVEY_ID} from '../questions.mjs';
+import {ACTIVE_QUESTIONS as QUESTIONS,QUESTIONS as LEGACY_QUESTIONS,SURVEY_ID} from '../questions.mjs';
+import {DEFAULT_SCHOOL,GRADES,QUESTION_CODES,restoreSurveyStep} from '../survey-config.mjs';
 const secret='test-management-password-never-for-production';
 const config={adminUsername:'M.mirsheri',adminKeyHash:createHash('sha256').update(secret).digest('hex'),signingKey:'test-only-signing-key-for-parent-survey'};
 export const payload=()=>({id:crypto.randomUUID(),survey_id:SURVEY_ID,first_name:'نام آزمایشی',last_name:'خانوادگی نمونه',school:'مدرسه آزمایش',grade:'ششم',cohort:'آزمایش خودکار',relationship:'مادر',duration_seconds:120,answers:Object.fromEntries(QUESTIONS.map(q=>[q.code,q.kind==='text'?'':q.code==='P14'?'خیر':q.options[0].value]))});
 const db=async action=>action==='ps_rate_limit'?true:action==='settings'?{is_open:true,schools:[],cohorts:[]}:{};
-test('all 15 source questions keep 11 required and 4 optional questions',()=>{assert.equal(QUESTIONS.length,15);assert.equal(QUESTIONS.filter(q=>q.required).length,11);assert.deepEqual(QUESTIONS.filter(q=>!q.required).map(q=>q.code),['P11','P12','P13','P15']);});
+test('active survey has 14 questions with P13 removed and consent retained',()=>{assert.equal(QUESTIONS.length,14);assert.equal(QUESTIONS.filter(q=>q.required).length,11);assert.deepEqual(QUESTIONS.filter(q=>!q.required).map(q=>q.code),['P11','P12','P15']);assert.equal(QUESTIONS.some(q=>q.code==='P13'),false);assert.equal(QUESTIONS[12].code,'P14');});
 test('zero is a valid answer to both 0–10 questions',()=>{const p=payload();assert.equal(normalizeSubmission(p).answers.P09,0);assert.equal(normalizeSubmission(p).answers.P10,0);});
 test('missing consent, wrong types and out-of-range answers are rejected',()=>{for(const [k,v] of [['P14',undefined],['P01','5'],['P01',6],['P10',11],['P04',0],['P05',4]]){const p=payload();p.answers[k]=v;assert.throws(()=>normalizeSubmission(p));}});
 test('optional blanks are retained as missing and no consent is preselected',()=>{const p=payload();delete p.answers.P13;assert.equal(normalizeSubmission(p).answers.P13,null);p.answers.P11='';assert.equal(normalizeSubmission(p).answers.P11,'');delete p.answers.P14;assert.throws(()=>normalizeSubmission(p));});
@@ -18,8 +19,27 @@ test('submission normalizes text and only confirms matching database acknowledge
 test('filters retain zero scores and reject invalid ranges and dates',()=>{assert.equal(normalizeFilters({qcode:'P10',qvalue:'0'}).qvalue,'0');assert.throws(()=>normalizeFilters({from:'2026-11-01',to:'2026-10-01'}));assert.throws(()=>normalizeFilters({qcode:'P01',qvalue:'6'}));assert.equal(normalizeFilters({consent:'false'}).consent,'false');});
 test('HTTP transport rejects unknown origins, oversized bodies and malformed JSON',async()=>{const handle=createHandler(createApi({db,config}),{origins:['https://mofid-academy.github.io']});assert.equal((await handle(new Request('https://test/',{method:'POST',headers:{Origin:'https://untrusted.test'},body:'{}'}))).status,403);assert.equal((await handle(new Request('https://test/',{method:'POST',body:'x'.repeat(33000)}))).status,413);assert.equal((await handle(new Request('https://test/',{method:'POST',body:'not json'}))).status,400);});
 
-test('both respondent names are required, bounded and normalized',()=>{for(const key of ['first_name','last_name']){for(const value of ['',null,undefined,'   ','x'.repeat(81),123]){const p=payload();p[key]=value;assert.throws(()=>normalizeSubmission(p));}}const p=payload();p.first_name='  نام   آزمایشی  ';assert.equal(normalizeSubmission(p).first_name,'نام آزمایشی');});
+test('student name is optional but supplied name values remain bounded and normalized',()=>{
+  const blank=payload();delete blank.first_name;delete blank.last_name;assert.equal(normalizeSubmission(blank).first_name,'');assert.equal(normalizeSubmission(blank).last_name,'');
+  for(const key of ['first_name','last_name']){for(const value of ['',null,undefined,'   ']){const p=payload();p[key]=value;assert.equal(normalizeSubmission(p)[key],'');}for(const value of ['x'.repeat(81),123]){const p=payload();p[key]=value;assert.throws(()=>normalizeSubmission(p));}}
+  const p=payload();p.first_name='  نام   آزمایشی  ';assert.equal(normalizeSubmission(p).first_name,'نام آزمایشی');
+});
 test('adding respondent names preserves the fingerprint of a legacy pending response',()=>{const n=normalizeSubmission(payload());const {first_name,last_name,...legacy}=n;assert.equal(submissionFingerprint(n),createHash('sha256').update(JSON.stringify(legacy)).digest('hex'));});
+test('removing P13 preserves the fingerprint of an already pending legacy submission',()=>{
+  const p=payload();p.answers=Object.fromEntries(LEGACY_QUESTIONS.map(q=>[q.code,q.code==='P13'?4:p.answers[q.code]]));
+  const {first_name,last_name,...legacy}=p;
+  assert.equal(submissionFingerprint(normalizeSubmission(p)),createHash('sha256').update(JSON.stringify(legacy)).digest('hex'));
+});
+test('drafts resume at the same retained question or review after P13 removal',()=>{
+  assert.equal(restoreSurveyStep(11),11);assert.equal(restoreSurveyStep(12),12);assert.equal(restoreSurveyStep(13),12);assert.equal(restoreSurveyStep(14),13);assert.equal(restoreSurveyStep(15),14);
+  for(let i=0;i<=14;i++)assert.equal(restoreSurveyStep(i,QUESTION_CODES),i);
+  assert.equal(restoreSurveyStep(-1),-1);assert.equal(DEFAULT_SCHOOL,'مدرسه ی دانش');assert.deepEqual(GRADES,['هفتم','هشتم','نهم']);
+});
+test('new and already-open export clients receive matching template layouts',async()=>{
+  const api=createApi({db,config,templateBase64:'new-14-questions',legacyTemplateBase64:'legacy-15-questions'}),token=api.sign();
+  assert.equal((await api.handle({action:'admin_template',token,template_version:2})).template,'new-14-questions');
+  assert.equal((await api.handle({action:'admin_template',token})).template,'legacy-15-questions');
+});
 
 test('deleting a response requires a valid administrator session before accessing the database',async()=>{
   let calls=0;const api=createApi({config,db:async()=>{calls++;return [];}}),id=crypto.randomUUID();

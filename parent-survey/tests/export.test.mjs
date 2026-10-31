@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
-import {buildWorkbook} from '../excel-export.mjs';
+import {buildWorkbook,HEADERS} from '../excel-export.mjs';
+import {ACTIVE_QUESTIONS} from '../questions.mjs';
 import {crc32,utf8,zipStored,unzipStored} from '../zip.mjs';
 assert.equal(crc32(utf8('123456789')),0xcbf43926);
 assert.deepEqual(unzipStored(zipStored({'a.txt':utf8('سلام')}))['a.txt'],utf8('سلام'));
@@ -9,6 +10,12 @@ const templateBytes=new Uint8Array(await fs.readFile(new URL('../assets/report-t
 const dir=process.env.PARENT_SURVEY_TEST_OUTPUT||'/workspace/scratch/0b3ac71d4e7b/outputs/parent-survey';
 await fs.mkdir(dir,{recursive:true});
 const bytes=await buildWorkbook(rows,{filters:{school:'مدرسه آزمایشی'},templateBytes,demo:true});
+const files=unzipStored(bytes),text=name=>new TextDecoder().decode(files[name]);
+assert.equal(HEADERS.length,26);assert.equal(HEADERS.some(h=>h.startsWith('P13')),false);
+const table=text('xl/tables/table1.xml'),sheet=text('xl/worksheets/sheet2.xml'),summary=text('xl/worksheets/sheet1.xml'),guide=text('xl/worksheets/sheet3.xml');
+assert.match(table,/ref="A5:Z8"/);assert.match(table,/tableColumns count="26"/);assert.deepEqual([...guide.matchAll(/>(P\d{2})<\//g)].map(m=>m[1]),ACTIVE_QUESTIONS.map(q=>q.code));
+assert.match(sheet,/<c r="T7"[^>]*>[\s\S]*?<t[^>]*>بله<\/t>/);assert.match(sheet,/<c r="X6"[^>]*>[\s\S]*?نام آزمایشی/);
+assert.match(summary,/<c [^>]*r="B18"[^>]*>[\s\S]*?<v>2<\/v>/);assert.equal(summary.includes('اثر حامی'),false);assert.match(summary,/Z6:Z8/);assert.match(summary,/T6:T8/);
 await fs.writeFile(dir+'/export-test.xlsx',bytes);
 const empty=await buildWorkbook([],{templateBytes});await fs.writeFile(dir+'/export-empty-test.xlsx',empty);
-console.log('PASS: ZIP CRC32, round trip and Excel export generation.');
+console.log('PASS: 14-question Excel layout, optional identity columns, consent formulas, filters and ZIP integrity.');

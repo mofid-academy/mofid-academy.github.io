@@ -1,6 +1,6 @@
-import {QUESTIONS} from './questions.mjs';
-import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs?v=20261031.9';
-import {buildWorkbook} from './excel-export.mjs?v=20261031.9';
+import {ACTIVE_QUESTIONS as QUESTIONS} from './questions.mjs?v=20261031.10';
+import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs?v=20261031.10';
+import {buildWorkbook} from './excel-export.mjs?v=20261031.10';
 initTheme();
 const $=s=>document.querySelector(s),demo=new URL(location.href).searchParams.get('demo')==='1';
 const SESSION='mofid-parent-admin-v1',PAGE_SIZE=25;
@@ -22,7 +22,7 @@ async function call(action,data={}){
   try{return await api(action,data,session?.token);}catch(e){if(e.status===401)logout();throw e;}
 }
 async function copy(text){try{await navigator.clipboard.writeText(text);toast('کپی شد.');}catch{toast('مرورگر اجازه کپی نداد؛ متن را انتخاب و کپی کنید.');}}
-function surveyURL(){return new URL('./?v=20261031.9',location.href).href;}
+function surveyURL(){return new URL('./?v=20261031.10',location.href).href;}
 $('#logout').onclick=logout;
 $('#showPassword').onclick=()=>{const p=$('#password');p.type=p.type==='password'?'text':'password';$('#showPassword').textContent=p.type==='password'?'نمایش':'پنهان';};
 $('#loginForm').onsubmit=async e=>{
@@ -78,7 +78,7 @@ function renderReport(){
   $('#scoreBars').innerHTML=[['رضایت کلی',s.satisfaction],['ضرورت آموزش',s.need],['تناسب سنی',s.age_fit],['گفت‌وگوی خانوادگی',s.family_learning],['تصمیم‌گیری آگاهانه',s.decision],['روش آموزش',s.method]].map(([l,v])=>'<div class="score-row"><span>'+l+'</span><div class="score-track"><span style="width:'+Math.max(0,Math.min(100,Number(v||0)/5*100))+'%"></span></div><strong>'+fa(v,2)+'</strong></div>').join('');
   $('#npsChart').innerHTML='<div class="nps-score"><b>'+nps+'</b><span>شاخص خالص توصیه (NPS)</span></div><div class="nps-stack" role="img" aria-label="مروجان '+fa(s.promoters)+'، منفعلان '+fa(s.passives)+'، منتقدان '+fa(s.detractors)+'">'+[['promoters','#00af9d'],['passives','#e5bf72'],['detractors','#d9847c']].map(([k,c])=>'<span style="width:'+(count?Number(s[k])/count*100:0)+'%;background:'+c+'"></span>').join('')+'</div><div class="nps-legend">'+[['مروج','promoters','#00af9d','۹ و ۱۰'],['منفعل','passives','#e5bf72','۷ و ۸'],['منتقد','detractors','#d9847c','۰ تا ۶']].map(([l,k,c,n])=>'<div><span class="legend-dot" style="background:'+c+'"></span>'+l+'<b>'+fa(s[k])+' <small>نفر</small></b><small>'+n+'</small></div>').join('')+'</div>';
   $('#impactMetrics').innerHTML=metric('گفت‌وگو دربارهٔ کلاس در خانه',pct(s.family_talk),'پاسخ‌های چندبار و مرتب در P04')+metric('تغییر در نگاه فرزند به مسائل مالی',pct(s.change),'پاسخ‌های «تا حدی» و «بله، واضح» در P05')+metric('تغییر به‌وضوح مشاهده شده',pct(s.clear_change),'فقط پاسخ «بله، واضح» در P05');
-  $('#supportMetrics').innerHTML=metric('حمایت از تداوم دوره',fa(s.support,2)+' <small>از ۱۰</small>','میانگین پاسخ به P09')+metric('حمایت قوی از ادامهٔ دوره',pct(s.support_high),'نمره‌های ۹ و ۱۰ در P09')+metric('اثر حمایت کارگزاری مفید',fa(s.sponsor,2)+' <small>از ۵</small>',fa(s.sponsor_count)+' پاسخ به سؤال اختیاری P13');
+  $('#supportMetrics').innerHTML=metric('حمایت از تداوم دوره',fa(s.support,2)+' <small>از ۱۰</small>','میانگین پاسخ به P09')+metric('حمایت قوی از ادامهٔ دوره',pct(s.support_high),'نمره‌های ۹ و ۱۰ در P09');
   renderDistribution();renderRows();renderComments();
 }
 function renderDistribution(){
@@ -87,7 +87,7 @@ function renderDistribution(){
   $('#distributionBars').innerHTML=q.options.map(o=>{const c=Number(dist[String(o.value)]||0),p=n?c/n*100:0;return '<div class="distribution-row"><span>'+(q.kind==='scale10'?fa(o.value):esc(o.label))+'</span><div class="score-track"><span style="width:'+p+'%"></span></div><span>'+fa(c)+' نفر · '+(n?pct(p):'—')+'</span></div>';}).join('');
 }
 const consentBadge=r=>'<span class="consent-badge '+(r.p14?'yes':'')+'">'+(r.p14?'اجازهٔ انتشار':'فقط بررسی داخلی')+'</span>';
-const respondentName=r=>[r.first_name,r.last_name].filter(Boolean).join(' ')||'پاسخ قدیمی بدون نام';
+const respondentName=r=>[r.first_name,r.last_name].filter(Boolean).join(' ')||'نام دانش‌آموز وارد نشده';
 const deleteButton=r=>'<button type="button" class="delete-button" data-delete="'+esc(r.id)+'" aria-label="حذف پاسخ '+esc(respondentName(r))+'">حذف</button>';
 const groupNps=n=>n>=9?'مروج':n>=7?'منفعل':'منتقد';
 function renderRows(){
@@ -160,7 +160,7 @@ $('#exportButton').onclick=async()=>{
   try{
     const all=[],snapshot=baseSnapshot||report.snapshot;let p=0,total=report.total;
     do{b.textContent='دریافت پاسخ‌ها: '+fa(all.length)+' / '+fa(total);const r=demo?demoReport(filters,p,1000):await call('admin_list',{filters:{...filters,snapshot},page:p,limit:1000});total=r.total;all.push(...r.rows);if(!r.rows.length&&all.length<total)throw Error('دریافت همهٔ پاسخ‌ها کامل نشد. دوباره خروجی بگیرید.');p++;}while(all.length<total);
-    b.textContent='در حال آماده‌سازی اکسل…';const response=await call('admin_template');const templateBytes=Uint8Array.from(atob(response.template),c=>c.charCodeAt(0));const bytes=await buildWorkbook(all,{filters,exportedAt:new Date().toISOString(),demo,templateBytes});
+    b.textContent='در حال آماده‌سازی اکسل…';const response=await call('admin_template',{template_version:2});const templateBytes=Uint8Array.from(atob(response.template),c=>c.charCodeAt(0));const bytes=await buildWorkbook(all,{filters,exportedAt:new Date().toISOString(),demo,templateBytes});
     const url=URL.createObjectURL(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));const a=document.createElement('a');a.href=url;a.download='Mofid-Parent-Survey'+(demo?'-DEMO':'')+'-'+new Date().toISOString().slice(0,10)+'.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);toast('خروجی اکسل شامل '+fa(all.length)+' پاسخ آماده شد.');
   }catch(e){setError(e.message);}finally{exporting=false;b.disabled=false;b.innerHTML=icons.download+' خروجی اکسل';}
 };

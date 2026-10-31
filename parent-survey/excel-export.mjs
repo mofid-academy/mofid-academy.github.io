@@ -1,6 +1,6 @@
-import {QUESTIONS} from './questions.mjs';
+import {ACTIVE_QUESTIONS as QUESTIONS} from './questions.mjs?v=20261031.10';
 import {unzipStored,zipStored,utf8,decode} from './zip.mjs';
-export const HEADERS=['شناسه پاسخ','زمان ثبت (تهران)','تاریخ شمسی','مدرسه','پایه','نوبت دوره','نسبت',...QUESTIONS.map(q=>q.code+' — '+q.axis),'گروه توصیه','زمان پاسخ‌گویی (ثانیه)','نام پاسخ‌دهنده','نام خانوادگی پاسخ‌دهنده','نمایش ردیف'];
+export const HEADERS=['شناسه پاسخ','زمان ثبت (تهران)','تاریخ شمسی','مدرسه','پایه','نوبت دوره','نسبت',...QUESTIONS.map(q=>q.code+' — '+q.axis),'گروه توصیه','زمان پاسخ‌گویی (ثانیه)','نام دانش‌آموز','نام خانوادگی دانش‌آموز','نمایش ردیف'];
 const xml=v=>String(v??'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g,'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 export const col=n=>{let s='';for(n++;n;n=Math.floor((n-1)/26))s=String.fromCharCode(65+(n-1)%26)+s;return s;};
 const cell=(r,c,value,style,formula)=>'<c r="'+col(c)+r+'"'+(style?' s="'+style+'"':'')+(typeof value==='number'?'':' t="inlineStr"')+'>'+(formula?'<f>'+xml(formula)+'</f>':'')+(typeof value==='number'?'<v>'+value+'</v>':'<is><t xml:space="preserve">'+xml(value)+'</t></is>')+'</c>';
@@ -34,7 +34,7 @@ export async function buildWorkbook(rows,{filters={},exportedAt=new Date().toISO
   const avg=k=>{const a=rows.filter(r=>typeof r[k]==='number');return a.length?a.reduce((s,r)=>s+r[k],0)/a.length:'';};
   const percent=fn=>n?rows.filter(fn).length/n:'';
   const values={B10:n,B11:avg('p01'),B12:percent(r=>r.p01>=4),B13:n?100*(rows.filter(r=>r.p10>=9).length-rows.filter(r=>r.p10<=6).length)/n:'',
-    B14:percent(r=>r.p05>=2),B15:percent(r=>r.p04>=3),B16:avg('p09'),B17:percent(r=>r.p09>=9),B18:avg('p13'),B19:rows.filter(r=>r.p13!==null&&r.p13!==undefined).length,B20:rows.filter(r=>r.p14).length};
+    B14:percent(r=>r.p05>=2),B15:percent(r=>r.p04>=3),B16:avg('p09'),B17:percent(r=>r.p09>=9),B18:rows.filter(r=>r.p14).length};
   let summary=read('xl/worksheets/sheet1.xml').replace(/([A-Z]+6:[A-Z]+)6\b/g,(_,prefix)=>prefix+last);
   summary=summary.replace(/<c\b([^>]*\br="(B\d+)"[^>]*)>([\s\S]*?)<\/c>/g,(whole,attrs,ref,inner)=>{
     if(!Object.hasOwn(values,ref))return whole;const f=inner.match(/<f[^>]*>[\s\S]*?<\/f>/)?.[0]||'';const v=values[ref];

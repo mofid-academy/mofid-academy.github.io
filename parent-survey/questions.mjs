@@ -442,3 +442,5 @@ export const QUESTIONS = [
   }
 ];
 export const SURVEY_ID = "ten-years-ahead-parents-v1";
+// Retain the original definitions for already-open forms and historical retries.
+export const ACTIVE_QUESTIONS=QUESTIONS.filter(q=>q.code!=='P13');

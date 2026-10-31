@@ -1,28 +1,29 @@
-import {QUESTIONS,SURVEY_ID} from './questions.mjs';
-import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs?v=20261031.9';
-import {respondentNameParts} from './respondent-name.mjs?v=20261031.9';
-import {mountQuestionEffects} from './question-effects.mjs?v=20261031.9';
+import {ACTIVE_QUESTIONS as QUESTIONS,SURVEY_ID} from './questions.mjs?v=20261031.10';
+import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs?v=20261031.10';
+import {respondentNameParts} from './respondent-name.mjs?v=20261031.10';
+import {mountQuestionEffects} from './question-effects.mjs?v=20261031.10';
+import {DEFAULT_SCHOOL,GRADES,QUESTION_CODES,restoreSurveyStep} from './survey-config.mjs?v=20261031.10';
 initTheme();
 document.querySelector('#clockIcon').innerHTML=icons.clock;
 document.querySelector('#shieldIcon').innerHTML=icons.shield;
 const $=s=>document.querySelector(s),view=$('#view'),actions=$('#formActions');
 const preview=new URL(location.href).searchParams.get('preview')==='1';
 const KEY='mofid-parent-survey-v1'+(preview?'-preview':'');
+const TOTAL=QUESTIONS.length;
 let storageOK=true,settings=null,loading=false,sending=false,pending=null,receipt=null,step=-1,returnToReview=false;
 let autoAdvanceTimer=0,sceneVersion=0,cleanupQuestionEffects=()=>{};
 let state={id:crypto.randomUUID(),answers:{},first_name:'',last_name:'',school:'',grade:'',cohort:'',relationship:'',started_at:0,updated_at:Date.now()};
 try{
   const old=JSON.parse(localStorage.getItem(KEY)||'null');
-  if(old?.survey_id===SURVEY_ID&&old.state&&Date.now()-old.state.updated_at<14*86400000){state=old.state;step=old.step??-1;pending=old.pending;receipt=old.receipt;}
+  if(old?.survey_id===SURVEY_ID&&old.state&&Date.now()-old.state.updated_at<14*86400000){state=old.state;step=restoreSurveyStep(old.step??-1,old.question_codes);pending=old.pending;receipt=old.receipt;}
 }catch{storageOK=false;}
 state.first_name=state.first_name||'';state.last_name=state.last_name||'';
 if(pending){for(const k of ['id','school','grade','cohort','relationship','first_name','last_name'])if(pending[k]!==undefined)state[k]=pending[k];state.answers={...pending.answers};}
 state.full_name=pending?[state.first_name,state.last_name].filter(Boolean).join(' '):(state.full_name??[state.first_name,state.last_name].filter(Boolean).join(' '));
-const namesComplete=()=>Boolean(state.first_name?.trim()&&state.last_name?.trim());
-if(!receipt&&!namesComplete())step=-1;
 const params=new URL(location.href).searchParams;
 for(const k of ['school','cohort','grade'])if(!state[k]&&params.get(k))state[k]=params.get(k).slice(0,k==='grade'?40:120);
-function save(){state.updated_at=Date.now();try{localStorage.setItem(KEY,JSON.stringify({survey_id:SURVEY_ID,state,step,pending,receipt}));}catch{storageOK=false;}}
+if(!pending){if(!state.school)state.school=DEFAULT_SCHOOL;if(state.grade&&!GRADES.includes(state.grade))state.grade='';}
+function save(){state.updated_at=Date.now();try{localStorage.setItem(KEY,JSON.stringify({survey_id:SURVEY_ID,question_codes:QUESTION_CODES,state,step,pending,receipt}));}catch{storageOK=false;}}
 function error(message){const e=$('#formError');e.textContent=message;e.hidden=!message;if(message)e.focus({preventScroll:true});}
 function focusTitle(){const h=view.querySelector('h2');if(h){h.tabIndex=-1;h.classList.add('section-focus');h.focus({preventScroll:true});}if(matchMedia('(max-width:700px)').matches&&step>=0)$('#survey').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'});}
 function answered(q){return state.answers[q.code]!==undefined&&state.answers[q.code]!==null&&state.answers[q.code]!=='';}
@@ -33,26 +34,27 @@ function render(){
   cleanupQuestionEffects();cleanupQuestionEffects=()=>{};
   error('');actions.classList.remove('intro-actions');$('#previewBanner').hidden=!preview;
   $('#survey').classList.toggle('is-question',step>=0&&!receipt);
-  const pct=receipt?15:Math.max(0,Math.min(step,15));
-  $('#progressFill').style.width=pct/15*100+'%';
+  const pct=receipt?TOTAL:Math.max(0,Math.min(step,TOTAL));
+  $('#progressFill').style.width=pct/TOTAL*100+'%';
+  $('.progress-track').setAttribute('aria-valuemax',TOTAL);
   $('.progress-track').setAttribute('aria-valuenow',pct);
-  $('#sectionLabel').textContent=receipt?'با سپاس از همراهی شما':step<0?'خوش آمدید':step===15?'بازبینی پاسخ‌ها':QUESTIONS[step].axis;
-  $('#stepLabel').textContent=receipt?(receipt.preview?'پیش‌نمایش کامل شد':'ثبت نهایی تأیید شد'):step<0?'پیش از شروع':step===15?'آمادهٔ ثبت نهایی':'سؤال '+fa(step+1)+' از ۱۵';
+  $('#sectionLabel').textContent=receipt?'با سپاس از همراهی شما':step<0?'خوش آمدید':step===TOTAL?'بازبینی پاسخ‌ها':QUESTIONS[step].axis;
+  $('#stepLabel').textContent=receipt?(receipt.preview?'پیش‌نمایش کامل شد':'ثبت نهایی تأیید شد'):step<0?'پیش از شروع':step===TOTAL?'آمادهٔ ثبت نهایی':'سؤال '+fa(step+1)+' از '+fa(TOTAL);
   const map=$('#questionMap');map.hidden=step<0||!!receipt;
   map.innerHTML=QUESTIONS.map((q,i)=>'<button type="button" data-jump="'+i+'" class="'+(answered(q)?'answered ':'')+(step===i?'current':'')+'" aria-label="سؤال '+fa(i+1)+'، '+esc(q.axis)+(answered(q)?'، پاسخ داده شده':'')+'" '+(step===i?'aria-current="step"':'')+(pending?' disabled':'')+'>'+fa(i+1)+'</button>').join('');
   map.querySelectorAll('button').forEach(b=>b.onclick=()=>{step=+b.dataset.jump;returnToReview=false;save();render();focusTitle();});
   if(receipt)return renderSuccess();
   if(step<0)return renderIntro();
-  if(step===15)return renderReview();
+  if(step===TOTAL)return renderReview();
   renderQuestion();
 }
 function renderIntro(){
   view.innerHTML=`<p class="intro-description">ولی گرامی، تجربه و نگاه شما به ما کمک می‌کند اثر این دوره را بهتر بشناسیم و آن را برای دانش‌آموزان بهتر کنیم.</p>
-  <form id="identityForm" class="intro-form" aria-label="مشخصات پاسخ‌دهنده"><div class="identity-fields">
-    <div><label for="full_name">نام و نام خانوادگی <span class="required-mark" aria-hidden="true">*</span></label><input id="full_name" name="full_name" autocomplete="name" maxlength="161" required placeholder="نام و نام خانوادگی" value="${esc(state.full_name)}"></div>
+  <form id="identityForm" class="intro-form" aria-label="مشخصات دانش‌آموز"><div class="identity-fields">
+    <div><label for="full_name">نام و نام خانوادگی دانش‌آموز <small>(اختیاری)</small></label><input id="full_name" name="full_name" autocomplete="off" maxlength="161" placeholder="نام و نام خانوادگی دانش‌آموز" value="${esc(state.full_name)}"></div>
   </div><div class="context-fields">
     <div><label for="school">مدرسه <small>(اختیاری)</small></label><input id="school" name="school" list="schools" maxlength="120" placeholder="نام مدرسه" autocomplete="off" value="${esc(state.school)}"><datalist id="schools">${(settings?.schools||[]).map(s=>'<option value="'+esc(s)+'">').join('')}</datalist></div>
-    <div><label for="grade">پایه تحصیلی <small>(اختیاری)</small></label><select id="grade" name="grade"><option value="">انتخاب پایه</option>${['اول','دوم','سوم','چهارم','پنجم','ششم','هفتم','هشتم','نهم','دهم','یازدهم','دوازدهم'].map(g=>'<option '+(state.grade===g?'selected':'')+'>'+g+'</option>').join('')}</select></div>
+    <div><label for="grade">پایه تحصیلی <small>(اختیاری)</small></label><select id="grade" name="grade"><option value="">انتخاب پایه</option>${GRADES.map(g=>'<option '+(state.grade===g?'selected':'')+'>'+g+'</option>').join('')}</select></div>
     <div><label for="relationship">نسبت با دانش‌آموز <small>(اختیاری)</small></label><select id="relationship" name="relationship"><option value="">انتخاب نسبت</option>${['مادر','پدر','سرپرست'].map(g=>'<option '+(state.relationship===g?'selected':'')+'>'+g+'</option>').join('')}</select></div>
   </div></form>`;
   $('#full_name').addEventListener('input',e=>{const previous={first_name:state.first_name,last_name:state.last_name};Object.assign(state,respondentNameParts(e.target.value,previous),{full_name:e.target.value});e.target.setCustomValidity('');save();});
@@ -63,9 +65,9 @@ function renderIntro(){
   $('#identityForm').onsubmit=e=>{
     e.preventDefault();if(!settings?.is_open)return;
     Object.assign(state,respondentNameParts($('#full_name').value,state));
-    if(!namesComplete()||state.first_name.length>80||state.last_name.length>80){const message=!namesComplete()?'نام و نام خانوادگی را کامل وارد کنید.':'نام واردشده بیش از حد طولانی است.';$('#full_name').setCustomValidity(message);$('#full_name').reportValidity();return;}
-    if(pending){pending={...pending,first_name:state.first_name,last_name:state.last_name};step=15;}
-    else{state.started_at=state.started_at||Date.now();step=hasAnswers&&missing()===-1?15:Math.max(0,QUESTIONS.findIndex(q=>!answered(q)));}
+    if(state.first_name.length>80||state.last_name.length>80){$('#full_name').setCustomValidity('نام واردشده بیش از حد طولانی است.');$('#full_name').reportValidity();return;}
+    if(pending){pending={...pending,first_name:state.first_name,last_name:state.last_name};step=TOTAL;}
+    else{state.started_at=state.started_at||Date.now();step=hasAnswers&&missing()===-1?TOTAL:Math.max(0,QUESTIONS.findIndex(q=>!answered(q)));}
     save();render();focusTitle();
   };
   if(closed)error('پاسخ‌گویی به این نظرسنجی در حال حاضر بسته است.');
@@ -99,23 +101,23 @@ function renderQuestion(){
   });
   if(q.kind==='text')$('#answerText').oninput=e=>{state.answers[q.code]=e.target.value;$('#counter').textContent=fa(e.target.value.length)+' / ۲٬۰۰۰ نویسه';save();updateMap();};
   if($('#clearAnswer'))$('#clearAnswer').onclick=()=>{delete state.answers[q.code];save();render();};
-  actions.innerHTML='<button type="button" class="button text" id="back">بازگشت</button>'+(!q.required?'<button type="button" class="button text" id="skip">رد کردن</button>':'')+'<button type="button" class="button primary" id="next">'+(returnToReview?'بازگشت به بازبینی':step===14?'بازبینی پاسخ‌ها':'سؤال بعدی')+icons.arrow+'</button>';
+  actions.innerHTML='<button type="button" class="button text" id="back">بازگشت</button>'+(!q.required?'<button type="button" class="button text" id="skip">رد کردن</button>':'')+'<button type="button" class="button primary" id="next">'+(returnToReview?'بازگشت به بازبینی':step===TOTAL-1?'بازبینی پاسخ‌ها':'سؤال بعدی')+icons.arrow+'</button>';
   $('#back').onclick=()=>{step--;returnToReview=false;save();render();focusTitle();};
-  if($('#skip'))$('#skip').onclick=()=>{step=returnToReview?15:step+1;returnToReview=false;save();render();focusTitle();};
-  $('#next').onclick=()=>{if(q.required&&!answered(q)){error('لطفاً یک گزینه برای این سؤال انتخاب کنید.');return;}step=returnToReview?15:step+1;returnToReview=false;save();render();focusTitle();};
+  if($('#skip'))$('#skip').onclick=()=>{step=returnToReview?TOTAL:step+1;returnToReview=false;save();render();focusTitle();};
+  $('#next').onclick=()=>{if(q.required&&!answered(q)){error('لطفاً یک گزینه برای این سؤال انتخاب کنید.');return;}step=returnToReview?TOTAL:step+1;returnToReview=false;save();render();focusTitle();};
   cleanupQuestionEffects=mountQuestionEffects($('#survey'),view);
 }
 function updateMap(){document.querySelector('[data-jump="'+step+'"]').classList.toggle('answered',answered(QUESTIONS[step]));}
 function renderReview(){
   view.innerHTML='<span class="intro-kicker">یک قدم تا پایان</span><h2>پاسخ‌ها را مرور کنید.</h2><p class="intro-description">'+(pending?'پاسخ‌ها آمادهٔ ارسال‌اند. برای تأیید ثبت، دوباره تلاش کنید.':'می‌توانید قبل از ثبت نهایی، هر پاسخ را ویرایش کنید.')+'</p><div class="review-list">'+QUESTIONS.map((q,i)=>'<div class="review-row"><div><b>'+fa(i+1)+'. '+esc(q.axis)+'</b><p>'+esc(choiceText(q,state.answers[q.code]))+'</p></div><button type="button" data-edit="'+i+'" '+(pending?'disabled':'')+' aria-label="ویرایش '+esc(q.axis)+'">ویرایش</button></div>').join('')+'</div><div class="privacy-note">'+(state.answers.P14==='بله'?'اجازهٔ استفادهٔ بدون نام از نظر خود را داده‌اید.':'اجازهٔ انتشار بیرونی نظر خود را نداده‌اید؛ این انتخاب رعایت می‌شود.')+'</div>';
-  const person=document.createElement('div');person.className='respondent-review';person.innerHTML='<span>پاسخ‌دهنده: <b>'+esc(state.first_name+' '+state.last_name)+'</b></span>'+(!pending?'<button type="button" id="editIdentity" class="button text">ویرایش مشخصات</button>':'');view.prepend(person);if($('#editIdentity'))$('#editIdentity').onclick=()=>{step=-1;save();render();focusTitle();};
+  const person=document.createElement('div');person.className='respondent-review';person.innerHTML='<span>دانش‌آموز: <b>'+esc([state.first_name,state.last_name].filter(Boolean).join(' ')||'نام وارد نشده')+'</b></span>'+(!pending?'<button type="button" id="editIdentity" class="button text">ویرایش مشخصات</button>':'');view.prepend(person);if($('#editIdentity'))$('#editIdentity').onclick=()=>{step=-1;save();render();focusTitle();};
   view.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{step=+b.dataset.edit;returnToReview=true;save();render();focusTitle();});
   actions.innerHTML='<button type="button" id="back" class="button text" '+(pending?'disabled':'')+'>بازگشت</button><button type="button" class="button primary" id="submit">'+(preview?'پایان پیش‌نمایش':pending?'تلاش مجدد برای ثبت':'ثبت نهایی پاسخ‌ها')+icons.check+'</button>';
-  $('#back').onclick=()=>{step=14;save();render();focusTitle();};
+  $('#back').onclick=()=>{step=TOTAL-1;save();render();focusTitle();};
   $('#submit').onclick=submit;
 }
 async function submit(){
-  if(sending)return;if(!namesComplete()){step=-1;render();error('نام و نام خانوادگی پاسخ‌دهنده را کامل وارد کنید.');return;}const m=missing();if(m>=0){step=m;render();error('این سؤال الزامی است؛ لطفاً پاسخ آن را انتخاب کنید.');return;}
+  if(sending)return;const m=missing();if(m>=0){step=m;render();error('این سؤال الزامی است؛ لطفاً پاسخ آن را انتخاب کنید.');return;}
   sending=true;error('');const b=$('#submit');b.disabled=true;b.innerHTML='<span class="loading-dot"></span> در حال ثبت…';
   try{
     if(preview){receipt={id:state.id,created_at:new Date().toISOString(),preview:true};save();render();focusTitle();return;}
@@ -135,7 +137,7 @@ function renderSuccess(){
 function network(){const n=$('#offlineNotice');n.hidden=navigator.onLine;}
 window.addEventListener('offline',network);window.addEventListener('online',network);network();
 window.addEventListener('beforeunload',save);
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&step>=0&&step<15&&!['TEXTAREA','BUTTON'].includes(document.activeElement.tagName)){e.preventDefault();$('#next')?.click();}});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&step>=0&&step<TOTAL&&!['TEXTAREA','BUTTON'].includes(document.activeElement.tagName)){e.preventDefault();$('#next')?.click();}});
 render();
 async function loadConfig(){
   if(loading)return;loading=true;
