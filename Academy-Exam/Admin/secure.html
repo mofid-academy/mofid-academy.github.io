@@ -91,7 +91,7 @@ async function readLiveTiming(options={}){
   html=html.replace('بانک و فرم روی GitHub عمومی هستند. پاسخ صحیح، کلید دسترسی و معیار تصحیح محرمانه را در این پنل یا متن سؤال وارد نکن.','فایل عمومی فرم فقط شامل سؤال‌هاست. کلیدهای انتخاب‌شده هنگام ذخیره در آرشیو خصوصی سرور نگه داشته می‌شوند.');
   const visualState='<scr'+'ipt>window.__ACADEMY_VISUAL_ASSETS__='+JSON.stringify(visual).replace(/</g,'\\u003c')+closeScript;
   const appearanceScript='<scr'+'ipt>'+visual.script.replace(/<\/script/gi,'<\\/script')+closeScript;
-  const extensions=visualState+appearanceScript+['timing-admin.js','visual-preview.js','site-access-admin.js','exam-save-sync.js','answer-key-ui.js','file-import-ui.js','xlsx-export.js','archive-admin.js'].map(path=>'<scr'+'ipt src="'+assetURL(path)+'">'+closeScript).join('');
+  const extensions=visualState+appearanceScript+['timing-admin.js','visual-preview.js','site-access-admin.js','exam-save-sync.js','answer-key-ui.js','word-import.js','file-import-ui.js','xlsx-export.js','archive-admin.js'].map(path=>'<scr'+'ipt src="'+assetURL(path)+'">'+closeScript).join('');
   html=html.replace('<html ','<html data-academy-theme="'+appearance+'" ');
   html=html.replace('<body>','<body>'+timingState);
   html=html.replace('</body>',extensions+'</body>');
@@ -100,6 +100,7 @@ async function readLiveTiming(options={}){
 </script>
 </body>
 </html>
+
 
 
 

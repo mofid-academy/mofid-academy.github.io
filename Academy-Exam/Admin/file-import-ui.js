@@ -1,4 +1,4 @@
-/* Academy Admin importer v3 - confirmed imports are loaded without a second upload. */
+/* Academy Admin importer v4 - explicit DOCX questions are read locally; PDF uses server import. */
 (function(){
 "use strict";
 const IMPORT_URL="https://azmoon.app.n8n.cloud/webhook/exam-import-file";
@@ -112,7 +112,7 @@ function install(){
   const box=document.createElement("div");box.className="qb-file-import";
   box.innerHTML=`
     <h3>ساخت آزمون جدید از PDF / Word</h3>
-    <p>سؤال‌ها، گزینه‌ها و پاسخ‌هایی که داخل فایل نوشته شده‌اند استخراج می‌شوند. هر فایل همیشه یک آزمون جدید و مستقل می‌سازد.</p>
+    <p>سؤال‌ها، گزینه‌ها و پاسخ‌های صریح داخل فایل خوانده می‌شوند. فایل Word در همین پنل به یک پیش‌نویس جدید تبدیل می‌شود؛ فایل PDF برای پردازش به سرور ارسال می‌شود.</p>
     <div class="notice">سؤال‌های آزمون قبلی به این فایل اضافه نمی‌شوند و هیچ بانکی با آزمون قبلی ادغام نمی‌شود.</div>
     <div class="qb-file-import-row">
       <div><label>عنوان آزمون — اختیاری</label><input id="academyImportTitle" type="text" placeholder="اگر خالی باشد از نام فایل/عنوان داخل فایل استفاده می‌شود"></div>
@@ -138,7 +138,7 @@ function install(){
     if(f.size>MAX_FILE_BYTES){result.textContent="حجم فایل بیشتر از ۱۰ مگابایت است.";result.classList.add("error");return;}
     if(!confirm("از این فایل یک آزمون جدید و جدا ساخته شود؟")){file.value="";return;}
 
-    const bank=currentBank()||{};
+    const sourceBank=currentBank()||{},localWord=ext==="docx";
     const fd=new FormData();
     fd.append("file",f,f.name);
 
@@ -147,7 +147,7 @@ function install(){
     fd.append("mode","replace");
     fd.append("exam_id","");
     fd.append("exam_title",String(title.value||"").trim());
-    fd.append("form_id",String(bank.formId||bank.form_id||"mofid-exam"));
+    fd.append("form_id",String(sourceBank.formId||sourceBank.form_id||"mofid-exam"));
     fd.append("bank_id","");
     fd.append("bank_version","");
     fd.append("create_new_exam","true");
@@ -157,12 +157,23 @@ function install(){
     const remoteButton=document.getElementById("qb-load-remote");
     if(remoteButton)remoteButton.disabled=true;
     btn.disabled=true;title.disabled=true;file.disabled=true;
-    btn.textContent="در حال ساخت آزمون جدید…";
-    result.textContent="فایل به n8n ارسال شد؛ سؤال‌ها و پاسخ‌ها در حال استخراج هستند…";
-    setStatus("در حال ساخت آزمون جدید از فایل…");
+    btn.textContent=localWord?"در حال خواندن Word…":"در حال ساخت آزمون جدید…";
+    result.textContent=localWord?"سؤال‌ها و پاسخ‌های صریح Word در همین مرورگر خوانده می‌شوند…":"فایل به n8n ارسال شد؛ سؤال‌ها و پاسخ‌ها در حال استخراج هستند…";
+    setStatus(localWord?"در حال آماده‌سازی پیش‌نویس آزمون از Word…":"در حال ساخت آزمون جدید از فایل…");
 
     let acceptedImport=null;
     try{
+      if(localWord){
+        if(typeof window.AcademyWordImport?.read!=="function")throw Error("خواندن Word آماده نیست؛ صفحه را دوباره باز کنید.");
+        const parsed=await window.AcademyWordImport.read(f,{title:String(title.value||"").trim(),formId:String(sourceBank.formId||sourceBank.form_id||"mofid-exam")});
+        if(typeof window.__ACADEMY_ADMIN__?.adopt!=="function")throw Error("ویرایشگر سؤال‌ها آماده نیست؛ صفحه را دوباره باز کنید.");
+        const adopted=window.__ACADEMY_ADMIN__.adopt(parsed.bank);
+        const previous=pendingImport();if(previous)clearPending(previous.examId);
+        document.dispatchEvent(new CustomEvent("academy-local-questions-loaded",{detail:{examId:parsed.bank.examId,count:adopted.questions.length}}));
+        result.textContent=adopted.questions.length+" سؤال از Word در یک پیش‌نویس مستقل آماده شد. "+(parsed.missing_answer_count?parsed.missing_answer_count+" سؤال پاسخ صریح ندارد. ":"پاسخ‌های صریح فایل هم وارد شدند. ")+"سؤال‌ها را بررسی و سپس آزمون را از پنل ذخیره یا منتشر کنید.";
+        setStatus(result.textContent,"success");
+        return;
+      }
       const r=await fetch(IMPORT_URL,{
         method:"POST",body:fd,credentials:"omit",cache:"no-store",referrerPolicy:"no-referrer",
         signal:AbortSignal.timeout(150000)
@@ -188,7 +199,9 @@ function install(){
       result.textContent=bank.questions.length+" سؤال در آزمون جدید و مستقل وارد شد. شناسه: "+examId+". "+(missing?missing+" سؤال بدون پاسخ صریح بود. ":"")+"سؤال‌های آزمون قبلی با این آزمون ادغام نشده‌اند.";
       setStatus("آزمون جدید با موفقیت ساخته و در پنل بارگذاری شد؛ برای دریافت سؤال‌ها نیازی به زدن دکمهٔ دیگری نیست.","success");
     }catch(e){
-      result.textContent=acceptedImport
+      result.textContent=localWord
+        ?"خواندن فایل Word انجام نشد: "+String(e.message||e)
+        :acceptedImport
         ?"فایل پذیرفته شده است؛ فقط بارگذاری سؤال‌ها در پنل تأیید نشد. "+String(e.message||e)+" فایل را دوباره ارسال نکنید؛ دکمهٔ دریافت سؤال‌ها را بزنید."
         :"تأیید ورود فایل دریافت نشد: "+String(e.message||e)+" پیش از ارسال دوباره، وضعیت آزمون را بررسی کنید.";
       result.classList.add("error");
@@ -206,5 +219,6 @@ observer.observe(document.documentElement,{subtree:true,childList:true});
 document.addEventListener("click",()=>setTimeout(install,0),true);
 setTimeout(install,300);
 })();
+
 
 

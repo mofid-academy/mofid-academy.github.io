@@ -199,8 +199,10 @@ function install(){
 
 window.__ACADEMY_QUESTIONS_DIRTY__=false;
 document.addEventListener("academy-remote-questions-loaded",markQuestionsClean);
+document.addEventListener("academy-local-questions-loaded",markQuestionsDirty);
 patchQuestionsApi();
 watchQuestionImports();
 install();
 })();
+
 
