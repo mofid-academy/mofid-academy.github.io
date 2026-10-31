@@ -1,0 +1,14 @@
+{
+  "name": "mofid-parent-survey",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:effects": "node tools/build-effects.mjs"
+  },
+  "dependencies": {
+    "@paper-design/shaders": "0.0.82"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}

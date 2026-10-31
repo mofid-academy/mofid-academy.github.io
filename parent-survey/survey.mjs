@@ -1,6 +1,7 @@
 import {QUESTIONS,SURVEY_ID} from './questions.mjs';
 import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs';
-import {respondentNameParts} from './respondent-name.mjs?v=20261031.5';
+import {respondentNameParts} from './respondent-name.mjs?v=20261031.6';
+import {mountQuestionEffects} from './question-effects.mjs?v=20261031.6';
 initTheme();
 document.querySelector('#clockIcon').innerHTML=icons.clock;
 document.querySelector('#shieldIcon').innerHTML=icons.shield;
@@ -8,6 +9,7 @@ const $=s=>document.querySelector(s),view=$('#view'),actions=$('#formActions');
 const preview=new URL(location.href).searchParams.get('preview')==='1';
 const KEY='mofid-parent-survey-v1'+(preview?'-preview':'');
 let storageOK=true,settings=null,loading=false,sending=false,pending=null,receipt=null,step=-1,returnToReview=false;
+let autoAdvanceTimer=0,sceneVersion=0,cleanupQuestionEffects=()=>{};
 let state={id:crypto.randomUUID(),answers:{},first_name:'',last_name:'',school:'',grade:'',cohort:'',relationship:'',started_at:0,updated_at:Date.now()};
 try{
   const old=JSON.parse(localStorage.getItem(KEY)||'null');
@@ -27,6 +29,8 @@ function answered(q){return state.answers[q.code]!==undefined&&state.answers[q.c
 function missing(){return QUESTIONS.findIndex(q=>q.required&&!answered(q));}
 function choiceText(q,v){if(v===null||v===undefined||v==='')return 'بدون پاسخ (اختیاری)';const o=q.options.find(o=>o.value===v);if(q.kind==='text')return v;if(q.kind==='scale10')return fa(v)+' از ۱۰';return (typeof v==='number'?fa(v)+' — ':'')+(o?.label||v);}
 function render(){
+  clearTimeout(autoAdvanceTimer);autoAdvanceTimer=0;sceneVersion++;
+  cleanupQuestionEffects();cleanupQuestionEffects=()=>{};
   error('');actions.classList.remove('intro-actions');$('#previewBanner').hidden=!preview;
   $('#survey').classList.toggle('is-question',step>=0&&!receipt);
   const pct=receipt?15:Math.max(0,Math.min(step,15));
@@ -76,14 +80,30 @@ function renderQuestion(){
   }else{
     options='<div class="choice-list" role="radiogroup" aria-labelledby="questionTitle">'+q.options.map(o=>'<label class="choice"><input type="radio" name="answer" value="'+esc(o.value)+'" '+(value===o.value?'checked':'')+'><span class="choice-radio" aria-hidden="true"></span><span>'+esc(o.label)+'</span>'+(typeof o.value==='number'?'<span class="choice-number">'+fa(o.value)+'</span>':'')+'</label>').join('')+'</div>';
   }
-  view.innerHTML='<div class="question-kicker" data-question-code="'+q.code+'"><span>'+esc(q.axis)+'</span><span class="optional">'+(q.required?'پاسخ الزامی':'اختیاری')+'</span></div><h2 id="questionTitle" class="question-title">'+esc(q.text)+'</h2><p class="question-help">'+(q.kind==='text'?'می‌توانید کوتاه بنویسید یا از این سؤال بگذرید.':q.code==='P14'?'انتخاب شما در گزارش‌ها و استفاده از نقل‌قول‌ها رعایت می‌شود.':'گزینه‌ای را انتخاب کنید که به تجربهٔ شما نزدیک‌تر است.')+'</p>'+options+(!q.required&&q.kind!=='text'?'<button type="button" class="clear-answer" id="clearAnswer">پاک کردن پاسخ این سؤال</button>':'');
-  view.querySelectorAll('input[name="answer"]').forEach(input=>input.onchange=()=>{const v=input.value;state.answers[q.code]=q.code==='P14'?v:Number(v);save();error('');updateMap();});
+  view.innerHTML='<div class="question-kicker" data-question-code="'+q.code+'"><span>'+esc(q.axis)+'</span><span class="optional">'+(q.required?'پاسخ الزامی':'اختیاری')+'</span></div><h2 id="questionTitle" class="question-title">'+esc(q.text)+'</h2><p class="question-help" id="questionHelp">'+(q.kind==='text'?'می‌توانید کوتاه بنویسید یا از این سؤال بگذرید.':(q.code==='P14'?'انتخاب شما دربارهٔ استفاده از نقل‌قول‌ها رعایت می‌شود. ':'')+'با انتخاب گزینه، سؤال بعدی نمایش داده می‌شود.')+'</p>'+options+(!q.required&&q.kind!=='text'?'<button type="button" class="clear-answer" id="clearAnswer">پاک کردن پاسخ این سؤال</button>':'');
+  const selectedValue=input=>q.code==='P14'?input.value:Number(input.value);
+  function advanceAfterSelection(input){
+    clearTimeout(autoAdvanceTimer);
+    const version=sceneVersion,questionStep=step;
+    autoAdvanceTimer=setTimeout(()=>{
+      autoAdvanceTimer=0;
+      if(version!==sceneVersion||step!==questionStep||!input.isConnected||!input.checked||sending||receipt||pending)return;
+      $('#next')?.click();
+    },matchMedia('(prefers-reduced-motion:reduce)').matches?180:320);
+  }
+  view.querySelector('[role="radiogroup"]')?.setAttribute('aria-describedby','questionHelp');
+  view.querySelectorAll('input[name="answer"]').forEach(input=>{
+    input.onchange=()=>{state.answers[q.code]=selectedValue(input);save();error('');updateMap();advanceAfterSelection(input);};
+    // A tap on an already selected answer also continues after revisiting a question.
+    input.onclick=()=>{if(input.checked&&state.answers[q.code]===selectedValue(input))advanceAfterSelection(input);};
+  });
   if(q.kind==='text')$('#answerText').oninput=e=>{state.answers[q.code]=e.target.value;$('#counter').textContent=fa(e.target.value.length)+' / ۲٬۰۰۰ نویسه';save();updateMap();};
   if($('#clearAnswer'))$('#clearAnswer').onclick=()=>{delete state.answers[q.code];save();render();};
   actions.innerHTML='<button type="button" class="button text" id="back">بازگشت</button>'+(!q.required?'<button type="button" class="button text" id="skip">رد کردن</button>':'')+'<button type="button" class="button primary" id="next">'+(returnToReview?'بازگشت به بازبینی':step===14?'بازبینی پاسخ‌ها':'سؤال بعدی')+icons.arrow+'</button>';
   $('#back').onclick=()=>{step--;returnToReview=false;save();render();focusTitle();};
   if($('#skip'))$('#skip').onclick=()=>{step=returnToReview?15:step+1;returnToReview=false;save();render();focusTitle();};
   $('#next').onclick=()=>{if(q.required&&!answered(q)){error('لطفاً یک گزینه برای این سؤال انتخاب کنید.');return;}step=returnToReview?15:step+1;returnToReview=false;save();render();focusTitle();};
+  cleanupQuestionEffects=mountQuestionEffects($('#survey'),view);
 }
 function updateMap(){document.querySelector('[data-jump="'+step+'"]').classList.toggle('answered',answered(QUESTIONS[step]));}
 function renderReview(){
