@@ -27,7 +27,7 @@ function render(){
   $('#progressFill').style.width=pct/15*100+'%';
   $('.progress-track').setAttribute('aria-valuenow',pct);
   $('#sectionLabel').textContent=receipt?'با سپاس از همراهی شما':step<0?'خوش آمدید':step===15?'بازبینی پاسخ‌ها':QUESTIONS[step].axis;
-  $('#stepLabel').textContent=receipt?'ثبت نهایی تأیید شد':step<0?'پیش از شروع':step===15?'آمادهٔ ثبت نهایی':'سؤال '+fa(step+1)+' از ۱۵';
+  $('#stepLabel').textContent=receipt?(receipt.preview?'پیش‌نمایش کامل شد':'ثبت نهایی تأیید شد'):step<0?'پیش از شروع':step===15?'آمادهٔ ثبت نهایی':'سؤال '+fa(step+1)+' از ۱۵';
   const map=$('#questionMap');map.hidden=step<0||!!receipt;
   map.innerHTML=QUESTIONS.map((q,i)=>'<button type="button" data-jump="'+i+'" class="'+(answered(q)?'answered ':'')+(step===i?'current':'')+'" aria-label="سؤال '+fa(i+1)+'، '+esc(q.axis)+(answered(q)?'، پاسخ داده شده':'')+'" '+(step===i?'aria-current="step"':'')+(pending?' disabled':'')+'>'+fa(i+1)+'</button>').join('');
   map.querySelectorAll('button').forEach(b=>b.onclick=()=>{step=+b.dataset.jump;returnToReview=false;save();render();focusTitle();});
