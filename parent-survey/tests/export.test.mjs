@@ -1,0 +1,14 @@
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import {buildWorkbook} from '../excel-export.mjs';
+import {crc32,utf8,zipStored,unzipStored} from '../zip.mjs';
+assert.equal(crc32(utf8('123456789')),0xcbf43926);
+assert.deepEqual(unzipStored(zipStored({'a.txt':utf8('سلام')}))['a.txt'],utf8('سلام'));
+const rows=Array.from({length:3},(_,i)=>({id:'00000000-0000-4000-8000-'+String(i+1).padStart(12,'0'),created_at:'2026-10-31T08:30:00Z',school:'مدرسه آزمایشی',grade:'ششم',cohort:'آزمون خروجی',relationship:'مادر',duration_seconds:120,p01:5-i,p02:5,p03:4,p04:i+1,p05:i+1,p06:4,p07:4,p08:5,p09:i===0?0:9,p10:[0,9,10][i],p11:i===0?'=HYPERLINK("https://test.invalid","test")':'متن آزمایشی '+i,p12:'<script>alert(1)</script> & متن',p13:i===0?null:4,p14:i!==0,p15:'نظر نمونه'}));
+const templateBytes=new Uint8Array(await fs.readFile(new URL('../assets/report-template.xlsx',import.meta.url)));
+const dir=process.env.PARENT_SURVEY_TEST_OUTPUT||'/workspace/scratch/0b3ac71d4e7b/outputs/parent-survey';
+await fs.mkdir(dir,{recursive:true});
+const bytes=await buildWorkbook(rows,{filters:{school:'مدرسه آزمایشی'},templateBytes,demo:true});
+await fs.writeFile(dir+'/export-test.xlsx',bytes);
+const empty=await buildWorkbook([],{templateBytes});await fs.writeFile(dir+'/export-empty-test.xlsx',empty);
+console.log('PASS: ZIP CRC32, round trip and Excel export generation.');

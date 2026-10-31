@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fa" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#00695e">
+  <meta name="description" content="نظرسنجی اولیای دانش‌آموزان در پایان دوره ده سال جلوتر؛ آکادمی مفید">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://siwmzffadbbhcyyppwzn.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <link rel="preload" href="./assets/Pinar-VF.woff" as="font" type="font/woff" crossorigin>
+  <link rel="stylesheet" href="./style.css">
+  <title>نظرسنجی اولیا | ده سال جلوتر</title>
+</head>
+<body>
+  <a class="skip-link" href="#survey">رفتن به پرسشنامه</a>
+  <header class="topbar">
+    <a href="./" class="brand" aria-label="نظرسنجی آکادمی مفید"><img src="./assets/mofid-academy-logo.webp" alt="آکادمی مفید" width="76" height="42"><span class="brand-divider"></span><span><b>صدای شما، مسیر فردا</b><small>نظرسنجی پایان دوره</small></span></a>
+    <div class="top-actions"><span class="audience-tag"><i></i> ویژه اولیای دانش‌آموزان</span><button data-theme-toggle class="icon-button" aria-label="تغییر حالت روشن و تیره" title="تغییر ظاهر"></button><a href="./admin.html" class="admin-link">ورود مدیر <span aria-hidden="true">↗</span></a></div>
+  </header>
+  <main class="survey-layout">
+    <aside class="story-panel" aria-label="درباره نظرسنجی">
+      <div class="story-top"><span class="eyebrow"><i></i> آکادمی مفید</span><span class="edition">پایان یک دوره، آغاز یک مسیر</span></div>
+      <h1>آینده از همین<br><span>گفت‌وگوها</span> شروع می‌شود.</h1>
+      <p class="story-description">تجربهٔ فرزندتان در دورهٔ «ده سال جلوتر» برای ما مهم است. با چند دقیقه همراهی، در بهتر شدن این مسیر سهیم باشید.</p>
+      <div class="year-art" aria-hidden="true"><span class="art-orbit orbit-one"></span><span class="art-orbit orbit-two"></span><div class="art-ten">۱۰<span>سال جلوتر</span></div><span class="art-spark spark-one">✦</span><span class="art-spark spark-two">✧</span><span class="art-label"><i></i> یک قدم برای فردای بهتر</span></div>
+      <div class="story-facts"><div><span class="fact-icon" id="clockIcon"></span><b>۳ تا ۴ دقیقه</b><small>زمان تقریبی پاسخ‌گویی</small></div><div><span class="fact-icon" id="shieldIcon"></span><b>بدون درج نام</b><small>با احترام به حریم خصوصی</small></div></div>
+      <div class="story-bottom"><span>با حمایت کارگزاری مفید</span><b>برای تصمیم‌های آگاهانه‌تر.</b></div>
+    </aside>
+    <section class="form-panel" id="survey" aria-label="پرسشنامه اولیا">
+      <div id="previewBanner" class="notice preview-notice" hidden>حالت پیش‌نمایش؛ پاسخ‌ها در پایگاه داده ثبت نمی‌شوند.</div>
+      <div class="form-heading"><span id="sectionLabel">خوش آمدید</span><span id="stepLabel" class="step-label">پیش از شروع</span></div>
+      <div class="progress-track" role="progressbar" aria-label="پیشرفت پاسخ‌گویی" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0"><span id="progressFill"></span></div>
+      <div id="offlineNotice" class="notice" role="status" hidden>اینترنت قطع است؛ پاسخ‌های شما روی این دستگاه حفظ می‌شوند.</div>
+      <div id="view"></div>
+      <div id="formError" class="error-box" role="alert" tabindex="-1" hidden></div>
+      <div id="formActions" class="form-actions"></div>
+      <nav id="questionMap" class="question-map" aria-label="رفتن به سؤال" hidden></nav>
+      <div class="form-trust" id="trustLine"><span class="tiny-dot"></span><span>پاسخ‌ها فقط در اختیار تیم برگزارکننده قرار می‌گیرند.</span></div>
+    </section>
+  </main>
+  <footer class="page-footer"><span>آکادمی مفید <span class="footer-dot">·</span> یادگیری برای زندگی</span><span>نظرسنجی پایان دوره «ده سال جلوتر»</span></footer>
+  <noscript><p class="error-box">برای پاسخ‌گویی، جاوااسکریپت مرورگر را فعال کنید.</p></noscript>
+  <script type="module" src="./survey.mjs"></script>
+</body>
+</html>

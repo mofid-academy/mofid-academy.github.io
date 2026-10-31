@@ -1,0 +1,4 @@
+dist/
+.openai/
+assets/report-template.xlsx
+backend/report-template.mjs
