@@ -1,5 +1,5 @@
-import {zipStored,utf8} from './zip.mjs';
-import {SCORE_QUESTIONS,DEFAULT_CATALOG,academyLabel} from './questions.mjs';
+import {zipStored,utf8} from './zip.mjs?v=20261031.3-instructor';
+import {SCORE_QUESTIONS,DEFAULT_CATALOG,academyLabel} from './questions.mjs?v=20261031.3-instructor';
 const xml=v=>String(v??'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g,'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 const col=n=>{let s='';for(n++;n;n=Math.floor((n-1)/26))s=String.fromCharCode(65+(n-1)%26)+s;return s;};
 const cell=(v,r,c,style=0)=>'<c r="'+col(c)+r+'" s="'+style+'"'+(typeof v==='number'&&Number.isFinite(v)?'><v>'+v+'</v>':' t="inlineStr"><is><t xml:space="preserve">'+xml(v)+'</t></is>')+'</c>';

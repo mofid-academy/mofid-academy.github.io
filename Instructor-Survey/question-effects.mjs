@@ -1,7 +1,7 @@
 // Spotlight framing inspired by Hossain Jahed's 21st.dev Spotlight Card.
 // Liquid-metal controls adapt the supplied prompt without replacing native radios.
 let paperLibrary;
-const loadPaper=()=>paperLibrary??=(import('./assets/liquid-metal.mjs?v=20261031.2-instructor').catch(()=>null));
+const loadPaper=()=>paperLibrary??=(import('./assets/liquid-metal.mjs?v=20261031.3-instructor').catch(()=>null));
 export function mountQuestionEffects(card,view){
   const events=new AbortController(),{signal}=events;
   const reduced=matchMedia('(prefers-reduced-motion:reduce)');

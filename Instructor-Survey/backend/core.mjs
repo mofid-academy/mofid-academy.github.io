@@ -7,12 +7,13 @@ const hash=v=>createHash('sha256').update(v).digest('hex');
 const equal=(a,b)=>{const x=Buffer.from(String(a)),y=Buffer.from(String(b));return x.length===y.length&&timingSafeEqual(x,y);};
 const uuid=v=>{if(typeof v!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(v))fail('شناسهٔ پاسخ معتبر نیست.');return v.toLowerCase();};
 const clean=(v,max,required=false)=>{if(v==null)v='';if(typeof v!=='string'||v.length>max||v.includes('\0'))fail('طول یا نوع یکی از فیلدها معتبر نیست.');v=v.trim();if(required&&!v)fail('مشخصات الزامی را کامل کنید.');return v;};
-export function normalizeSubmission(data){
+export function normalizeSubmission(data,{allowEmptyFeedback=false}={}){
   if(!data||typeof data!=='object'||Array.isArray(data)||data.survey_id!==SURVEY_ID)fail('نسخهٔ پرسشنامه معتبر نیست. صفحه را تازه کنید.');
   if(!DEFAULT_CATALOG.some(c=>c.id===data.academy))fail('دوره معتبر نیست.');
   const out={id:uuid(data.id),academy:data.academy,organizational_name:clean(data.organizational_name,120,true),instructor_name:clean(data.instructor_name,140,true),course_title:clean(data.course_title,200,data.academy!=='19')};
   for(const q of SCORE_QUESTIONS){const value=data.answers?.[q.code];if(!Number.isInteger(value)||value<1||value>5)fail('برای هر پنج سؤال امتیاز ۱ تا ۵ انتخاب کنید.');out[q.code]=value;}
   out.feedback=clean(data.answers?.feedback,2000);
+  if(!allowEmptyFeedback&&!out.feedback)fail('پاسخ سؤال ششم الزامی است؛ نظر یا پیشنهاد خود را بنویسید.');
   if(!Number.isInteger(data.duration_seconds)||data.duration_seconds<0||data.duration_seconds>86400)fail('زمان پاسخ‌گویی معتبر نیست.');
   out.duration_seconds=data.duration_seconds;out.source_url='';
   if(data.source_url){try{const u=new URL(clean(data.source_url,500));if(!['https:','http:'].includes(u.protocol))fail('نشانی منبع معتبر نیست.');out.source_url=u.origin+u.pathname;}catch{fail('نشانی منبع معتبر نیست.');}}
@@ -48,12 +49,15 @@ export function createApi({db,config,now=Date.now,schedule=()=>{}}){
   return {sign,verify,async handle(body,{ip='unknown'}={}){
     if(!body||typeof body!=='object'||Array.isArray(body))fail('درخواست معتبر نیست.');
     const {action}=body;
-    if(action==='health'){const s=await db('settings');return {ok:true,ready:!!s,version:'instructor-survey/2'};}
+    if(action==='health'){const s=await db('settings');return {ok:true,ready:!!s,version:'instructor-survey/3'};}
     if(action==='config'){const s=await db('settings');if(!s)fail('تنظیمات فرم در دسترس نیست.',503);return {ok:true,survey_id:SURVEY_ID,settings:{is_open:s.is_open,catalog:s.catalog}};}
     if(action==='admin_login'){await gate('login',ip,12,15);const secret=body.secret;if(typeof secret!=='string'||secret.length>256||clean(body.username,64).toLowerCase()!==username||!equal(hash(secret),config.adminKeyHash))fail('نام کاربری یا رمز مدیریت معتبر نیست.',401);return {ok:true,token:sign(),expires_at:new Date(now()+7200000).toISOString()};}
     if(action==='submit'||action==='admin_test_submit'){
       const test=action==='admin_test_submit';if(test)verify(body.token);await gate('submit',ip,120,60);
-      const data=normalizeSubmission(body.data),result=await db('record',{p_payload:data,p_hash:fingerprint(data),p_test:test});
+      const data=normalizeSubmission(body.data,{allowEmptyFeedback:true});
+      // Acknowledging an already stored response must remain safe across this rule change.
+      if(!data.feedback){const existing=(await db('response_exists',{id:data.id}))[0];if(!existing||existing.is_test!==test||existing.request_hash!==fingerprint(data))fail('پاسخ سؤال ششم الزامی است؛ نظر یا پیشنهاد خود را بنویسید.');}
+      const result=await db('record',{p_payload:data,p_hash:fingerprint(data),p_test:test});
       if(result?.stored!==true||result.id!==data.id)fail('ذخیرهٔ پاسخ تأیید نشد. دوباره تلاش کنید.',503);
       if(!test&&!result.duplicate)schedule(result.id);return {ok:true,...result};
     }
@@ -74,6 +78,7 @@ export function createStore({url,key,fetchImpl=fetch}){
     else if(action==='settings_save'){path='/rest/v1/instructor_survey_settings?id=eq.main&select=is_open,catalog,updated_at';method='PATCH';body={...data,updated_at:new Date().toISOString()};prefer='return=representation';}
     else if(action==='delete'){path='/rest/v1/instructor_survey_responses?id=eq.'+uuid(data.id)+'&deleted_at=is.null&select=id';method='PATCH';body={deleted_at:new Date().toISOString()};prefer='return=representation';}
     else if(action==='sync_lookup')path='/rest/v1/instructor_survey_responses?id=eq.'+uuid(data.id)+'&select=*';
+    else if(action==='response_exists')path='/rest/v1/instructor_survey_responses?id=eq.'+uuid(data.id)+'&select=id,request_hash,is_test';
     else if(action==='sync_update'){path='/rest/v1/instructor_survey_responses?id=eq.'+uuid(data.id);method='PATCH';body=data.update;}
     else{path='/rest/v1/rpc/'+({record:'instructor_survey_record',report:'instructor_survey_report',rate:'instructor_survey_check_rate'}[action]||'');if(path.endsWith('/'))throw Error('Unknown store operation');method='POST';body=data;}
     let r;try{r=await fetchImpl(url+path,{method,headers:{...headers,...(prefer?{Prefer:prefer}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(25000)});}catch{fail('ارتباط با پایگاه داده برقرار نشد.',503);}
