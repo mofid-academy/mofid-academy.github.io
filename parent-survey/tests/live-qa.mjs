@@ -4,7 +4,7 @@ const input=await new Promise(resolve=>{let s='';process.stdin.on('data',b=>{s+=
 const token=input.token;
 const url='https://siwmzffadbbhcyyppwzn.supabase.co/functions/v1/parent-survey-api';
 async function send(action,data={},expected=200){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://mofid-academy.github.io'},body:JSON.stringify({action,...data})});const body=await r.json();assert.equal(r.status,expected,JSON.stringify(body));return body;}
-const payload=i=>({id:crypto.randomUUID(),survey_id:SURVEY_ID,school:'کنترل کیفیت سامانه',grade:'ششم',cohort:'آزمون خودکار',relationship:'مادر',duration_seconds:120,answers:Object.fromEntries(QUESTIONS.map(q=>[q.code,q.kind==='text'?'متن آزمایشی':q.code==='P14'?(i?'بله':'خیر'):q.code==='P13'?null:q.code==='P10'?(i?10:0):q.options.at(-1).value]))});
+const payload=i=>({id:crypto.randomUUID(),survey_id:SURVEY_ID,first_name:'نام آزمایشی',last_name:'خانوادگی نمونه',school:'کنترل کیفیت سامانه',grade:'ششم',cohort:'آزمون خودکار',relationship:'مادر',duration_seconds:120,answers:Object.fromEntries(QUESTIONS.map(q=>[q.code,q.kind==='text'?'متن آزمایشی':q.code==='P14'?(i?'بله':'خیر'):q.code==='P13'?null:q.code==='P10'?(i?10:0):q.options.at(-1).value]))});
 try{
  const a=payload(0),b=payload(1);
  const first=await send('admin_test_submit',{token,data:a});assert.equal(first.stored,true);assert.equal(first.id,a.id);

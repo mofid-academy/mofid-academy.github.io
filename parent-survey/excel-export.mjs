@@ -1,6 +1,6 @@
 import {QUESTIONS} from './questions.mjs';
 import {unzipStored,zipStored,utf8,decode} from './zip.mjs';
-export const HEADERS=['شناسه پاسخ','زمان ثبت (تهران)','تاریخ شمسی','مدرسه','پایه','نوبت دوره','نسبت',...QUESTIONS.map(q=>q.code+' — '+q.axis),'گروه توصیه','زمان پاسخ‌گویی (ثانیه)','نمایش ردیف'];
+export const HEADERS=['شناسه پاسخ','زمان ثبت (تهران)','تاریخ شمسی','مدرسه','پایه','نوبت دوره','نسبت',...QUESTIONS.map(q=>q.code+' — '+q.axis),'گروه توصیه','زمان پاسخ‌گویی (ثانیه)','نام پاسخ‌دهنده','نام خانوادگی پاسخ‌دهنده','نمایش ردیف'];
 const xml=v=>String(v??'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g,'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 export const col=n=>{let s='';for(n++;n;n=Math.floor((n-1)/26))s=String.fromCharCode(65+(n-1)%26)+s;return s;};
 const cell=(r,c,value,style,formula)=>'<c r="'+col(c)+r+'"'+(style?' s="'+style+'"':'')+(typeof value==='number'?'':' t="inlineStr"')+'>'+(formula?'<f>'+xml(formula)+'</f>':'')+(typeof value==='number'?'<v>'+value+'</v>':'<is><t xml:space="preserve">'+xml(value)+'</t></is>')+'</c>';
@@ -26,7 +26,7 @@ export async function buildWorkbook(rows,{filters={},exportedAt=new Date().toISO
     r.id,(Date.parse(r.created_at)+210*60000)/86400000+25569,
     new Intl.DateTimeFormat('fa-IR',{timeZone:'Asia/Tehran',dateStyle:'short',timeStyle:'short'}).format(new Date(r.created_at)),
     r.school,r.grade,r.cohort,r.relationship,...QUESTIONS.map(q=>q.code==='P14'?(r.p14?'بله':'خیر'):r[q.code.toLowerCase()]??''),
-    r.p10>=9?'مروج':r.p10>=7?'منفعل':'منتقد',r.duration_seconds,{formula:'SUBTOTAL(103,A'+(i+6)+')',value:1}
+    r.p10>=9?'مروج':r.p10>=7?'منفعل':'منتقد',r.duration_seconds,r.first_name||'',r.last_name||'',{formula:'SUBTOTAL(103,A'+(i+6)+')',value:1}
   ]);
   files['xl/worksheets/sheet2.xml']=utf8(fillSheet(read('xl/worksheets/sheet2.xml'),data.length?data:[Array(HEADERS.length).fill('')],6,6));
   const quotes=rows.filter(r=>r.p14&&(r.p11||r.p12||r.p15)).map(r=>[r.id,r.p11||'',r.p12||'',r.p15||'','بله']);

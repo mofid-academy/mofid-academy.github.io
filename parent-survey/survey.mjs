@@ -7,11 +7,15 @@ const $=s=>document.querySelector(s),view=$('#view'),actions=$('#formActions');
 const preview=new URL(location.href).searchParams.get('preview')==='1';
 const KEY='mofid-parent-survey-v1'+(preview?'-preview':'');
 let storageOK=true,settings=null,loading=false,sending=false,pending=null,receipt=null,step=-1,returnToReview=false;
-let state={id:crypto.randomUUID(),answers:{},school:'',grade:'',cohort:'',relationship:'',started_at:0,updated_at:Date.now()};
+let state={id:crypto.randomUUID(),answers:{},first_name:'',last_name:'',school:'',grade:'',cohort:'',relationship:'',started_at:0,updated_at:Date.now()};
 try{
   const old=JSON.parse(localStorage.getItem(KEY)||'null');
   if(old?.survey_id===SURVEY_ID&&old.state&&Date.now()-old.state.updated_at<14*86400000){state=old.state;step=old.step??-1;pending=old.pending;receipt=old.receipt;}
 }catch{storageOK=false;}
+state.first_name=state.first_name||'';state.last_name=state.last_name||'';
+if(pending){for(const k of ['id','school','grade','cohort','relationship','first_name','last_name'])if(pending[k]!==undefined)state[k]=pending[k];state.answers={...pending.answers};}
+const namesComplete=()=>Boolean(state.first_name?.trim()&&state.last_name?.trim());
+if(!receipt&&!namesComplete())step=-1;
 const params=new URL(location.href).searchParams;
 for(const k of ['school','cohort','grade'])if(!state[k]&&params.get(k))state[k]=params.get(k).slice(0,k==='grade'?40:120);
 function save(){state.updated_at=Date.now();try{localStorage.setItem(KEY,JSON.stringify({survey_id:SURVEY_ID,state,step,pending,receipt}));}catch{storageOK=false;}}
@@ -21,7 +25,7 @@ function answered(q){return state.answers[q.code]!==undefined&&state.answers[q.c
 function missing(){return QUESTIONS.findIndex(q=>q.required&&!answered(q));}
 function choiceText(q,v){if(v===null||v===undefined||v==='')return 'بدون پاسخ (اختیاری)';const o=q.options.find(o=>o.value===v);if(q.kind==='text')return v;if(q.kind==='scale10')return fa(v)+' از ۱۰';return (typeof v==='number'?fa(v)+' — ':'')+(o?.label||v);}
 function render(){
-  error('');$('#previewBanner').hidden=!preview;
+  error('');actions.classList.remove('intro-actions');$('#previewBanner').hidden=!preview;
   $('#survey').classList.toggle('is-question',step>=0&&!receipt);
   const pct=receipt?15:Math.max(0,Math.min(step,15));
   $('#progressFill').style.width=pct/15*100+'%';
@@ -37,12 +41,27 @@ function render(){
   renderQuestion();
 }
 function renderIntro(){
-  view.innerHTML='<span class="intro-kicker"><i></i> نظرسنجی پایان دوره «ده سال جلوتر»</span><h2 class="intro-title">همراهی شما،<br><span>بهتر شدن این مسیر.</span></h2><p class="intro-description">ولی گرامی، تجربه و نگاه شما به ما کمک می‌کند اثر این دوره را بهتر بشناسیم و آن را برای دانش‌آموزان بهتر کنیم.</p><div class="context-fields"><div><label for="school">مدرسه <small>(اختیاری)</small></label><input id="school" name="school" list="schools" maxlength="120" placeholder="نام مدرسه" autocomplete="off" value="'+esc(state.school)+'"><datalist id="schools">'+(settings?.schools||[]).map(s=>'<option value="'+esc(s)+'">').join('')+'</datalist></div><div><label for="grade">پایه تحصیلی <small>(اختیاری)</small></label><select id="grade" name="grade"><option value="">انتخاب پایه</option>'+['اول','دوم','سوم','چهارم','پنجم','ششم','هفتم','هشتم','نهم','دهم','یازدهم','دوازدهم'].map(g=>'<option '+(state.grade===g?'selected':'')+'>'+g+'</option>').join('')+'</select></div><div><label for="cohort">نوبت برگزاری <small>(اختیاری)</small></label><input id="cohort" name="cohort" list="cohorts" maxlength="120" placeholder="مثلاً پاییز ۱۴۰۵" value="'+esc(state.cohort)+'"><datalist id="cohorts">'+(settings?.cohorts||[]).map(s=>'<option value="'+esc(s)+'">').join('')+'</datalist></div><div><label for="relationship">نسبت با دانش‌آموز <small>(اختیاری)</small></label><select id="relationship" name="relationship"><option value="">انتخاب نسبت</option>'+['مادر','پدر','سرپرست'].map(g=>'<option '+(state.relationship===g?'selected':'')+'>'+g+'</option>').join('')+'</select></div></div><div class="privacy-note"><b>۱۵ سؤال کوتاه، بدون نیاز به نام و شماره تماس.</b><br>۴ سؤال اختیاری‌اند. استفادهٔ بیرونی از متن نظر شما فقط با اجازهٔ صریح شما انجام می‌شود. لطفاً در پاسخ‌های متنی، نام یا اطلاعات شخصی ننویسید.</div>';
-  for(const k of ['school','grade','cohort','relationship'])$('#'+k).addEventListener('input',e=>{state[k]=e.target.value;save();});
-  const hasAnswers=Object.keys(state.answers).length>0;
-  const closed=settings?.is_open===false;
-  actions.innerHTML='<span class="action-hint">'+(storageOK?'پاسخ‌ها روی همین دستگاه حفظ می‌شوند.':'ذخیره خودکار در این مرورگر در دسترس نیست.')+'</span><button class="button primary" id="start" '+(!settings||closed?'disabled':'')+'>'+(closed?'پاسخ‌گویی بسته است':!settings?'<span class="loading-dot"></span> در حال اتصال…':hasAnswers?'ادامهٔ پاسخ‌گویی':'شروع نظرسنجی')+icons.arrow+'</button>';
-  $('#start').onclick=()=>{if(!settings?.is_open)return;state.started_at=state.started_at||Date.now();step=Math.max(0,QUESTIONS.findIndex(q=>!answered(q)));save();render();focusTitle();};
+  view.innerHTML=`<span class="intro-kicker"><i></i> نظرسنجی پایان دوره «ده سال جلوتر»</span><h2 class="intro-title">همراهی شما،<br><span>بهتر شدن این مسیر.</span></h2><p class="intro-description">ولی گرامی، تجربه و نگاه شما به ما کمک می‌کند اثر این دوره را بهتر بشناسیم و آن را برای دانش‌آموزان بهتر کنیم.</p>
+  <form id="identityForm" class="intro-form"><div class="identity-fields">
+    <div><label for="first_name">نام پاسخ‌دهنده <span class="required-mark" aria-hidden="true">*</span></label><input id="first_name" name="first_name" autocomplete="given-name" maxlength="80" required placeholder="نام" value="${esc(state.first_name)}"></div>
+    <div><label for="last_name">نام خانوادگی پاسخ‌دهنده <span class="required-mark" aria-hidden="true">*</span></label><input id="last_name" name="last_name" autocomplete="family-name" maxlength="80" required placeholder="نام خانوادگی" value="${esc(state.last_name)}"></div>
+  </div><div class="context-fields">
+    <div><label for="school">مدرسه <small>(اختیاری)</small></label><input id="school" name="school" list="schools" maxlength="120" placeholder="نام مدرسه" autocomplete="off" value="${esc(state.school)}"><datalist id="schools">${(settings?.schools||[]).map(s=>'<option value="'+esc(s)+'">').join('')}</datalist></div>
+    <div><label for="grade">پایه تحصیلی <small>(اختیاری)</small></label><select id="grade" name="grade"><option value="">انتخاب پایه</option>${['اول','دوم','سوم','چهارم','پنجم','ششم','هفتم','هشتم','نهم','دهم','یازدهم','دوازدهم'].map(g=>'<option '+(state.grade===g?'selected':'')+'>'+g+'</option>').join('')}</select></div>
+    <div><label for="relationship">نسبت با دانش‌آموز <small>(اختیاری)</small></label><select id="relationship" name="relationship"><option value="">انتخاب نسبت</option>${['مادر','پدر','سرپرست'].map(g=>'<option '+(state.relationship===g?'selected':'')+'>'+g+'</option>').join('')}</select></div>
+  </div></form><div class="privacy-note"><b>۱۵ سؤال کوتاه؛ نام پاسخ‌دهنده همراه پاسخ‌ها ثبت می‌شود.</b><br>۴ سؤال اختیاری‌اند. استفادهٔ بیرونی از متن نظر شما، بدون درج نام، فقط با اجازهٔ صریح شما انجام می‌شود.</div>`;
+  for(const k of ['first_name','last_name','school','grade','relationship'])$('#'+k).addEventListener('input',e=>{state[k]=e.target.value;save();});
+  const hasAnswers=Object.keys(state.answers).length>0,closed=settings?.is_open===false;
+  actions.classList.add('intro-actions');
+  actions.innerHTML='<button type="submit" form="identityForm" class="button primary" id="start" '+(!settings||closed?'disabled':'')+'>'+(closed?'پاسخ‌گویی بسته است':!settings?'<span class="loading-dot"></span> در حال اتصال…':hasAnswers?'ادامهٔ پاسخ‌گویی':'شروع نظرسنجی')+icons.arrow+'</button>';
+  $('#identityForm').onsubmit=e=>{
+    e.preventDefault();if(!settings?.is_open)return;
+    for(const k of ['first_name','last_name'])state[k]=$('#'+k).value.trim().replace(/\s+/g,' ');
+    if(!namesComplete()){error('نام و نام خانوادگی پاسخ‌دهنده را کامل وارد کنید.');$('#'+(!state.first_name?'first_name':'last_name')).focus();return;}
+    if(pending){pending={...pending,first_name:state.first_name,last_name:state.last_name};step=15;}
+    else{state.started_at=state.started_at||Date.now();step=hasAnswers&&missing()===-1?15:Math.max(0,QUESTIONS.findIndex(q=>!answered(q)));}
+    save();render();focusTitle();
+  };
   if(closed)error('پاسخ‌گویی به این نظرسنجی در حال حاضر بسته است.');
 }
 function renderQuestion(){
@@ -55,7 +74,7 @@ function renderQuestion(){
   }else{
     options='<div class="choice-list" role="radiogroup" aria-labelledby="questionTitle">'+q.options.map(o=>'<label class="choice"><input type="radio" name="answer" value="'+esc(o.value)+'" '+(value===o.value?'checked':'')+'><span class="choice-radio" aria-hidden="true"></span><span>'+esc(o.label)+'</span>'+(typeof o.value==='number'?'<span class="choice-number">'+fa(o.value)+'</span>':'')+'</label>').join('')+'</div>';
   }
-  view.innerHTML='<div class="question-kicker"><span class="code">'+q.code+'</span><span>'+esc(q.axis)+'</span><span class="optional">'+(q.required?'پاسخ الزامی':'اختیاری')+'</span></div><h2 id="questionTitle" class="question-title">'+esc(q.text)+'</h2><p class="question-help">'+(q.kind==='text'?'می‌توانید کوتاه بنویسید یا از این سؤال بگذرید.':q.code==='P14'?'انتخاب شما در گزارش‌ها و استفاده از نقل‌قول‌ها رعایت می‌شود.':'گزینه‌ای را انتخاب کنید که به تجربهٔ شما نزدیک‌تر است.')+'</p>'+options+(!q.required&&q.kind!=='text'?'<button type="button" class="clear-answer" id="clearAnswer">پاک کردن پاسخ این سؤال</button>':'');
+  view.innerHTML='<div class="question-kicker" data-question-code="'+q.code+'"><span>'+esc(q.axis)+'</span><span class="optional">'+(q.required?'پاسخ الزامی':'اختیاری')+'</span></div><h2 id="questionTitle" class="question-title">'+esc(q.text)+'</h2><p class="question-help">'+(q.kind==='text'?'می‌توانید کوتاه بنویسید یا از این سؤال بگذرید.':q.code==='P14'?'انتخاب شما در گزارش‌ها و استفاده از نقل‌قول‌ها رعایت می‌شود.':'گزینه‌ای را انتخاب کنید که به تجربهٔ شما نزدیک‌تر است.')+'</p>'+options+(!q.required&&q.kind!=='text'?'<button type="button" class="clear-answer" id="clearAnswer">پاک کردن پاسخ این سؤال</button>':'');
   view.querySelectorAll('input[name="answer"]').forEach(input=>input.onchange=()=>{const v=input.value;state.answers[q.code]=q.code==='P14'?v:Number(v);save();error('');updateMap();});
   if(q.kind==='text')$('#answerText').oninput=e=>{state.answers[q.code]=e.target.value;$('#counter').textContent=fa(e.target.value.length)+' / ۲٬۰۰۰ نویسه';save();updateMap();};
   if($('#clearAnswer'))$('#clearAnswer').onclick=()=>{delete state.answers[q.code];save();render();};
@@ -67,17 +86,18 @@ function renderQuestion(){
 function updateMap(){document.querySelector('[data-jump="'+step+'"]').classList.toggle('answered',answered(QUESTIONS[step]));}
 function renderReview(){
   view.innerHTML='<span class="intro-kicker">یک قدم تا پایان</span><h2>پاسخ‌ها را مرور کنید.</h2><p class="intro-description">'+(pending?'پاسخ‌ها آمادهٔ ارسال‌اند. برای تأیید ثبت، دوباره تلاش کنید.':'می‌توانید قبل از ثبت نهایی، هر پاسخ را ویرایش کنید.')+'</p><div class="review-list">'+QUESTIONS.map((q,i)=>'<div class="review-row"><div><b>'+fa(i+1)+'. '+esc(q.axis)+'</b><p>'+esc(choiceText(q,state.answers[q.code]))+'</p></div><button type="button" data-edit="'+i+'" '+(pending?'disabled':'')+' aria-label="ویرایش '+esc(q.axis)+'">ویرایش</button></div>').join('')+'</div><div class="privacy-note">'+(state.answers.P14==='بله'?'اجازهٔ استفادهٔ بدون نام از نظر خود را داده‌اید.':'اجازهٔ انتشار بیرونی نظر خود را نداده‌اید؛ این انتخاب رعایت می‌شود.')+'</div>';
+  const person=document.createElement('div');person.className='respondent-review';person.innerHTML='<span>پاسخ‌دهنده: <b>'+esc(state.first_name+' '+state.last_name)+'</b></span>'+(!pending?'<button type="button" id="editIdentity" class="button text">ویرایش مشخصات</button>':'');view.prepend(person);if($('#editIdentity'))$('#editIdentity').onclick=()=>{step=-1;save();render();focusTitle();};
   view.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{step=+b.dataset.edit;returnToReview=true;save();render();focusTitle();});
   actions.innerHTML='<button type="button" id="back" class="button text" '+(pending?'disabled':'')+'>بازگشت</button><button type="button" class="button primary" id="submit">'+(preview?'پایان پیش‌نمایش':pending?'تلاش مجدد برای ثبت':'ثبت نهایی پاسخ‌ها')+icons.check+'</button>';
   $('#back').onclick=()=>{step=14;save();render();focusTitle();};
   $('#submit').onclick=submit;
 }
 async function submit(){
-  if(sending)return;const m=missing();if(m>=0){step=m;render();error('این سؤال الزامی است؛ لطفاً پاسخ آن را انتخاب کنید.');return;}
+  if(sending)return;if(!namesComplete()){step=-1;render();error('نام و نام خانوادگی پاسخ‌دهنده را کامل وارد کنید.');return;}const m=missing();if(m>=0){step=m;render();error('این سؤال الزامی است؛ لطفاً پاسخ آن را انتخاب کنید.');return;}
   sending=true;error('');const b=$('#submit');b.disabled=true;b.innerHTML='<span class="loading-dot"></span> در حال ثبت…';
   try{
     if(preview){receipt={id:state.id,created_at:new Date().toISOString(),preview:true};save();render();focusTitle();return;}
-    pending=pending||{...Object.fromEntries(['id','school','grade','cohort','relationship'].map(k=>[k,state[k]])),survey_id:SURVEY_ID,answers:{...state.answers},duration_seconds:Math.min(86400,Math.max(0,Math.round((Date.now()-state.started_at)/1000)))};
+    pending=pending||{...Object.fromEntries(['id','first_name','last_name','school','grade','cohort','relationship'].map(k=>[k,state[k]])),survey_id:SURVEY_ID,answers:{...state.answers},duration_seconds:Math.min(86400,Math.max(0,Math.round((Date.now()-state.started_at)/1000)))};
     save();renderReview();$('#submit').disabled=true;$('#submit').innerHTML='<span class="loading-dot"></span> در حال ثبت…';
     const ack=await api('submit',{data:pending});
     if(ack.stored!==true||ack.id!==pending.id)throw Error('ثبت پاسخ تأیید نشد. دوباره تلاش کنید.');
@@ -88,7 +108,7 @@ function renderSuccess(){
   view.innerHTML='<div class="success-icon">'+icons.check+'</div><span class="intro-kicker">'+(receipt.preview?'پیش‌نمایش به پایان رسید':'پاسخ شما با موفقیت ذخیره شد')+'</span><h2>از همراهی شما<br>سپاسگزاریم.</h2><p class="intro-description">'+(receipt.preview?'در حالت پیش‌نمایش هیچ پاسخی به پایگاه داده ارسال نشده است.':'نظر شما به ما کمک می‌کند تجربهٔ یادگیری بهتری برای دانش‌آموزان بسازیم. پاسخ‌تان در سامانه ثبت شد و نیازی به ارسال دوباره نیست.')+'</p><label style="font-size:11px;color:var(--muted)">شناسهٔ '+(receipt.preview?'آزمایشی':'پیگیری پاسخ')+'</label><div class="receipt">'+esc(receipt.id)+'</div><p class="action-hint">'+dateFa(receipt.created_at)+'، به وقت تهران</p>';
   actions.innerHTML='<button type="button" class="button subtle" id="copyReceipt">'+icons.copy+' کپی شناسه</button><button type="button" class="button text" id="another">پاسخ برای فرزند دیگر</button>';
   $('#copyReceipt').onclick=async()=>{try{await navigator.clipboard.writeText(receipt.id);$('#copyReceipt').textContent='شناسه کپی شد';}catch{error('برای کپی، شناسهٔ بالا را انتخاب کنید.');}};
-  $('#another').onclick=()=>{state={...state,id:crypto.randomUUID(),answers:{},started_at:0};receipt=null;pending=null;step=-1;save();render();focusTitle();};
+  $('#another').onclick=()=>{state={...state,id:crypto.randomUUID(),answers:{},first_name:'',last_name:'',started_at:0};receipt=null;pending=null;step=-1;save();render();focusTitle();};
 }
 function network(){const n=$('#offlineNotice');n.hidden=navigator.onLine;}
 window.addEventListener('offline',network);window.addEventListener('online',network);network();

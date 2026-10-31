@@ -13,6 +13,8 @@ create table public.ps_responses (
   survey_id text not null references public.ps_settings(id),
   created_at timestamptz not null default now(),
   payload_hash text not null,
+  first_name text not null default '' check(length(first_name)<=80),
+  last_name text not null default '' check(length(last_name)<=80),
   school text not null default '' check(length(school)<=120),
   grade text not null default '' check(length(grade)<=40),
   cohort text not null default '' check(length(cohort)<=120),
@@ -63,19 +65,27 @@ end $$;
 
 create function public.ps_record(p_id uuid,p_payload jsonb,p_hash text,p_test boolean default false)
 returns jsonb language plpgsql security invoker set search_path='' as $$
-declare v_existing public.ps_responses; v_open boolean; v_answers jsonb;
+declare v_existing public.ps_responses; v_open boolean; v_answers jsonb; v_first text; v_last text;
 begin
-  select * into v_existing from public.ps_responses where id=p_id;
+  v_first:=btrim(coalesce(p_payload->>'first_name',''));
+  v_last:=btrim(coalesce(p_payload->>'last_name',''));
+  if v_first='' or v_last='' or length(v_first)>80 or length(v_last)>80 then raise exception 'NAME_REQUIRED'; end if;
+  select * into v_existing from public.ps_responses where id=p_id for update;
   if found then
     if v_existing.payload_hash<>p_hash then raise exception 'ID_CONFLICT'; end if;
+    if v_existing.first_name='' and v_existing.last_name='' then
+      update public.ps_responses set first_name=v_first,last_name=v_last where id=p_id returning * into v_existing;
+    elsif v_existing.first_name<>v_first or v_existing.last_name<>v_last then
+      raise exception 'ID_CONFLICT';
+    end if;
     return jsonb_build_object('stored',true,'id',v_existing.id,'created_at',v_existing.created_at,'is_test',v_existing.is_test);
   end if;
   select is_open into v_open from public.ps_settings where id='ten-years-ahead-parents-v1' for share;
   if not v_open and not p_test then raise exception 'SURVEY_CLOSED'; end if;
   v_answers:=p_payload->'answers';
-  insert into public.ps_responses(id,survey_id,payload_hash,school,grade,cohort,relationship,duration_seconds,
+  insert into public.ps_responses(id,survey_id,payload_hash,first_name,last_name,school,grade,cohort,relationship,duration_seconds,
     p01,p02,p03,p04,p05,p06,p07,p08,p09,p10,p11,p12,p13,p14,p15,is_test)
-  values(p_id,'ten-years-ahead-parents-v1',p_hash,p_payload->>'school',p_payload->>'grade',p_payload->>'cohort',p_payload->>'relationship',
+  values(p_id,'ten-years-ahead-parents-v1',p_hash,v_first,v_last,p_payload->>'school',p_payload->>'grade',p_payload->>'cohort',p_payload->>'relationship',
     (p_payload->>'duration_seconds')::integer,(v_answers->>'P01')::smallint,(v_answers->>'P02')::smallint,(v_answers->>'P03')::smallint,
     (v_answers->>'P04')::smallint,(v_answers->>'P05')::smallint,(v_answers->>'P06')::smallint,(v_answers->>'P07')::smallint,
     (v_answers->>'P08')::smallint,(v_answers->>'P09')::smallint,(v_answers->>'P10')::smallint,
@@ -83,7 +93,7 @@ begin
     (v_answers->>'P14')='بله',nullif(v_answers->>'P15',''),p_test)
   on conflict(id) do nothing;
   select * into v_existing from public.ps_responses where id=p_id;
-  if v_existing.payload_hash<>p_hash then raise exception 'ID_CONFLICT'; end if;
+  if v_existing.payload_hash<>p_hash or v_existing.first_name<>v_first or v_existing.last_name<>v_last then raise exception 'ID_CONFLICT'; end if;
   return jsonb_build_object('stored',true,'id',v_existing.id,'created_at',v_existing.created_at,'is_test',v_existing.is_test);
 end $$;
 
@@ -103,7 +113,7 @@ with filtered as materialized (
   and (coalesce(p_filters->>'nps','')='' or case when r.p10>=9 then 'promoter' when r.p10>=7 then 'passive' else 'detractor' end=p_filters->>'nps')
   and (coalesce(p_filters->>'comment','')<>'yes' or coalesce(r.p11,'')<>'' or coalesce(r.p12,'')<>'' or coalesce(r.p15,'')<>'')
   and (coalesce(p_filters->>'qcode','')='' or case when p_filters->>'qcode'='P14' then case when r.p14 then 'بله' else 'خیر' end else to_jsonb(r)->>lower(p_filters->>'qcode') end=p_filters->>'qvalue')
-  and (coalesce(p_filters->>'search','')='' or position(lower(p_filters->>'search') in lower(concat_ws(' ',r.id::text,r.school,r.grade,r.cohort,r.p11,r.p12,r.p15)))>0)
+  and (coalesce(p_filters->>'search','')='' or position(lower(p_filters->>'search') in lower(concat_ws(' ',r.first_name,r.last_name,r.id::text,r.school,r.grade,r.cohort,r.p11,r.p12,r.p15)))>0)
 ), summary as (
   select jsonb_build_object(
     'count',count(*),'satisfaction',avg(p01),'satisfied',100.0*count(*) filter(where p01>=4)/nullif(count(*),0),

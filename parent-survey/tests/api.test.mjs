@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {createApi,createHandler,normalizeSubmission,normalizeFilters} from '../backend/core.mjs';
+import {createApi,createHandler,normalizeSubmission,normalizeFilters,submissionFingerprint} from '../backend/core.mjs';
 import {QUESTIONS,SURVEY_ID} from '../questions.mjs';
 const secret='test-management-password-never-for-production';
 const config={adminUsername:'M.mirsheri',adminKeyHash:createHash('sha256').update(secret).digest('hex'),signingKey:'test-only-signing-key-for-parent-survey'};
-export const payload=()=>({id:crypto.randomUUID(),survey_id:SURVEY_ID,school:'مدرسه آزمایش',grade:'ششم',cohort:'آزمایش خودکار',relationship:'مادر',duration_seconds:120,answers:Object.fromEntries(QUESTIONS.map(q=>[q.code,q.kind==='text'?'':q.code==='P14'?'خیر':q.options[0].value]))});
+export const payload=()=>({id:crypto.randomUUID(),survey_id:SURVEY_ID,first_name:'نام آزمایشی',last_name:'خانوادگی نمونه',school:'مدرسه آزمایش',grade:'ششم',cohort:'آزمایش خودکار',relationship:'مادر',duration_seconds:120,answers:Object.fromEntries(QUESTIONS.map(q=>[q.code,q.kind==='text'?'':q.code==='P14'?'خیر':q.options[0].value]))});
 const db=async action=>action==='ps_rate_limit'?true:action==='settings'?{is_open:true,schools:[],cohorts:[]}:{};
 test('all 15 source questions keep 11 required and 4 optional questions',()=>{assert.equal(QUESTIONS.length,15);assert.equal(QUESTIONS.filter(q=>q.required).length,11);assert.deepEqual(QUESTIONS.filter(q=>!q.required).map(q=>q.code),['P11','P12','P13','P15']);});
 test('zero is a valid answer to both 0–10 questions',()=>{const p=payload();assert.equal(normalizeSubmission(p).answers.P09,0);assert.equal(normalizeSubmission(p).answers.P10,0);});
@@ -17,3 +17,6 @@ test('sessions expire and a participant cannot submit a test record',async()=>{l
 test('submission normalizes text and only confirms matching database acknowledgement',async()=>{const p=payload();p.school='  آزمایش  ';const api=createApi({config,db:async(a,d)=>a==='ps_rate_limit'?true:a==='ps_record'?{stored:true,id:d.p_id,created_at:new Date().toISOString()}:null});assert.equal((await api.handle({action:'submit',data:p})).stored,true);const broken=createApi({config,db:async a=>a==='ps_rate_limit'?true:{stored:true,id:crypto.randomUUID()}});await assert.rejects(broken.handle({action:'submit',data:p}));});
 test('filters retain zero scores and reject invalid ranges and dates',()=>{assert.equal(normalizeFilters({qcode:'P10',qvalue:'0'}).qvalue,'0');assert.throws(()=>normalizeFilters({from:'2026-11-01',to:'2026-10-01'}));assert.throws(()=>normalizeFilters({qcode:'P01',qvalue:'6'}));assert.equal(normalizeFilters({consent:'false'}).consent,'false');});
 test('HTTP transport rejects unknown origins, oversized bodies and malformed JSON',async()=>{const handle=createHandler(createApi({db,config}),{origins:['https://mofid-academy.github.io']});assert.equal((await handle(new Request('https://test/',{method:'POST',headers:{Origin:'https://untrusted.test'},body:'{}'}))).status,403);assert.equal((await handle(new Request('https://test/',{method:'POST',body:'x'.repeat(33000)}))).status,413);assert.equal((await handle(new Request('https://test/',{method:'POST',body:'not json'}))).status,400);});
+
+test('both respondent names are required, bounded and normalized',()=>{for(const key of ['first_name','last_name']){for(const value of ['',null,undefined,'   ','x'.repeat(81),123]){const p=payload();p[key]=value;assert.throws(()=>normalizeSubmission(p));}}const p=payload();p.first_name='  نام   آزمایشی  ';assert.equal(normalizeSubmission(p).first_name,'نام آزمایشی');});
+test('adding respondent names preserves the fingerprint of a legacy pending response',()=>{const n=normalizeSubmission(payload());const {first_name,last_name,...legacy}=n;assert.equal(submissionFingerprint(n),createHash('sha256').update(JSON.stringify(legacy)).digest('hex'));});

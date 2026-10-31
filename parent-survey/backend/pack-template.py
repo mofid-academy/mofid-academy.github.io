@@ -16,7 +16,7 @@ with ZipFile(source) as archive, ZipFile(destination, 'w', compression=ZIP_STORE
             if name.startswith('xl/worksheets/'):
                 text = re.sub(r'<sheetView\b', '<sheetView rightToLeft="1"', text)
                 if name == 'xl/worksheets/sheet2.xml':
-                    text = re.sub(r'<col\b(?=[^>]*min="25")([^>]*?)/>', lambda m: '<col' + re.sub(r'\s+hidden="[^"]*"', '', m[1]) + ' hidden="1"/>', text)
+                    text = re.sub(r'<col\b(?=[^>]*min="27")([^>]*?)/>', lambda m: '<col' + re.sub(r'\s+hidden="[^"]*"', '', m[1]) + ' hidden="1"/>', text)
             ET.fromstring(text)
             content = text.encode()
         output.writestr(name, content)

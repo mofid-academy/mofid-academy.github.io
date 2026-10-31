@@ -22,7 +22,15 @@ export function normalizeSubmission(data){
   const relationship=clean(data.relationship,20);
   if(!['','مادر','پدر','سرپرست'].includes(relationship))fail('نسبت با دانش‌آموز معتبر نیست.');
   if(!Number.isInteger(data.duration_seconds)||data.duration_seconds<0||data.duration_seconds>86400)fail('زمان پاسخ معتبر نیست.');
-  return {id:data.id,survey_id:SURVEY_ID,school:clean(data.school,120),grade:clean(data.grade,40),cohort:clean(data.cohort,120),relationship,duration_seconds:data.duration_seconds,answers};
+  const first_name=clean(data.first_name,80).replace(/\s+/g,' '),last_name=clean(data.last_name,80).replace(/\s+/g,' ');
+  if(!first_name||!last_name)fail('نام و نام خانوادگی پاسخ‌دهنده را کامل وارد کنید. اگر این فیلدها را نمی‌بینید، صفحه را تازه کنید.');
+  return {id:data.id,survey_id:SURVEY_ID,school:clean(data.school,120),grade:clean(data.grade,40),cohort:clean(data.cohort,120),relationship,duration_seconds:data.duration_seconds,answers,first_name,last_name};
+}
+// Keep existing response fingerprints stable when an older pending response gains a name.
+// The database separately enforces that an already recorded name cannot be changed on retry.
+export function submissionFingerprint(data){
+  const {first_name,last_name,...response}=data;
+  return hash(JSON.stringify(response));
 }
 export function normalizeFilters(f={}){
   if(!f||typeof f!=='object'||Array.isArray(f))fail('فیلترها معتبر نیستند.');
@@ -66,7 +74,7 @@ export function createApi({db,config,templateBase64='',now=Date.now}){
   return {sign,verify,async handle(body,{ip='unknown'}={}){
     if(!body||typeof body!=='object'||Array.isArray(body))fail('درخواست معتبر نیست.');
     const {action}=body;
-    if(action==='health')return {ok:true,version:'parent-survey/1',ready:Boolean(await db('settings'))};
+    if(action==='health')return {ok:true,version:'parent-survey/2',ready:Boolean(await db('settings'))};
     if(action==='config'){const c=await db('settings');return {ok:true,settings:{is_open:c.is_open,schools:c.schools,cohorts:c.cohorts},survey_id:SURVEY_ID};}
     if(action==='admin_login'){
       await gate('login',ip,12,15);
@@ -78,7 +86,7 @@ export function createApi({db,config,templateBase64='',now=Date.now}){
       const test=action==='admin_test_submit';if(test)verify(body.token);
       const data=normalizeSubmission(body.data);
       await gate('submit',ip,120,60);
-      const result=await db('ps_record',{p_id:data.id,p_payload:data,p_hash:hash(JSON.stringify(data)),p_test:test});
+      const result=await db('ps_record',{p_id:data.id,p_payload:data,p_hash:submissionFingerprint(data),p_test:test});
       if(result.stored!==true||result.id!==data.id)fail('ذخیره پاسخ تأیید نشد؛ دوباره تلاش کنید.',503);
       return {ok:true,...result};
     }
@@ -116,7 +124,7 @@ export function createStore({url,key,fetchImpl=fetch}){
     else {path='/rest/v1/rpc/'+action;options={...options,method:'POST',body:JSON.stringify(data)};}
     let r;try{r=await fetchImpl(url+path,options);}catch{fail('ارتباط با پایگاه داده برقرار نشد. دوباره تلاش کنید.',503);}
     const result=r.status===204?null:await r.json();
-    if(!r.ok){const msg=String(result?.message||'');if(msg.includes('SURVEY_CLOSED'))fail('مهلت پاسخ‌گویی پایان یافته است.',409);if(msg.includes('ID_CONFLICT'))fail('این شناسه قبلاً ثبت شده است. صفحه را تازه کنید.',409);fail('ذخیره یا دریافت اطلاعات تأیید نشد. دوباره تلاش کنید.',503);}
+    if(!r.ok){const msg=String(result?.message||'');if(msg.includes('SURVEY_CLOSED'))fail('مهلت پاسخ‌گویی پایان یافته است.',409);if(msg.includes('NAME_REQUIRED'))fail('نام و نام خانوادگی پاسخ‌دهنده را کامل وارد کنید.');if(msg.includes('ID_CONFLICT'))fail('این شناسه قبلاً با اطلاعات دیگری ثبت شده است.',409);fail('ذخیره یا دریافت اطلاعات تأیید نشد. دوباره تلاش کنید.',503);}
     return ['settings','settings_save'].includes(action)?result[0]:result;
   };
 }

@@ -1,6 +1,6 @@
 import {QUESTIONS} from './questions.mjs';
 import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs';
-import {buildWorkbook} from './excel-export.mjs';
+import {buildWorkbook} from './excel-export.mjs?v=20261031.4';
 initTheme();
 const $=s=>document.querySelector(s),demo=new URL(location.href).searchParams.get('demo')==='1';
 const SESSION='mofid-parent-admin-v1',PAGE_SIZE=25;
@@ -15,7 +15,7 @@ async function call(action,data={}){
   try{return await api(action,data,session?.token);}catch(e){if(e.status===401)logout();throw e;}
 }
 async function copy(text){try{await navigator.clipboard.writeText(text);toast('کپی شد.');}catch{toast('مرورگر اجازه کپی نداد؛ متن را انتخاب و کپی کنید.');}}
-function surveyURL(){return new URL('./',location.href).href.split('?')[0];}
+function surveyURL(){return new URL('./?v=20261031.4',location.href).href;}
 $('#logout').onclick=logout;
 $('#showPassword').onclick=()=>{const p=$('#password');p.type=p.type==='password'?'text':'password';$('#showPassword').textContent=p.type==='password'?'نمایش':'پنهان';};
 $('#loginForm').onsubmit=async e=>{
@@ -80,24 +80,25 @@ function renderDistribution(){
   $('#distributionBars').innerHTML=q.options.map(o=>{const c=Number(dist[String(o.value)]||0),p=n?c/n*100:0;return '<div class="distribution-row"><span>'+(q.kind==='scale10'?fa(o.value):esc(o.label))+'</span><div class="score-track"><span style="width:'+p+'%"></span></div><span>'+fa(c)+' نفر · '+(n?pct(p):'—')+'</span></div>';}).join('');
 }
 const consentBadge=r=>'<span class="consent-badge '+(r.p14?'yes':'')+'">'+(r.p14?'اجازهٔ انتشار':'فقط بررسی داخلی')+'</span>';
+const respondentName=r=>[r.first_name,r.last_name].filter(Boolean).join(' ')||'پاسخ قدیمی بدون نام';
 const groupNps=n=>n>=9?'مروج':n>=7?'منفعل':'منتقد';
 function renderRows(){
   const rows=report.rows,total=report.total;
   $('#responseCount').textContent=fa(total)+' پاسخ';
-  $('#responsesBody').innerHTML=rows.length?rows.map(r=>'<tr><td><span class="response-id">'+esc(r.id.slice(0,8))+'</span><small>'+dateFa(r.created_at)+'</small></td><td>'+esc(r.school||'نامشخص')+'<small>'+esc(r.grade||'بدون پایه')+'</small></td><td>'+esc(r.cohort||'—')+'</td><td><span class="score-badge">'+fa(r.p01)+' / ۵</span></td><td>'+fa(r.p10)+' <small>'+groupNps(r.p10)+'</small></td><td>'+consentBadge(r)+'</td><td><button class="detail-button" data-detail="'+esc(r.id)+'">مشاهده</button></td></tr>').join(''):'<tr><td colspan="7">'+empty()+'</td></tr>';
-  $('#responseCards').innerHTML=rows.length?rows.map(r=>'<article class="response-mobile"><header><strong>'+esc(r.school||'مدرسه نامشخص')+'</strong><span class="response-id">'+esc(r.id.slice(0,8))+'</span></header><p>'+dateFa(r.created_at)+' · '+esc(r.grade||'بدون پایه')+' · '+esc(r.cohort||'بدون نوبت')+'</p><footer><span class="score-badge">رضایت '+fa(r.p01)+' از ۵</span>'+consentBadge(r)+'<button class="detail-button" data-detail="'+esc(r.id)+'">جزئیات</button></footer></article>').join(''):empty();
+  $('#responsesBody').innerHTML=rows.length?rows.map(r=>'<tr><td><strong class="respondent-name">'+esc(respondentName(r))+'</strong><span class="response-id">'+esc(r.id.slice(0,8))+'</span><small>'+dateFa(r.created_at)+'</small></td><td>'+esc(r.school||'نامشخص')+'<small>'+esc(r.grade||'بدون پایه')+'</small></td><td>'+esc(r.cohort||'—')+'</td><td><span class="score-badge">'+fa(r.p01)+' / ۵</span></td><td>'+fa(r.p10)+' <small>'+groupNps(r.p10)+'</small></td><td>'+consentBadge(r)+'</td><td><button class="detail-button" data-detail="'+esc(r.id)+'">مشاهده</button></td></tr>').join(''):'<tr><td colspan="7">'+empty()+'</td></tr>';
+  $('#responseCards').innerHTML=rows.length?rows.map(r=>'<article class="response-mobile"><header><strong>'+esc(respondentName(r))+'</strong><span class="response-id">'+esc(r.id.slice(0,8))+'</span></header><p>'+esc(r.school||'مدرسه نامشخص')+' · '+dateFa(r.created_at)+' · '+esc(r.grade||'بدون پایه')+' · '+esc(r.cohort||'بدون نوبت')+'</p><footer><span class="score-badge">رضایت '+fa(r.p01)+' از ۵</span>'+consentBadge(r)+'<button class="detail-button" data-detail="'+esc(r.id)+'">جزئیات</button></footer></article>').join(''):empty();
   document.querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>showDetail(rows.find(r=>r.id===b.dataset.detail)));
   for(const p of ['','#comment']){const prev=$(p?'#commentPrev':'#prevPage'),next=$(p?'#commentNext':'#nextPage'),info=$(p?'#commentPageInfo':'#pageInfo');prev.disabled=page===0;next.disabled=(page+1)*PAGE_SIZE>=total;info.textContent=total?'صفحه '+fa(page+1)+' از '+fa(Math.ceil(total/PAGE_SIZE)):'بدون پاسخ';prev.onclick=()=>{page--;loadReport();};next.onclick=()=>{page++;loadReport();};}
 }
 function empty(){return '<div class="empty-state"><strong>هنوز پاسخی برای نمایش نیست.</strong>پس از ثبت نظر والدین، گزارش‌ها در این بخش نمایش داده می‌شوند.</div>';}
 function renderComments(){
   const rows=report.rows.filter(r=>r.p11||r.p12||r.p15);
-  $('#commentsList').innerHTML=rows.length?rows.map(r=>'<article class="comment-card"><header><div><strong>'+esc(r.school||'ولی دانش‌آموز')+'</strong><small>'+esc(r.grade||'پایه نامشخص')+' · '+dateFa(r.created_at)+'</small></div>'+consentBadge(r)+'</header>'+[['ارزش اصلی دوره',r.p11],['پیشنهاد بهبود',r.p12],['معرفی دوره',r.p15]].filter(([,t])=>t).map(([l,t])=>'<h3>'+l+'</h3><p>'+esc(t)+'</p>').join('')+'<footer><span class="response-id">'+esc(r.id.slice(0,8))+'</span>'+(r.p14?'<button class="button subtle" data-copy-comment="'+esc(r.id)+'">کپی متن بدون مشخصات</button>':'<span>اجازهٔ استفادهٔ بیرونی داده نشده است.</span>')+'</footer></article>').join(''):empty();
+  $('#commentsList').innerHTML=rows.length?rows.map(r=>'<article class="comment-card"><header><div><strong>'+esc(respondentName(r))+'</strong><small>'+esc(r.school||'مدرسه نامشخص')+' · '+esc(r.grade||'پایه نامشخص')+' · '+dateFa(r.created_at)+'</small></div>'+consentBadge(r)+'</header>'+[['ارزش اصلی دوره',r.p11],['پیشنهاد بهبود',r.p12],['معرفی دوره',r.p15]].filter(([,t])=>t).map(([l,t])=>'<h3>'+l+'</h3><p>'+esc(t)+'</p>').join('')+'<footer><span class="response-id">'+esc(r.id.slice(0,8))+'</span>'+(r.p14?'<button class="button subtle" data-copy-comment="'+esc(r.id)+'">کپی متن بدون مشخصات</button>':'<span>اجازهٔ استفادهٔ بیرونی داده نشده است.</span>')+'</footer></article>').join(''):empty();
   document.querySelectorAll('[data-copy-comment]').forEach(b=>b.onclick=()=>{const r=rows.find(r=>r.id===b.dataset.copyComment);if(r?.p14)copy([r.p11,r.p12,r.p15].filter(Boolean).join('\n\n'));});
 }
 $('#consentedOnly').onclick=()=>{filters={...filters,consent:'true',comment:'yes'};$('#fConsent').value='true';$('#fComment').value='yes';page=0;baseSnapshot=null;loadReport();};
 function showDetail(r){
-  $('#detailContent').innerHTML='<div class="detail-metadata"><span>'+esc(r.school||'مدرسه نامشخص')+'</span><span>'+esc(r.grade)+'</span><span>'+esc(r.cohort)+'</span><span>'+dateFa(r.created_at)+'</span>'+consentBadge(r)+'</div><div class="receipt">'+esc(r.id)+'</div>'+QUESTIONS.map(q=>{const v=q.code==='P14'?(r.p14?'بله':'خیر'):r[q.code.toLowerCase()];const o=q.options.find(o=>o.value===v);return '<div class="detail-question"><h3>'+q.code+' — '+esc(q.text)+'</h3><p>'+esc(v===null||v===undefined||v===''?'بدون پاسخ (اختیاری)':q.kind==='text'?v:q.kind==='scale10'?fa(v)+' از ۱۰':(typeof v==='number'?fa(v)+' — ':'')+(o?.label||v))+'</p></div>';}).join('');
+  $('#detailContent').innerHTML='<div class="detail-metadata"><strong>'+esc(respondentName(r))+'</strong><span>'+esc(r.school||'مدرسه نامشخص')+'</span><span>'+esc(r.grade)+'</span><span>'+esc(r.cohort)+'</span><span>'+dateFa(r.created_at)+'</span>'+consentBadge(r)+'</div><div class="receipt">'+esc(r.id)+'</div>'+QUESTIONS.map(q=>{const v=q.code==='P14'?(r.p14?'بله':'خیر'):r[q.code.toLowerCase()];const o=q.options.find(o=>o.value===v);return '<div class="detail-question"><h3>'+q.code+' — '+esc(q.text)+'</h3><p>'+esc(v===null||v===undefined||v===''?'بدون پاسخ (اختیاری)':q.kind==='text'?v:q.kind==='scale10'?fa(v)+' از ۱۰':(typeof v==='number'?fa(v)+' — ':'')+(o?.label||v))+'</p></div>';}).join('');
   $('#detailDialog').showModal();
 }
 $('#closeDetail').onclick=()=>$('#detailDialog').close();
@@ -122,7 +123,7 @@ $('#exportButton').onclick=async()=>{
 };
 // Explicitly selected, isolated sample mode for training and interface review.
 const sampleRows=Array.from({length:36},(_,i)=>{
- const r={id:'00000000-0000-4000-8000-'+String(i+1).padStart(12,'0'),created_at:new Date(Date.UTC(2026,9,31-i%7,7+i%9,12)).toISOString(),school:i%2?'مدرسه نمونه الف':'مدرسه نمونه ب',grade:['پنجم','ششم','هفتم'][i%3],cohort:'پاییز ۱۴۰۵',relationship:i%3?'مادر':'پدر',duration_seconds:160+i,p01:3+i%3,p02:4+i%2,p03:3+i%3,p04:1+i%4,p05:1+i%3,p06:2+i%4,p07:3+i%3,p08:3+i%3,p09:6+i%5,p10:[10,9,8,10,7,6,9,8,5][i%9],p11:i%3===0?'پاسخ نمونه: فرزندم دربارهٔ پس‌انداز بیشتر صحبت می‌کند.':'',p12:i%5===0?'پاسخ نمونه: تمرین‌های بیشتری برای خانه در نظر بگیرید.':'',p13:i%4===0?null:3+i%3,p14:i%4!==0,p15:i%7===0?'پاسخ نمونه: فرصتی برای فکر کردن به انتخاب‌های مالی در زندگی روزمره.':'',is_test:false};return r;
+ const r={first_name:'نام نمونه '+(i+1),last_name:'آزمایشی',id:'00000000-0000-4000-8000-'+String(i+1).padStart(12,'0'),created_at:new Date(Date.UTC(2026,9,31-i%7,7+i%9,12)).toISOString(),school:i%2?'مدرسه نمونه الف':'مدرسه نمونه ب',grade:['پنجم','ششم','هفتم'][i%3],cohort:'پاییز ۱۴۰۵',relationship:i%3?'مادر':'پدر',duration_seconds:160+i,p01:3+i%3,p02:4+i%2,p03:3+i%3,p04:1+i%4,p05:1+i%3,p06:2+i%4,p07:3+i%3,p08:3+i%3,p09:6+i%5,p10:[10,9,8,10,7,6,9,8,5][i%9],p11:i%3===0?'پاسخ نمونه: فرزندم دربارهٔ پس‌انداز بیشتر صحبت می‌کند.':'',p12:i%5===0?'پاسخ نمونه: تمرین‌های بیشتری برای خانه در نظر بگیرید.':'',p13:i%4===0?null:3+i%3,p14:i%4!==0,p15:i%7===0?'پاسخ نمونه: فرصتی برای فکر کردن به انتخاب‌های مالی در زندگی روزمره.':'',is_test:false};return r;
 });
 export function demoReport(f={},p=0,limit=25){
  const rows=sampleRows.filter(r=>(!f.school||r.school===f.school)&&(!f.grade||r.grade===f.grade)&&(!f.cohort||r.cohort===f.cohort)&&(!f.relationship||r.relationship===f.relationship)&&(!f.consent||r.p14===(f.consent==='true'))&&(!f.nps||(r.p10>=9?'promoter':r.p10>=7?'passive':'detractor')===f.nps)&&(!f.comment||r.p11||r.p12||r.p15)&&(!f.search||JSON.stringify(r).toLowerCase().includes(f.search.toLowerCase()))&&(!f.qcode||String(f.qcode==='P14'?(r.p14?'بله':'خیر'):r[f.qcode.toLowerCase()])===f.qvalue)&&(!f.from||r.created_at>=f.from+'T00:00:00+03:30')&&(!f.to||new Date(r.created_at)<new Date(new Date(f.to+'T00:00:00+03:30').getTime()+86400000)));

@@ -4,7 +4,7 @@ import {pathToFileURL} from 'node:url';
 const [sourceDir,outputDir]=process.argv.slice(2);
 if(!sourceDir||!outputDir)throw Error('Usage: build-report-template.mjs SOURCE_DIR OUTPUT_DIR');
 const {QUESTIONS:questions}=await import(pathToFileURL(sourceDir+'/questions.mjs').href);
-const headers=['شناسه پاسخ','زمان ثبت (تهران)','تاریخ شمسی','مدرسه','پایه','نوبت دوره','نسبت',...questions.map(q=>q.code+' — '+q.axis),'گروه توصیه','زمان پاسخ‌گویی (ثانیه)','نمایش ردیف'];
+const headers=['شناسه پاسخ','زمان ثبت (تهران)','تاریخ شمسی','مدرسه','پایه','نوبت دوره','نسبت',...questions.map(q=>q.code+' — '+q.axis),'گروه توصیه','زمان پاسخ‌گویی (ثانیه)','نام پاسخ‌دهنده','نام خانوادگی پاسخ‌دهنده','نمایش ردیف'];
 const wb=Workbook.create();
 const summary=wb.worksheets.add('خلاصه'),data=wb.worksheets.add('پاسخ‌ها'),guide=wb.worksheets.add('راهنمای سؤال‌ها'),quotes=wb.worksheets.add('نقل‌قول‌های مجاز');
 const green='#00695E',ink='#173E36',muted='#63786F';
@@ -19,7 +19,7 @@ summary.getRange('A4:A7').format.font={name:'Arial',size:10,color:muted};summary
 summary.getRange('A9:B9').values=[['شاخص','نتیجه']];head(summary,'A9:B9');
 const labels=['تعداد پاسخ‌ها','میانگین رضایت کلی (از ۵)','رضایت زیاد و بسیار زیاد','شاخص خالص توصیه (NPS)','تغییر مشاهده‌شده (تا حدی یا واضح)','گفت‌وگو در خانه (چندبار یا مرتب)','حمایت از تداوم (میانگین از ۱۰)','حمایت قوی از تداوم (۹ و ۱۰)','اثر حامی (میانگین از ۵)','تعداد پاسخ سؤال اختیاری حامی','تعداد مجوز استفاده از نظر'];
 summary.getRange('A10:A20').values=labels.map(x=>[x]);
-const r=c=>"'پاسخ‌ها'!"+c+'6:'+c+'6',vis=r('Y');
+const r=c=>"'پاسخ‌ها'!"+c+'6:'+c+'6',vis=r('AA');
 const formulas=[
  '=SUBTOTAL(103,'+r('A')+')',
  '=IF(B10=0,"",SUBTOTAL(101,'+r('H')+'))',
@@ -38,10 +38,10 @@ for(const row of [10,19,20])summary.getRange('B'+row).setNumberFormat('0');for(c
 summary.getRange('A10:B20').format.rowHeight=34;summary.getRange('B10:B20').format.font={name:'Arial',size:12,bold:true,color:green};
 summary.getRange('D9:D14').values=[['خواندن گزارش'],['فیلترهای شیت پاسخ‌ها، خلاصه را به‌روز می‌کنند.'],['NPS: درصد مروجان ۹ و ۱۰ منهای درصد منتقدان ۰ تا ۶.'],['سؤال حامی اختیاری است؛ پاسخ خالی در میانگین آن وارد نمی‌شود.'],['متن نظرهای بدون مجوز صرفاً برای بررسی داخلی است.'],['پیش از انتشار نقل‌قول‌های مجاز، اطلاعات شخصی احتمالی را حذف کنید.']];summary.getRange('D9').format.font={name:'Arial',size:11,bold:true,color:green};summary.getRange('D10:D14').format.font={name:'Arial',size:10,color:muted};
 title(data,'پاسخ‌های نظرسنجی اولیا');data.getRange('A3').values=[['مقادیر عددی با راهنمای سؤال‌ها تفسیر شوند. متن نظرها برای بررسی داخلی است.']];data.getRange('A3').format.font={name:'Arial',size:10,color:muted};
-data.getRange('A5:Y5').values=[headers];head(data,'A5:Y5');data.getRange('A6:Y6').values=[Array(25).fill('')];data.getRange('A6:Y6').format.wrapText=true;data.getRange('A6:Y6').format.rowHeight=34;
-data.getRange('A:A').format.columnWidth=39;data.getRange('B:C').format.columnWidth=24;data.getRange('D:G').format.columnWidth=23;data.getRange('H:Q').format.columnWidth=17;data.getRange('R:S').format.columnWidth=55;data.getRange('T:U').format.columnWidth=20;data.getRange('V:V').format.columnWidth=60;data.getRange('W:X').format.columnWidth=23;data.getRange('Y:Y').format.columnWidth=15;
-data.getRange('B6').setNumberFormat('yyyy-mm-dd hh:mm');data.getRange('H6:Q6').setNumberFormat('0');data.getRange('T6').setNumberFormat('0');data.getRange('X6:Y6').setNumberFormat('0');data.getRange('Y6').formulas=[['=SUBTOTAL(103,A6)']];data.freezePanes.freezeRows(5);
-const table=data.tables.add('A5:Y6',true,'ParentResponses');table.style='TableStyleMedium4';table.showFilterButton=true;
+data.getRange('A5:AA5').values=[headers];head(data,'A5:AA5');data.getRange('A6:AA6').values=[Array(27).fill('')];data.getRange('A6:AA6').format.wrapText=true;data.getRange('A6:AA6').format.rowHeight=34;
+data.getRange('A:A').format.columnWidth=39;data.getRange('B:C').format.columnWidth=24;data.getRange('D:G').format.columnWidth=23;data.getRange('H:Q').format.columnWidth=17;data.getRange('R:S').format.columnWidth=55;data.getRange('T:U').format.columnWidth=20;data.getRange('V:V').format.columnWidth=60;data.getRange('W:X').format.columnWidth=23;data.getRange('Y:Z').format.columnWidth=26;data.getRange('AA:AA').format.columnWidth=15;data.getRange('A6:AA6').format.font={name:'Arial',size:11,color:ink};
+data.getRange('B6').setNumberFormat('yyyy-mm-dd hh:mm');data.getRange('H6:Q6').setNumberFormat('0');data.getRange('T6').setNumberFormat('0');data.getRange('X6').setNumberFormat('0');data.getRange('AA6').setNumberFormat('0');data.getRange('AA6').formulas=[['=SUBTOTAL(103,A6)']];data.freezePanes.freezeRows(5);
+const table=data.tables.add('A5:AA6',true,'ParentResponses');table.style='TableStyleMedium4';table.showFilterButton=true;
 title(guide,'راهنمای سؤال‌ها و کدگذاری');guide.getRange('A3').values=[['منبع: FFFL68-Parent-Survey-Questions(2).xlsx، شیت سوالات اولیا و کدگذاری تحلیل']];guide.getRange('A3').format.font={name:'Arial',size:10,color:muted};
 guide.getRange('A5:G5').values=[['کد','محور','متن کامل سؤال','نوع پاسخ','گزینه‌ها و مقیاس','الزام','روش تحلیل']];head(guide,'A5:G5');
 guide.getRange('A6:G20').values=questions.map(q=>[q.code,q.axis,q.text,q.kind==='text'?'متن آزاد':q.kind==='scale10'?'۰ تا ۱۰':'گزینه‌ای',q.scale,q.required?'الزامی':'اختیاری',q.analysis]);
@@ -49,7 +49,7 @@ guide.getRange('A:A').format.columnWidth=10;guide.getRange('B:B').format.columnW
 title(quotes,'نقل‌قول‌های دارای اجازه');quotes.getRange('A3').values=[['فقط پاسخ‌های P14=بله؛ پیش از انتشار، اطلاعات شخصی احتمالی را از متن حذف کنید.']];quotes.getRange('A3').format.font={name:'Arial',size:10,color:muted};quotes.getRange('A5:E5').values=[['شناسه پاسخ','ارزش اصلی دوره (P11)','پیشنهاد بهبود (P12)','معرفی دوره (P15)','اجازه انتشار']];head(quotes,'A5:E5');quotes.getRange('A6:E6').values=[['','','','','']];quotes.getRange('A6:E6').format.wrapText=true;quotes.getRange('A6:E6').format.rowHeight=75;quotes.getRange('A:A').format.columnWidth=39;quotes.getRange('B:D').format.columnWidth=64;quotes.getRange('E:E').format.columnWidth=18;quotes.freezePanes.freezeRows(5);const qt=quotes.tables.add('A5:E6',true,'ApprovedQuotes');qt.style='TableStyleMedium4';qt.showFilterButton=true;
 wb.recalculate();await fs.mkdir(outputDir,{recursive:true});
 console.log((await wb.inspect({kind:'region',sheetId:'خلاصه',range:'A9:B20',maxChars:3000,tableMaxRows:12,tableMaxCols:2})).ndjson);
-for(const [s,range,file] of [['خلاصه','A1:D21','summary'],['پاسخ‌ها','A1:G7','responses'],['راهنمای سؤال‌ها','A1:C9','guide'],['نقل‌قول‌های مجاز','A1:B7','quotes']]){
+for(const [s,range,file] of [['خلاصه','A1:D21','summary'],['پاسخ‌ها','W4:AA7','responses'],['راهنمای سؤال‌ها','A1:C9','guide'],['نقل‌قول‌های مجاز','A1:B7','quotes']]){
  const image=await wb.render({sheetName:s,range,scale:1.4,format:'png'});await fs.writeFile(outputDir+'/'+file+'.png',new Uint8Array(await image.arrayBuffer()));
 }
 const output=await SpreadsheetFile.exportXlsx(wb);await output.save(outputDir+'/report-template.xlsx');
