@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {createApi,createHandler,normalizeSubmission,normalizeFilters,submissionFingerprint} from '../backend/core.mjs';
+import {createApi,createHandler,createStore,normalizeSubmission,normalizeFilters,submissionFingerprint} from '../backend/core.mjs';
 import {QUESTIONS,SURVEY_ID} from '../questions.mjs';
 const secret='test-management-password-never-for-production';
 const config={adminUsername:'M.mirsheri',adminKeyHash:createHash('sha256').update(secret).digest('hex'),signingKey:'test-only-signing-key-for-parent-survey'};
@@ -20,3 +20,37 @@ test('HTTP transport rejects unknown origins, oversized bodies and malformed JSO
 
 test('both respondent names are required, bounded and normalized',()=>{for(const key of ['first_name','last_name']){for(const value of ['',null,undefined,'   ','x'.repeat(81),123]){const p=payload();p[key]=value;assert.throws(()=>normalizeSubmission(p));}}const p=payload();p.first_name='  نام   آزمایشی  ';assert.equal(normalizeSubmission(p).first_name,'نام آزمایشی');});
 test('adding respondent names preserves the fingerprint of a legacy pending response',()=>{const n=normalizeSubmission(payload());const {first_name,last_name,...legacy}=n;assert.equal(submissionFingerprint(n),createHash('sha256').update(JSON.stringify(legacy)).digest('hex'));});
+
+test('deleting a response requires a valid administrator session before accessing the database',async()=>{
+  let calls=0;const api=createApi({config,db:async()=>{calls++;return [];}}),id=crypto.randomUUID();
+  for(const token of [undefined,'invalid',api.sign()+'x'])await assert.rejects(api.handle({action:'admin_delete',token,id,confirm:true}),e=>e.status===401);
+  assert.equal(calls,0);
+});
+test('deletion rejects missing IDs, filter injection and unconfirmed requests',async()=>{
+  let calls=0;const api=createApi({config,db:async()=>{calls++;return [];}}),token=api.sign(),id=crypto.randomUUID();
+  for(const invalid of [undefined,'','*','eq.'+id,id+'&id=neq.x',[],42])await assert.rejects(api.handle({action:'admin_delete',token,id:invalid,confirm:true}),e=>e.status===400);
+  for(const confirm of [undefined,false,'true'])await assert.rejects(api.handle({action:'admin_delete',token,id,confirm}),e=>e.status===400);
+  assert.equal(calls,0);
+});
+test('deletion removes only the selected response and confirms the database acknowledgement',async()=>{
+  const id=crypto.randomUUID(),other=crypto.randomUUID(),rows=new Map([[id,{id}],[other,{id:other}]]);
+  const api=createApi({config,db:async(action,data)=>{assert.equal(action,'response_delete');const row=rows.get(data.id);rows.delete(data.id);return row?[row]:[];}}),token=api.sign();
+  assert.deepEqual(await api.handle({action:'admin_delete',token,id,confirm:true}),{ok:true,deleted:true,id});
+  assert.equal(rows.has(id),false);assert.equal(rows.has(other),true);
+  await assert.rejects(api.handle({action:'admin_delete',token,id,confirm:true}),e=>e.status===404);
+  for(const reply of [null,{},[{id:other}],[{id},{id:other}]]){
+    const broken=createApi({config,db:async()=>reply});
+    await assert.rejects(broken.handle({action:'admin_delete',token:broken.sign(),id,confirm:true}),e=>e.status===503);
+  }
+});
+test('database deletion is scoped to one ID and this survey and returns only its ID',async()=>{
+  const id=crypto.randomUUID();let calls=0;
+  const store=createStore({url:'https://database.test',key:'test-service-key',fetchImpl:async(url,options)=>{
+    calls++;const u=new URL(url);assert.equal(options.method,'DELETE');assert.equal(u.pathname,'/rest/v1/ps_responses');
+    assert.deepEqual(Object.fromEntries(u.searchParams),{id:'eq.'+id,survey_id:'eq.'+SURVEY_ID,select:'id'});
+    assert.equal(options.headers.Prefer,'return=representation');return Response.json([{id}]);
+  }});
+  assert.deepEqual(await store('response_delete',{id}),[{id}]);
+  await assert.rejects(store('response_delete',{id:id+'&or=(id.not.is.null)'}),e=>e.status===400);
+  assert.equal(calls,1);
+});

@@ -1,21 +1,28 @@
 import {QUESTIONS} from './questions.mjs';
-import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs?v=20261031.7';
-import {buildWorkbook} from './excel-export.mjs?v=20261031.7';
+import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs?v=20261031.9';
+import {buildWorkbook} from './excel-export.mjs?v=20261031.9';
 initTheme();
 const $=s=>document.querySelector(s),demo=new URL(location.href).searchParams.get('demo')==='1';
 const SESSION='mofid-parent-admin-v1',PAGE_SIZE=25;
 let session=null,report=null,filters={},page=0,tab='overview',requestId=0,settings=null,baseSnapshot=null,exporting=false;
+let deleteTarget=null,deleting=false;
 try{const v=JSON.parse(sessionStorage.getItem(SESSION)||'null');if(v&&Date.parse(v.expires_at)>Date.now())session=v;}catch{}
 let toastTimer;
 function toast(message){const t=$('#toast');t.textContent=message;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.hidden=true,4500);}
 function setError(message){$('#reportError').textContent=message;$('#reportError').hidden=!message;}
-function logout(){session=null;report=null;settings=null;requestId++;try{sessionStorage.removeItem(SESSION);}catch{}$('#dashboard').hidden=true;$('#loginView').hidden=false;$('#logout').hidden=true;$('#password').value='';for(const id of ['kpis','scoreBars','npsChart','impactMetrics','supportMetrics','distributionBars','responsesBody','responseCards','commentsList','detailContent'])$('#'+id).innerHTML='';$('#detailDialog').close();$('#settingsForm').reset();}
+function clearReport(){
+  requestId++;report=null;baseSnapshot=null;
+  for(const id of ['kpis','scoreBars','npsChart','impactMetrics','supportMetrics','distributionBars','responsesBody','responseCards','commentsList','detailContent'])$('#'+id).innerHTML='';
+  for(const id of ['filterCount','responseCount','reportTimestamp','pageInfo','commentPageInfo'])$('#'+id).textContent='';
+  $('#exportButton').disabled=true;
+}
+function logout(){session=null;settings=null;clearReport();deleteTarget=null;try{sessionStorage.removeItem(SESSION);}catch{}$('#dashboard').hidden=true;$('#loginView').hidden=false;$('#logout').hidden=true;$('#password').value='';$('#detailDialog').close();$('#deleteDialog').close();for(const id of ['deleteName','deleteId','deleteInfo'])$('#'+id).textContent='';$('#settingsForm').reset();}
 async function call(action,data={}){
   if(!demo&&(!session||Date.parse(session.expires_at)<=Date.now())){logout();throw Error('نشست شما پایان یافته است؛ دوباره وارد شوید.');}
   try{return await api(action,data,session?.token);}catch(e){if(e.status===401)logout();throw e;}
 }
 async function copy(text){try{await navigator.clipboard.writeText(text);toast('کپی شد.');}catch{toast('مرورگر اجازه کپی نداد؛ متن را انتخاب و کپی کنید.');}}
-function surveyURL(){return new URL('./?v=20261031.7',location.href).href;}
+function surveyURL(){return new URL('./?v=20261031.9',location.href).href;}
 $('#logout').onclick=logout;
 $('#showPassword').onclick=()=>{const p=$('#password');p.type=p.type==='password'?'text':'password';$('#showPassword').textContent=p.type==='password'?'نمایش':'پنهان';};
 $('#loginForm').onsubmit=async e=>{
@@ -54,14 +61,14 @@ async function loadReport(){
   try{
     const result=demo?demoReport(filters,page,PAGE_SIZE):await call('admin_list',{filters:{...filters,...(baseSnapshot?{snapshot:baseSnapshot}:{})},page,limit:PAGE_SIZE});
     if(id!==requestId)return;report=result;baseSnapshot=baseSnapshot||result.snapshot;
-    if(page>0&&!report.rows.length&&report.total){page=Math.max(0,Math.ceil(report.total/PAGE_SIZE)-1);return loadReport();}
+    if(page>0&&!report.rows.length){page=Math.max(0,Math.ceil(report.total/PAGE_SIZE)-1);return loadReport();}
     options($('#fSchool'),[...(result.options?.schools||[]),...(filters.school?[filters.school]:[])],'همه مدارس');
-    options($('#fGrade'),result.options?.grades||[],'همه پایه‌ها');options($('#fCohort'),result.options?.cohorts||[],'همه نوبت‌ها');
+    options($('#fGrade'),[...(result.options?.grades||[]),...(filters.grade?[filters.grade]:[])],'همه پایه‌ها');options($('#fCohort'),[...(result.options?.cohorts||[]),...(filters.cohort?[filters.cohort]:[])],'همه نوبت‌ها');
     $('#filterCount').textContent=fa(report.total)+' پاسخ'+(Object.keys(filters).length?' مطابق فیلترها':' ثبت‌شده');
     $('#reportTimestamp').textContent=(demo?'دادهٔ نمونه · ':'')+'آخرین دریافت: '+dateFa(result.snapshot)+'، به وقت تهران';
     renderReport();
   }catch(e){if(id===requestId)setError(e.message+(report?' آخرین گزارش دریافت‌شده همچنان نمایش داده می‌شود.':''));}
-  finally{if(id===requestId){$('#reportLoading').hidden=true;$('#applyFilters').disabled=false;}}
+  finally{if(id===requestId){$('#reportLoading').hidden=true;$('#applyFilters').disabled=false;$('#exportButton').disabled=exporting||deleting||!report;}}
 }
 const pct=v=>v===null||v===undefined?'—':fa(v,1)+'٪';
 const metric=(label,value,note='')=>'<div class="metric-row"><span>'+label+(note?'<small>'+note+'</small>':'')+'</span><strong>'+value+'</strong></div>';
@@ -81,13 +88,15 @@ function renderDistribution(){
 }
 const consentBadge=r=>'<span class="consent-badge '+(r.p14?'yes':'')+'">'+(r.p14?'اجازهٔ انتشار':'فقط بررسی داخلی')+'</span>';
 const respondentName=r=>[r.first_name,r.last_name].filter(Boolean).join(' ')||'پاسخ قدیمی بدون نام';
+const deleteButton=r=>'<button type="button" class="delete-button" data-delete="'+esc(r.id)+'" aria-label="حذف پاسخ '+esc(respondentName(r))+'">حذف</button>';
 const groupNps=n=>n>=9?'مروج':n>=7?'منفعل':'منتقد';
 function renderRows(){
   const rows=report.rows,total=report.total;
   $('#responseCount').textContent=fa(total)+' پاسخ';
-  $('#responsesBody').innerHTML=rows.length?rows.map(r=>'<tr><td><strong class="respondent-name">'+esc(respondentName(r))+'</strong><span class="response-id">'+esc(r.id.slice(0,8))+'</span><small>'+dateFa(r.created_at)+'</small></td><td>'+esc(r.school||'نامشخص')+'<small>'+esc(r.grade||'بدون پایه')+'</small></td><td>'+esc(r.cohort||'—')+'</td><td><span class="score-badge">'+fa(r.p01)+' / ۵</span></td><td>'+fa(r.p10)+' <small>'+groupNps(r.p10)+'</small></td><td>'+consentBadge(r)+'</td><td><button class="detail-button" data-detail="'+esc(r.id)+'">مشاهده</button></td></tr>').join(''):'<tr><td colspan="7">'+empty()+'</td></tr>';
-  $('#responseCards').innerHTML=rows.length?rows.map(r=>'<article class="response-mobile"><header><strong>'+esc(respondentName(r))+'</strong><span class="response-id">'+esc(r.id.slice(0,8))+'</span></header><p>'+esc(r.school||'مدرسه نامشخص')+' · '+dateFa(r.created_at)+' · '+esc(r.grade||'بدون پایه')+' · '+esc(r.cohort||'بدون نوبت')+'</p><footer><span class="score-badge">رضایت '+fa(r.p01)+' از ۵</span>'+consentBadge(r)+'<button class="detail-button" data-detail="'+esc(r.id)+'">جزئیات</button></footer></article>').join(''):empty();
+  $('#responsesBody').innerHTML=rows.length?rows.map(r=>'<tr><td><strong class="respondent-name">'+esc(respondentName(r))+'</strong><span class="response-id">'+esc(r.id.slice(0,8))+'</span><small>'+dateFa(r.created_at)+'</small></td><td>'+esc(r.school||'نامشخص')+'<small>'+esc(r.grade||'بدون پایه')+'</small></td><td>'+esc(r.cohort||'—')+'</td><td><span class="score-badge">'+fa(r.p01)+' / ۵</span></td><td>'+fa(r.p10)+' <small>'+groupNps(r.p10)+'</small></td><td>'+consentBadge(r)+'</td><td><div class="response-actions"><button class="detail-button" data-detail="'+esc(r.id)+'">مشاهده</button>'+deleteButton(r)+'</div></td></tr>').join(''):'<tr><td colspan="7">'+empty()+'</td></tr>';
+  $('#responseCards').innerHTML=rows.length?rows.map(r=>'<article class="response-mobile"><header><strong>'+esc(respondentName(r))+'</strong><span class="response-id">'+esc(r.id.slice(0,8))+'</span></header><p>'+esc(r.school||'مدرسه نامشخص')+' · '+dateFa(r.created_at)+' · '+esc(r.grade||'بدون پایه')+' · '+esc(r.cohort||'بدون نوبت')+'</p><footer><span class="score-badge">رضایت '+fa(r.p01)+' از ۵</span>'+consentBadge(r)+'<span class="response-actions"><button class="detail-button" data-detail="'+esc(r.id)+'">جزئیات</button>'+deleteButton(r)+'</span></footer></article>').join(''):empty();
   document.querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>showDetail(rows.find(r=>r.id===b.dataset.detail)));
+  document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>requestDelete(rows.find(r=>r.id===b.dataset.delete)));
   for(const p of ['','#comment']){const prev=$(p?'#commentPrev':'#prevPage'),next=$(p?'#commentNext':'#nextPage'),info=$(p?'#commentPageInfo':'#pageInfo');prev.disabled=page===0;next.disabled=(page+1)*PAGE_SIZE>=total;info.textContent=total?'صفحه '+fa(page+1)+' از '+fa(Math.ceil(total/PAGE_SIZE)):'بدون پاسخ';prev.onclick=()=>{page--;loadReport();};next.onclick=()=>{page++;loadReport();};}
 }
 function empty(){return '<div class="empty-state"><strong>هنوز پاسخی برای نمایش نیست.</strong>پس از ثبت نظر والدین، گزارش‌ها در این بخش نمایش داده می‌شوند.</div>';}
@@ -98,11 +107,45 @@ function renderComments(){
 }
 $('#consentedOnly').onclick=()=>{filters={...filters,consent:'true',comment:'yes'};$('#fConsent').value='true';$('#fComment').value='yes';page=0;baseSnapshot=null;loadReport();};
 function showDetail(r){
+  if(!r)return;
   $('#detailContent').innerHTML='<div class="detail-metadata"><strong>'+esc(respondentName(r))+'</strong><span>'+esc(r.school||'مدرسه نامشخص')+'</span><span>'+esc(r.grade)+'</span><span>'+esc(r.cohort)+'</span><span>'+dateFa(r.created_at)+'</span>'+consentBadge(r)+'</div><div class="receipt">'+esc(r.id)+'</div>'+QUESTIONS.map(q=>{const v=q.code==='P14'?(r.p14?'بله':'خیر'):r[q.code.toLowerCase()];const o=q.options.find(o=>o.value===v);return '<div class="detail-question"><h3>'+q.code+' — '+esc(q.text)+'</h3><p>'+esc(v===null||v===undefined||v===''?'بدون پاسخ (اختیاری)':q.kind==='text'?v:q.kind==='scale10'?fa(v)+' از ۱۰':(typeof v==='number'?fa(v)+' — ':'')+(o?.label||v))+'</p></div>';}).join('');
+  const footer=document.createElement('div');footer.className='detail-actions';
+  const remove=document.createElement('button');remove.type='button';remove.className='button danger';remove.textContent='حذف این پاسخ';remove.onclick=()=>requestDelete(r);footer.append(remove);$('#detailContent').append(footer);
   $('#detailDialog').showModal();
 }
 $('#closeDetail').onclick=()=>$('#detailDialog').close();
 $('#detailDialog').addEventListener('click',e=>{if(e.target===$('#detailDialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}});
+function requestDelete(r){
+  if(!r||deleting)return;
+  if(exporting){toast('پس از آماده شدن خروجی اکسل، پاسخ را حذف کنید.');return;}
+  deleteTarget=r;$('#deleteName').textContent=respondentName(r);$('#deleteId').textContent=r.id;
+  $('#deleteInfo').textContent=(r.school||'مدرسه نامشخص')+' · '+dateFa(r.created_at);
+  $('#deleteError').textContent='';$('#deleteError').hidden=true;$('#deleteDialog').showModal();
+}
+$('#cancelDelete').onclick=()=>{if(!deleting)$('#deleteDialog').close();};
+$('#deleteDialog').addEventListener('cancel',e=>{if(deleting)e.preventDefault();});
+$('#deleteDialog').addEventListener('close',()=>{deleteTarget=null;});
+$('#confirmDelete').onclick=async()=>{
+  if(!deleteTarget||deleting)return;
+  const target=deleteTarget,activeSession=session,b=$('#confirmDelete');deleting=true;
+  b.disabled=true;$('#cancelDelete').disabled=true;$('#exportButton').disabled=true;b.textContent='در حال حذف…';$('#deleteError').hidden=true;
+  async function finish(message){
+    deleteTarget=null;$('#deleteDialog').close();$('#detailDialog').close();clearReport();toast(message);await loadReport();
+  }
+  try{
+    if(demo){const index=sampleRows.findIndex(r=>r.id===target.id);if(index>=0)sampleRows.splice(index,1);}
+    else{
+      const ack=await call('admin_delete',{id:target.id,confirm:true});
+      if(ack.deleted!==true||ack.id!==target.id)throw Error('حذف پاسخ تأیید نشد. فهرست را تازه‌سازی کنید.');
+      if(session!==activeSession)return;
+    }
+    await finish(demo?'پاسخ نمونه حذف شد؛ داده‌های واقعی تغییری نکردند.':'پاسخ حذف شد.');
+  }catch(e){
+    if(e.status===404&&(demo||session===activeSession))await finish('این پاسخ قبلاً حذف شده است.');
+    else if($('#deleteDialog').open){$('#deleteError').textContent=e.message;$('#deleteError').hidden=false;}
+    else toast(e.message);
+  }finally{deleting=false;b.disabled=false;$('#cancelDelete').disabled=false;b.textContent='حذف پاسخ';$('#exportButton').disabled=exporting||!report;}
+};
 async function loadSettings(){
   try{settings=demo?{is_open:true,schools:['مدرسه نمونه الف','مدرسه نمونه ب'],cohorts:['پاییز ۱۴۰۵']}:(await call('admin_settings')).settings;$('#surveyOpen').checked=settings.is_open;$('#schoolList').value=settings.schools.join('\n');$('#cohortList').value=settings.cohorts.join('\n');}catch(e){setError(e.message);}
 }
@@ -113,7 +156,7 @@ $('#settingsForm').onsubmit=async e=>{
 };
 $('#generateLink').onclick=()=>{const u=new URL(surveyURL());if($('#linkSchool').value.trim())u.searchParams.set('school',$('#linkSchool').value.trim());if($('#linkCohort').value.trim())u.searchParams.set('cohort',$('#linkCohort').value.trim());$('#generatedLink').value=u.href;copy(u.href);};
 $('#exportButton').onclick=async()=>{
-  if(exporting||!report)return;if(demo){toast('خروجی اکسل پس از ورود به پنل واقعی در دسترس است.');return;}exporting=true;const b=$('#exportButton');b.disabled=true;setError('');
+  if(exporting||deleting||!report)return;if(demo){toast('خروجی اکسل پس از ورود به پنل واقعی در دسترس است.');return;}exporting=true;const b=$('#exportButton');b.disabled=true;setError('');
   try{
     const all=[],snapshot=baseSnapshot||report.snapshot;let p=0,total=report.total;
     do{b.textContent='دریافت پاسخ‌ها: '+fa(all.length)+' / '+fa(total);const r=demo?demoReport(filters,p,1000):await call('admin_list',{filters:{...filters,snapshot},page:p,limit:1000});total=r.total;all.push(...r.rows);if(!r.rows.length&&all.length<total)throw Error('دریافت همهٔ پاسخ‌ها کامل نشد. دوباره خروجی بگیرید.');p++;}while(all.length<total);

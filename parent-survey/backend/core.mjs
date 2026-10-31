@@ -6,6 +6,10 @@ export class ApiError extends Error { constructor(message,status=400){super(mess
 const fail=(message,status=400)=>{throw new ApiError(message,status);};
 const hash=v=>createHash('sha256').update(v).digest('hex');
 const equal=(a,b)=>{const x=Buffer.from(String(a)),y=Buffer.from(String(b));return x.length===y.length&&timingSafeEqual(x,y);};
+function responseId(value){
+  if(typeof value!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value))fail('شناسه پاسخ معتبر نیست.');
+  return value.toLowerCase();
+}
 export function normalizeSubmission(data){
   if(!data||typeof data!=='object'||Array.isArray(data))fail('پاسخ‌ها معتبر نیستند.');
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.id||''))fail('شناسه پاسخ معتبر نیست.');
@@ -74,7 +78,7 @@ export function createApi({db,config,templateBase64='',now=Date.now}){
   return {sign,verify,async handle(body,{ip='unknown'}={}){
     if(!body||typeof body!=='object'||Array.isArray(body))fail('درخواست معتبر نیست.');
     const {action}=body;
-    if(action==='health')return {ok:true,version:'parent-survey/2',ready:Boolean(await db('settings'))};
+    if(action==='health')return {ok:true,version:'parent-survey/3',ready:Boolean(await db('settings'))};
     if(action==='config'){const c=await db('settings');return {ok:true,settings:{is_open:c.is_open,schools:c.schools,cohorts:c.cohorts},survey_id:SURVEY_ID};}
     if(action==='admin_login'){
       await gate('login',ip,12,15);
@@ -91,6 +95,14 @@ export function createApi({db,config,templateBase64='',now=Date.now}){
       return {ok:true,...result};
     }
     verify(body.token);
+    if(action==='admin_delete'){
+      const id=responseId(body.id);
+      if(body.confirm!==true)fail('حذف پاسخ را تأیید کنید.');
+      const rows=await db('response_delete',{id});
+      if(Array.isArray(rows)&&rows.length===0)fail('این پاسخ پیدا نشد؛ ممکن است قبلاً حذف شده باشد.',404);
+      if(!Array.isArray(rows)||rows.length!==1||rows[0]?.id!==id)fail('حذف پاسخ تأیید نشد. فهرست را تازه‌سازی کنید.',503);
+      return {ok:true,deleted:true,id};
+    }
     if(action==='admin_template'){
       if(!templateBase64)fail('قالب خروجی در دسترس نیست. با مدیر سامانه تماس بگیرید.',503);
       return {ok:true,template:templateBase64};
@@ -121,6 +133,11 @@ export function createStore({url,key,fetchImpl=fetch}){
     if(action==='settings')path='/rest/v1/ps_settings?id=eq.ten-years-ahead-parents-v1&select=*';
     else if(action==='settings_save'){path='/rest/v1/ps_settings?id=eq.ten-years-ahead-parents-v1';options={...options,method:'PATCH',headers:{...headers,Prefer:'return=representation'},body:JSON.stringify({...data,updated_at:new Date().toISOString()})};}
     else if(action==='test_clear'){path='/rest/v1/ps_responses?is_test=eq.true';options={...options,method:'DELETE'};}
+    else if(action==='response_delete'){
+      const id=responseId(data.id);
+      path='/rest/v1/ps_responses?id=eq.'+id+'&survey_id=eq.'+encodeURIComponent(SURVEY_ID)+'&select=id';
+      options={...options,method:'DELETE',headers:{...headers,Prefer:'return=representation'}};
+    }
     else {path='/rest/v1/rpc/'+action;options={...options,method:'POST',body:JSON.stringify(data)};}
     let r;try{r=await fetchImpl(url+path,options);}catch{fail('ارتباط با پایگاه داده برقرار نشد. دوباره تلاش کنید.',503);}
     const result=r.status===204?null:await r.json();

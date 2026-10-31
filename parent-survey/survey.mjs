@@ -1,7 +1,7 @@
 import {QUESTIONS,SURVEY_ID} from './questions.mjs';
-import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs?v=20261031.7';
-import {respondentNameParts} from './respondent-name.mjs?v=20261031.7';
-import {mountQuestionEffects} from './question-effects.mjs?v=20261031.7';
+import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs?v=20261031.9';
+import {respondentNameParts} from './respondent-name.mjs?v=20261031.9';
+import {mountQuestionEffects} from './question-effects.mjs?v=20261031.9';
 initTheme();
 document.querySelector('#clockIcon').innerHTML=icons.clock;
 document.querySelector('#shieldIcon').innerHTML=icons.shield;
