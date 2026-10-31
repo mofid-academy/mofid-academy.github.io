@@ -49,7 +49,7 @@ function render(){
 function renderIntro(){
   view.innerHTML=`<p class="intro-description">ولی گرامی، تجربه و نگاه شما به ما کمک می‌کند اثر این دوره را بهتر بشناسیم و آن را برای دانش‌آموزان بهتر کنیم.</p>
   <form id="identityForm" class="intro-form" aria-label="مشخصات پاسخ‌دهنده"><div class="identity-fields">
-    <div><label for="full_name">نام و نام خانوادگی پاسخ‌دهنده <span class="required-mark" aria-hidden="true">*</span></label><input id="full_name" name="full_name" autocomplete="name" maxlength="161" required placeholder="نام و نام خانوادگی" value="${esc(state.full_name)}"></div>
+    <div><label for="full_name">نام و نام خانوادگی <span class="required-mark" aria-hidden="true">*</span></label><input id="full_name" name="full_name" autocomplete="name" maxlength="161" required placeholder="نام و نام خانوادگی" value="${esc(state.full_name)}"></div>
   </div><div class="context-fields">
     <div><label for="school">مدرسه <small>(اختیاری)</small></label><input id="school" name="school" list="schools" maxlength="120" placeholder="نام مدرسه" autocomplete="off" value="${esc(state.school)}"><datalist id="schools">${(settings?.schools||[]).map(s=>'<option value="'+esc(s)+'">').join('')}</datalist></div>
     <div><label for="grade">پایه تحصیلی <small>(اختیاری)</small></label><select id="grade" name="grade"><option value="">انتخاب پایه</option>${['اول','دوم','سوم','چهارم','پنجم','ششم','هفتم','هشتم','نهم','دهم','یازدهم','دوازدهم'].map(g=>'<option '+(state.grade===g?'selected':'')+'>'+g+'</option>').join('')}</select></div>
