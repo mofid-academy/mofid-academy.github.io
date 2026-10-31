@@ -1,5 +1,6 @@
 import {QUESTIONS,SURVEY_ID} from './questions.mjs';
 import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs';
+import {respondentNameParts} from './respondent-name.mjs?v=20261031.5';
 initTheme();
 document.querySelector('#clockIcon').innerHTML=icons.clock;
 document.querySelector('#shieldIcon').innerHTML=icons.shield;
@@ -14,6 +15,7 @@ try{
 }catch{storageOK=false;}
 state.first_name=state.first_name||'';state.last_name=state.last_name||'';
 if(pending){for(const k of ['id','school','grade','cohort','relationship','first_name','last_name'])if(pending[k]!==undefined)state[k]=pending[k];state.answers={...pending.answers};}
+state.full_name=pending?[state.first_name,state.last_name].filter(Boolean).join(' '):(state.full_name??[state.first_name,state.last_name].filter(Boolean).join(' '));
 const namesComplete=()=>Boolean(state.first_name?.trim()&&state.last_name?.trim());
 if(!receipt&&!namesComplete())step=-1;
 const params=new URL(location.href).searchParams;
@@ -41,23 +43,23 @@ function render(){
   renderQuestion();
 }
 function renderIntro(){
-  view.innerHTML=`<span class="intro-kicker"><i></i> نظرسنجی پایان دوره «ده سال جلوتر»</span><h2 class="intro-title">همراهی شما،<br><span>بهتر شدن این مسیر.</span></h2><p class="intro-description">ولی گرامی، تجربه و نگاه شما به ما کمک می‌کند اثر این دوره را بهتر بشناسیم و آن را برای دانش‌آموزان بهتر کنیم.</p>
-  <form id="identityForm" class="intro-form"><div class="identity-fields">
-    <div><label for="first_name">نام پاسخ‌دهنده <span class="required-mark" aria-hidden="true">*</span></label><input id="first_name" name="first_name" autocomplete="given-name" maxlength="80" required placeholder="نام" value="${esc(state.first_name)}"></div>
-    <div><label for="last_name">نام خانوادگی پاسخ‌دهنده <span class="required-mark" aria-hidden="true">*</span></label><input id="last_name" name="last_name" autocomplete="family-name" maxlength="80" required placeholder="نام خانوادگی" value="${esc(state.last_name)}"></div>
+  view.innerHTML=`<p class="intro-description">ولی گرامی، تجربه و نگاه شما به ما کمک می‌کند اثر این دوره را بهتر بشناسیم و آن را برای دانش‌آموزان بهتر کنیم.</p>
+  <form id="identityForm" class="intro-form" aria-label="مشخصات پاسخ‌دهنده"><div class="identity-fields">
+    <div><label for="full_name">نام و نام خانوادگی پاسخ‌دهنده <span class="required-mark" aria-hidden="true">*</span></label><input id="full_name" name="full_name" autocomplete="name" maxlength="161" required placeholder="نام و نام خانوادگی" value="${esc(state.full_name)}"></div>
   </div><div class="context-fields">
     <div><label for="school">مدرسه <small>(اختیاری)</small></label><input id="school" name="school" list="schools" maxlength="120" placeholder="نام مدرسه" autocomplete="off" value="${esc(state.school)}"><datalist id="schools">${(settings?.schools||[]).map(s=>'<option value="'+esc(s)+'">').join('')}</datalist></div>
     <div><label for="grade">پایه تحصیلی <small>(اختیاری)</small></label><select id="grade" name="grade"><option value="">انتخاب پایه</option>${['اول','دوم','سوم','چهارم','پنجم','ششم','هفتم','هشتم','نهم','دهم','یازدهم','دوازدهم'].map(g=>'<option '+(state.grade===g?'selected':'')+'>'+g+'</option>').join('')}</select></div>
     <div><label for="relationship">نسبت با دانش‌آموز <small>(اختیاری)</small></label><select id="relationship" name="relationship"><option value="">انتخاب نسبت</option>${['مادر','پدر','سرپرست'].map(g=>'<option '+(state.relationship===g?'selected':'')+'>'+g+'</option>').join('')}</select></div>
-  </div></form><div class="privacy-note"><b>۱۵ سؤال کوتاه؛ نام پاسخ‌دهنده همراه پاسخ‌ها ثبت می‌شود.</b><br>۴ سؤال اختیاری‌اند. استفادهٔ بیرونی از متن نظر شما، بدون درج نام، فقط با اجازهٔ صریح شما انجام می‌شود.</div>`;
-  for(const k of ['first_name','last_name','school','grade','relationship'])$('#'+k).addEventListener('input',e=>{state[k]=e.target.value;save();});
+  </div></form>`;
+  $('#full_name').addEventListener('input',e=>{const previous={first_name:state.first_name,last_name:state.last_name};Object.assign(state,respondentNameParts(e.target.value,previous),{full_name:e.target.value});e.target.setCustomValidity('');save();});
+  for(const k of ['school','grade','relationship'])$('#'+k).addEventListener('input',e=>{state[k]=e.target.value;save();});
   const hasAnswers=Object.keys(state.answers).length>0,closed=settings?.is_open===false;
   actions.classList.add('intro-actions');
   actions.innerHTML='<button type="submit" form="identityForm" class="button primary" id="start" '+(!settings||closed?'disabled':'')+'>'+(closed?'پاسخ‌گویی بسته است':!settings?'<span class="loading-dot"></span> در حال اتصال…':hasAnswers?'ادامهٔ پاسخ‌گویی':'شروع نظرسنجی')+icons.arrow+'</button>';
   $('#identityForm').onsubmit=e=>{
     e.preventDefault();if(!settings?.is_open)return;
-    for(const k of ['first_name','last_name'])state[k]=$('#'+k).value.trim().replace(/\s+/g,' ');
-    if(!namesComplete()){error('نام و نام خانوادگی پاسخ‌دهنده را کامل وارد کنید.');$('#'+(!state.first_name?'first_name':'last_name')).focus();return;}
+    Object.assign(state,respondentNameParts($('#full_name').value,state));
+    if(!namesComplete()||state.first_name.length>80||state.last_name.length>80){const message=!namesComplete()?'نام و نام خانوادگی را کامل وارد کنید.':'نام واردشده بیش از حد طولانی است.';$('#full_name').setCustomValidity(message);$('#full_name').reportValidity();return;}
     if(pending){pending={...pending,first_name:state.first_name,last_name:state.last_name};step=15;}
     else{state.started_at=state.started_at||Date.now();step=hasAnswers&&missing()===-1?15:Math.max(0,QUESTIONS.findIndex(q=>!answered(q)));}
     save();render();focusTitle();
@@ -108,7 +110,7 @@ function renderSuccess(){
   view.innerHTML='<div class="success-icon">'+icons.check+'</div><span class="intro-kicker">'+(receipt.preview?'پیش‌نمایش به پایان رسید':'پاسخ شما با موفقیت ذخیره شد')+'</span><h2>از همراهی شما<br>سپاسگزاریم.</h2><p class="intro-description">'+(receipt.preview?'در حالت پیش‌نمایش هیچ پاسخی به پایگاه داده ارسال نشده است.':'نظر شما به ما کمک می‌کند تجربهٔ یادگیری بهتری برای دانش‌آموزان بسازیم. پاسخ‌تان در سامانه ثبت شد و نیازی به ارسال دوباره نیست.')+'</p><label style="font-size:11px;color:var(--muted)">شناسهٔ '+(receipt.preview?'آزمایشی':'پیگیری پاسخ')+'</label><div class="receipt">'+esc(receipt.id)+'</div><p class="action-hint">'+dateFa(receipt.created_at)+'، به وقت تهران</p>';
   actions.innerHTML='<button type="button" class="button subtle" id="copyReceipt">'+icons.copy+' کپی شناسه</button><button type="button" class="button text" id="another">پاسخ برای فرزند دیگر</button>';
   $('#copyReceipt').onclick=async()=>{try{await navigator.clipboard.writeText(receipt.id);$('#copyReceipt').textContent='شناسه کپی شد';}catch{error('برای کپی، شناسهٔ بالا را انتخاب کنید.');}};
-  $('#another').onclick=()=>{state={...state,id:crypto.randomUUID(),answers:{},first_name:'',last_name:'',started_at:0};receipt=null;pending=null;step=-1;save();render();focusTitle();};
+  $('#another').onclick=()=>{state={...state,id:crypto.randomUUID(),answers:{},first_name:'',last_name:'',full_name:'',started_at:0};receipt=null;pending=null;step=-1;save();render();focusTitle();};
 }
 function network(){const n=$('#offlineNotice');n.hidden=navigator.onLine;}
 window.addEventListener('offline',network);window.addEventListener('online',network);network();

@@ -1,6 +1,6 @@
 import {QUESTIONS} from './questions.mjs';
 import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs';
-import {buildWorkbook} from './excel-export.mjs?v=20261031.4';
+import {buildWorkbook} from './excel-export.mjs?v=20261031.5';
 initTheme();
 const $=s=>document.querySelector(s),demo=new URL(location.href).searchParams.get('demo')==='1';
 const SESSION='mofid-parent-admin-v1',PAGE_SIZE=25;
@@ -15,7 +15,7 @@ async function call(action,data={}){
   try{return await api(action,data,session?.token);}catch(e){if(e.status===401)logout();throw e;}
 }
 async function copy(text){try{await navigator.clipboard.writeText(text);toast('کپی شد.');}catch{toast('مرورگر اجازه کپی نداد؛ متن را انتخاب و کپی کنید.');}}
-function surveyURL(){return new URL('./?v=20261031.4',location.href).href;}
+function surveyURL(){return new URL('./?v=20261031.5',location.href).href;}
 $('#logout').onclick=logout;
 $('#showPassword').onclick=()=>{const p=$('#password');p.type=p.type==='password'?'text':'password';$('#showPassword').textContent=p.type==='password'?'نمایش':'پنهان';};
 $('#loginForm').onsubmit=async e=>{
