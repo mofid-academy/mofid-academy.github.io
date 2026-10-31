@@ -21,6 +21,7 @@ export const icons={
  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V3H3v13h5"/></svg>'
 };
 export function initTheme(){
-  try{document.documentElement.dataset.theme=localStorage.getItem('ps-theme')||'light';}catch{}
+  document.documentElement.dataset.theme='dark';
+  try{const saved=localStorage.getItem('ps-theme');if(saved==='light'||saved==='dark')document.documentElement.dataset.theme=saved;}catch{}
   document.querySelectorAll('[data-theme-toggle]').forEach(b=>{b.innerHTML=icons.sun;b.onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('ps-theme',t);}catch{}};});
 }
