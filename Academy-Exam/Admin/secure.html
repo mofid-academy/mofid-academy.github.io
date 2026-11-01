@@ -41,6 +41,13 @@ async function readLiveTiming(options={}){
   ]);
   if(!baseRes.ok)throw Error('base '+baseRes.status);
   let html=await baseRes.text();
+  // Keep rebuilt bundles and archived source on the current account.
+  html=html.replace(/https:\/\/(?:azmoon|miladmirsheriseyed|miladmirsheriii|miladmmirsheri|miladmirsheriam)\.app\.n8n\.cloud\b/g,"https://azmonmofid.app.n8n.cloud");
+  const n8nSourceEntry="function setSource(s,remember=true){";
+  if(!html.includes("/* academy-n8n-account-20261101 */")){
+    if(!html.includes(n8nSourceEntry))throw Error("نسخهٔ بخش اتصال پنل هماهنگ نیست؛ صفحه را دوباره باز کنید.");
+    html=html.replace(n8nSourceEntry,n8nSourceEntry+"\n/* academy-n8n-account-20261101 */\n s=s.replace(/https:\\/\\/(?:azmoon|miladmirsheriseyed|miladmirsheriii|miladmmirsheri|miladmirsheriam)\\.app\\.n8n\\.cloud\\b/g,\"https://azmonmofid.app.n8n.cloud\");\n");
+  }
   html=html
     .replace("connect-src https://api.github.com", "connect-src https://raw.githubusercontent.com https://api.github.com")
     .replace("script-src 'unsafe-inline';","script-src 'unsafe-inline' 'self';")

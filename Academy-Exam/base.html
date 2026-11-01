@@ -249,20 +249,22 @@ button:focus-visible,.opt:focus-visible,input:focus-visible,textarea:focus-visib
 
 <script>
 const CONFIG = {
-  questionsUrl: "https://azmoon.app.n8n.cloud/webhook/exam-questions",
-  submitUrl:    "https://azmoon.app.n8n.cloud/webhook/youform-exam"
+  questionsUrl: "https://azmonmofid.app.n8n.cloud/webhook/exam-questions",
+  submitUrl:    "https://azmonmofid.app.n8n.cloud/webhook/youform-exam"
 };
+
+function academyN8nURL(value){return String(value||"").replace(/https:\/\/(?:azmoon|miladmirsheriseyed|miladmirsheriii|miladmmirsheri|miladmirsheriam)\.app\.n8n\.cloud\b/g,"https://azmonmofid.app.n8n.cloud");}
 
 async function loadConfig(){
   const p = new URLSearchParams(location.search);
-  if (p.get("q")) CONFIG.questionsUrl = p.get("q");
-  if (p.get("s")) CONFIG.submitUrl = p.get("s");
+  if (p.get("q")) CONFIG.questionsUrl = academyN8nURL(p.get("q"));
+  if (p.get("s")) CONFIG.submitUrl = academyN8nURL(p.get("s"));
   if (CONFIG.questionsUrl && CONFIG.submitUrl) return;
   try{
     const r = await fetch("config.json?v=" + Date.now(), {cache:"no-store"});
     if(r.ok){ const c = await r.json();
-      CONFIG.questionsUrl = CONFIG.questionsUrl || c.questionsUrl || "";
-      CONFIG.submitUrl    = CONFIG.submitUrl    || c.submitUrl    || ""; }
+      CONFIG.questionsUrl = CONFIG.questionsUrl || academyN8nURL(c.questionsUrl);
+      CONFIG.submitUrl    = CONFIG.submitUrl    || academyN8nURL(c.submitUrl); }
   }catch(e){}
 }
 

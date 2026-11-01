@@ -34,12 +34,12 @@ test('a proxied submission keeps its original body, signal, ID and real storage 
     // A valid public HTTPS request may traverse a proxy with another address space.
     // Forcing a target space rejects it before the storage server is contacted.
     if (init.targetAddressSpace === 'public') throw new TypeError('Failed to fetch');
-    assert.equal(url, 'https://azmoon.app.n8n.cloud/webhook/academy-submit-v5');
+    assert.equal(url, 'https://azmonmofid.app.n8n.cloud/webhook/academy-submit-v5');
     assert.equal(init, options);
     assert.equal(init.body, payload);
     return Response.json({ accepted: true, stored: true, submission_id: JSON.parse(init.body).submission_id });
   });
-  const receipt = await (await window.fetch('https://azmoon.app.n8n.cloud/webhook/academy-submit-v5', options)).json();
+  const receipt = await (await window.fetch('https://azmonmofid.app.n8n.cloud/webhook/academy-submit-v5', options)).json();
   assert.equal(receipt.accepted, true); assert.equal(receipt.stored, true);
   assert.equal(receipt.submission_id, 'sub_fixture_12345678'); assert.equal(calls, 1);
 });
