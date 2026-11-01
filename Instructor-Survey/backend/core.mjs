@@ -49,7 +49,7 @@ export function createApi({db,config,now=Date.now,schedule=()=>{}}){
   return {sign,verify,async handle(body,{ip='unknown'}={}){
     if(!body||typeof body!=='object'||Array.isArray(body))fail('درخواست معتبر نیست.');
     const {action}=body;
-    if(action==='health'){const s=await db('settings');return {ok:true,ready:!!s,version:'instructor-survey/3'};}
+    if(action==='health'){const s=await db('settings');return {ok:true,ready:!!s,version:'instructor-survey/4'};}
     if(action==='config'){const s=await db('settings');if(!s)fail('تنظیمات فرم در دسترس نیست.',503);return {ok:true,survey_id:SURVEY_ID,settings:{is_open:s.is_open,catalog:s.catalog}};}
     if(action==='admin_login'){await gate('login',ip,12,15);const secret=body.secret;if(typeof secret!=='string'||secret.length>256||clean(body.username,64).toLowerCase()!==username||!equal(hash(secret),config.adminKeyHash))fail('نام کاربری یا رمز مدیریت معتبر نیست.',401);return {ok:true,token:sign(),expires_at:new Date(now()+7200000).toISOString()};}
     if(action==='submit'||action==='admin_test_submit'){
@@ -87,13 +87,20 @@ export function createStore({url,key,fetchImpl=fetch}){
     return ['settings','settings_save'].includes(action)?result[0]:result;
   };
 }
-export async function syncResponse(db,id,{fetchImpl=fetch,webhook='https://nazarsanjimofid.app.n8n.cloud/webhook/instructor-survey'}={}){
+export const INSTRUCTOR_WEBHOOK_URL='https://azmonmofid.app.n8n.cloud/webhook/instructor-survey';
+export function webhookPayload(row){
+  return {submission_id:row.id,submitted_at:row.created_at,academy:row.academy,organizational_name:row.organizational_name,team_name:row.team_name,instructor_name:row.instructor_name,course_title:row.course_title,...Object.fromEntries(SCORE_QUESTIONS.map(q=>[q.code,row[q.code]])),average_score:Number(row.average_score),feedback:row.feedback,duration_seconds:row.duration_seconds,source_url:row.source_url};
+}
+export async function syncResponse(db,id,{fetchImpl=fetch,webhook=INSTRUCTOR_WEBHOOK_URL}={}){
   const rows=await db('sync_lookup',{id}),row=rows[0];if(!row||row.is_test||row.deleted_at||row.sync_status==='sent')return;
+  let syncError='ارتباط با گردش‌کار برقرار نشد؛ پاسخ در سوپابیس محفوظ است و ارسال دوباره از پنل ممکن است.';
   try{
-    const payload={...row,submission_id:row.id,submitted_at:row.created_at};delete payload.request_hash;delete payload.deleted_at;delete payload.is_test;
-    const r=await fetchImpl(webhook,{method:'POST',headers:{'Content-Type':'application/json','X-Idempotency-Key':row.id},body:JSON.stringify(payload),signal:AbortSignal.timeout(15000)});
-    if(!r.ok)throw Error('HTTP '+r.status);await db('sync_update',{id,update:{sync_status:'sent',sync_error:'',synced_at:new Date().toISOString()}});
-  }catch{await db('sync_update',{id,update:{sync_status:'failed',sync_error:'ارسال به گردش‌کار تأیید نشد؛ از پنل دوباره تلاش کنید.'}});}
+    const r=await fetchImpl(webhook,{method:'POST',headers:{'Content-Type':'application/json','X-Idempotency-Key':row.id},body:JSON.stringify(webhookPayload(row)),signal:AbortSignal.timeout(45000)});
+    if(!r.ok){syncError='ثبت در گردش‌کار تأیید نشد (HTTP '+r.status+'). پاسخ در سوپابیس محفوظ است.';throw Error('Webhook rejected');}
+    syncError='تأیید ثبت همین پاسخ در شیت دریافت نشد؛ وضعیت اجرای گردش‌کار را بررسی کنید.';
+    const ack=await r.json();if(ack?.accepted!==true||ack.submission_id!==row.id)throw Error('Unconfirmed sheet write');
+    await db('sync_update',{id,update:{sync_status:'sent',sync_error:'',synced_at:new Date().toISOString()}});
+  }catch{await db('sync_update',{id,update:{sync_status:'failed',sync_error:syncError}});}
 }
 export function createHandler(api,{origins}){
   return async request=>{
