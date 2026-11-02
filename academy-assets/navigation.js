@@ -4,7 +4,8 @@
   if (window.__ACADEMY_PREVIEW__ || document.getElementById('academyNavigation')) return;
   const root = document.documentElement;
   const section = document.currentScript?.dataset.academySection ||
-    (location.pathname.startsWith('/Academy-Exam/') ? 'exam' :
+    (location.pathname.startsWith('/videoo/') ? 'videos' :
+      location.pathname.startsWith('/Academy-Exam/') ? 'exam' :
       location.pathname.startsWith('/learning-studio/') ? 'studio' : 'home');
   root.dataset.academyApp = section;
   const header = document.createElement('header');
@@ -34,7 +35,8 @@
   const modules = [
     ['home', '/', 'خانه'],
     ['studio', '/learning-studio/?portal=participant', 'مفید استودیو'],
-    ['exam', '/Academy-Exam/', 'آزمون‌ها']
+    ['exam', '/Academy-Exam/', 'آزمون‌ها'],
+    ['videos', '/videoo/', 'ویدیوهای آموزشی']
   ];
   const protectCurrentPage = section === 'exam' || section === 'studio';
   function protect(link) {
