@@ -17,3 +17,8 @@ test('blocked preview never renders an Arvan credential form',()=>{
 test('student preview hides editing controls while retaining lesson navigation and progress',()=>{
   const app=view();app.preview=true;const html=app.library();assert.ok(!html.includes('data-action="edit-course"'));app.courseId=app.courses[2].id;const player=app.player();assert.match(player,/syllabus-lesson/);assert.match(player,/data-course-progress/);assert.match(player,/data-action="play"/);
 });
+test('browser draft transfer is explicit and hidden from the learning preview',()=>{
+  const app=view();app.previewOnly=false;app.localDraftCount=3;
+  assert.match(app.draftNotice(),/data-action="import-draft"/);app.preview=true;assert.equal(app.draftNotice(),'');
+  app.preview=false;app.localDraftMessage='<script>bad</script>';assert.ok(!app.draftNotice().includes('<script>'));
+});

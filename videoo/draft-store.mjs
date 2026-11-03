@@ -5,6 +5,7 @@ const bytesTo64=bytes=>btoa(String.fromCharCode(...new Uint8Array(bytes)));
 const from64=value=>Uint8Array.from(atob(value),c=>c.charCodeAt(0));
 const encoder=new TextEncoder(),decoder=new TextDecoder();
 const storageName=name=>'mofid-video-private-draft:'+name.toLowerCase();
+export function hasDraft(username){try{return !!JSON.parse(localStorage.getItem(storageName(username))||'null')?.data;}catch{return false;}}
 export function seedCatalog(){
   const excel=newCourse();Object.assign(excel,{title:'آموزش اکسل پیشرفته',description:'از مرتب‌سازی داده تا گزارش‌های حرفه‌ای؛ یک مسیر مرحله‌به‌مرحله برای کار دقیق‌تر با اکسل.',category:'مهارت‌های کاربردی',art:'excel'});excel.sections=[{id:uid(),title:'کار با داده‌ها',lessons:[]},{id:uid(),title:'تحلیل و گزارش‌سازی',lessons:[]},{id:uid(),title:'تمرین‌های کاربردی',lessons:[]}];
   const industry=newCourse();Object.assign(industry,{title:'آموزش تحلیل صنایع',description:'شناخت ساختار صنعت، بررسی متغیرهای اثرگذار و ساختن یک چارچوب تحلیلی منسجم.',category:'بازار سرمایه',art:'industry'});industry.sections=[{id:uid(),title:'چارچوب تحلیل صنعت',lessons:[]},{id:uid(),title:'بررسی و تحلیل صنایع',lessons:[]}];
@@ -23,6 +24,8 @@ export async function openDraft(username,password,exportedKey){
   async function save(){const iv=crypto.getRandomValues(new Uint8Array(12)),encrypted=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,encoder.encode(JSON.stringify(data)));localStorage.setItem(name,JSON.stringify({salt:bytesTo64(salt),iv:bytesTo64(iv),data:bytesTo64(encrypted)}));}
   return {exportedKey:bytesTo64(await crypto.subtle.exportKey('raw',key)),
     async request(action,payload={}){
+      if(action==='migration_snapshot')return data.migratedRevision===data.catalog.revision?null:structuredClone({catalog:data.catalog,progress:Object.values(data.progress)});
+      if(action==='migration_complete'){data.migratedRevision=payload.revision;await save();return {ok:true};}
       if(action==='bootstrap')return {ok:true,catalog:structuredClone(data.catalog),progress:Object.values(data.progress),username,previewOnly:true,storage:{connected:false,endpoint:'https://s3.ir-central1.arvanstorage.ir',region:'ir-central1',bucket:'mofid-academy-videos'}};
       if(action==='catalog_save'){if(payload.revision!==data.catalog.revision){const e=Error('نسخهٔ جدیدتری ذخیره شده است؛ صفحه را تازه کنید.');e.code='REVISION_CONFLICT';throw e;}data.catalog={courses:structuredClone(payload.courses),revision:data.catalog.revision+1};await save();return {ok:true,catalog:structuredClone(data.catalog)};}
       if(action==='progress_save'){const old=data.progress[payload.lessonId]||{ranges:[],revision:0};let ranges=old.ranges;for(const r of payload.ranges||[])ranges=mergeWatch(ranges,r[0],r[1]);const row={lesson_id:payload.lessonId,position:payload.position,duration:payload.duration,ranges,revision:old.revision+1,updated_at:new Date().toISOString()};data.progress[payload.lessonId]=row;await save();return {ok:true,progress:row};}

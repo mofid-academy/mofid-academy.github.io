@@ -92,7 +92,7 @@ test('S3 list parsing keeps private object keys, handles entities and pagination
   assert.equal(r.files.length,1);assert.equal(r.files[0].key,'آموزش & تست.mp4');assert.equal(r.cursor,'a&b');assert.equal(r.truncated,true);assert.throws(()=>parseListing('<!DOCTYPE bad><Contents/>'));
 });
 test('CORS setup preserves existing bucket rules and only adds the academy origin',async()=>{
-  let stored='';const storage=createStorage({fetchImpl:async(url,options={})=>{if(options.method==='PUT'){stored=options.body;return new Response('',{status:200});}return new Response('<CORSConfiguration><CORSRule><ID>other-app</ID><AllowedOrigin>https://other.example</AllowedOrigin></CORSRule></CORSConfiguration>');}});
+  let stored='';const storage=createStorage({fetchImpl:async(url,options={})=>{if(options.method==='PUT'){stored=options.body;assert.match(stored,/xmlns="http:\/\/s3.amazonaws.com\/doc\/2006-03-01\/"/);assert.equal(options.headers['content-md5'],createHash('md5').update(stored).digest('base64'));assert.match(new URL(url).searchParams.get('X-Amz-SignedHeaders'),/content-md5/);return new Response('',{status:200});}return new Response('<CORSConfiguration><CORSRule><ID>other-app</ID><AllowedOrigin>https://other.example</AllowedOrigin></CORSRule></CORSConfiguration>');}});
   await storage.configureCors(s3,config.siteOrigin);assert.match(stored,/other-app/);assert.match(stored,/https:\/\/mofid-academy.github.io/);assert.match(stored,/<ExposeHeader>ETag/);assert.ok(!stored.includes('<AllowedOrigin>*</AllowedOrigin>'));
 });
 test('HTTP interface rejects foreign origins and malformed or oversized requests',async()=>{

@@ -1,12 +1,22 @@
-import {openDraft} from './draft-store.mjs';
+import {openDraft,hasDraft} from './draft-store.mjs?v=20261103-server-1';
+import {planDraftImport} from './migration.mjs?v=20261103-server-1';
 export const API='https://siwmzffadbbhcyyppwzn.supabase.co/functions/v1/academy-video-api';
-// Public release remains disabled. Switch only after the private API deployment is approved.
-export const BACKEND_MODE='private-preview';
+// The owner API is active; the public catalogue remains Coming Soon.
+export const BACKEND_MODE='server';
 const EXISTING_MANAGEMENT_API='https://siwmzffadbbhcyyppwzn.supabase.co/functions/v1/parent-survey-api';
-let draft;
+let draft,draftMessage='';
 export function session(){try{return JSON.parse(sessionStorage.getItem('mofid-video-admin')||'null');}catch{return null;}}
-export function remember(value){if(!value)draft=null;try{if(value)sessionStorage.setItem('mofid-video-admin',JSON.stringify(value));else sessionStorage.removeItem('mofid-video-admin');}catch{}}
+export function remember(value){if(!value){draft=null;draftMessage='';}try{if(value)sessionStorage.setItem('mofid-video-admin',JSON.stringify(value));else sessionStorage.removeItem('mofid-video-admin');}catch{}}
 export async function request(action,data={},token){
+  if(BACKEND_MODE==='server'&&action==='draft_import'){
+    const latest=await request('bootstrap',{},token),snapshot=await draft?.request('migration_snapshot');
+    if(!snapshot)throw Error('پیش‌نویس قابل انتقالی در این مرورگر وجود ندارد.');
+    const plan=planDraftImport(latest.catalog.courses,snapshot);
+    if(plan.added)await request('catalog_save',{revision:latest.catalog.revision,courses:plan.courses},token);
+    for(const progress of plan.progress)await request('progress_save',progress,token);
+    await draft.request('migration_complete',{revision:snapshot.catalog.revision});
+    return {...await request('bootstrap',{},token),imported:plan.added};
+  }
   if(BACKEND_MODE==='private-preview'){
     if(action==='admin_login'){
       const r=await fetch(EXISTING_MANAGEMENT_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'admin_login',username:data.username,secret:data.password}),signal:AbortSignal.timeout(30000)});
@@ -25,6 +35,19 @@ export async function request(action,data={},token){
   let response;try{response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,data,token}),signal:AbortSignal.timeout(45000),keepalive:action==='progress_save'});}catch{throw Error('ارتباط با سامانه برقرار نشد؛ اتصال اینترنت را بررسی و دوباره تلاش کنید.');}
   let result;try{result=await response.json();}catch{throw Error('پاسخ سامانه خوانده نشد؛ دوباره تلاش کنید.');}
   if(!response.ok||!result.ok){const e=new Error(result.message||'عملیات انجام نشد.');e.code=result.code;e.status=response.status;throw e;}
+  if(action==='admin_login'&&hasDraft(result.username)){
+    try{draft=await openDraft(result.username,data.password);result.draftKey=draft.exportedKey;draftMessage='';}
+    catch{draftMessage='پیش‌نویس قبلی این مرورگر با رمز فعلی باز نشد. نسخهٔ رمزگذاری‌شده حفظ شده است.';}
+  }
+  if(action==='bootstrap'){
+    const stored=session();
+    if(!draft&&stored?.draftKey&&hasDraft(result.username)){
+      try{draft=await openDraft(result.username,undefined,stored.draftKey);}catch{draftMessage='برای بازیابی پیش‌نویس مرورگر، یک بار خارج و دوباره وارد شوید.';}
+    }
+    if(!draft&&!stored?.draftKey&&hasDraft(result.username)&&!draftMessage)draftMessage='پیش‌نویس قبلی این مرورگر حفظ شده است؛ برای انتقال، یک بار خارج و دوباره وارد شوید.';
+    const pending=await draft?.request('migration_snapshot');
+    result.localDraftCount=pending?.catalog.courses.length||0;result.localDraftMessage=draftMessage;
+  }
   return result;
 }
 

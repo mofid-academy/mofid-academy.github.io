@@ -70,8 +70,8 @@ export function createStorage({fetchImpl=fetch,now=()=>new Date()}={}){
       let old='';const r=await fetchImpl(url,{redirect:'error',signal:AbortSignal.timeout(20000)});
       if(r.ok)old=await r.text();else if(r.status!==404)throw Error('STORAGE_CORS_DENIED');
       const rules=[...old.matchAll(/<CORSRule>([\s\S]*?)<\/CORSRule>/g)].filter(m=>!m[1].includes('<ID>mofid-academy-video</ID>')).map(m=>m[0]).join('');
-      const body='<CORSConfiguration>'+rules+'<CORSRule><ID>mofid-academy-video</ID><AllowedOrigin>'+xmlEscape(origin)+'</AllowedOrigin><AllowedMethod>GET</AllowedMethod><AllowedMethod>HEAD</AllowedMethod><AllowedMethod>PUT</AllowedMethod><AllowedHeader>*</AllowedHeader><ExposeHeader>ETag</ExposeHeader><ExposeHeader>Content-Range</ExposeHeader><MaxAgeSeconds>3600</MaxAgeSeconds></CORSRule></CORSConfiguration>';
-      await request(config,{method:'PUT',query:{cors:''},headers:{'content-type':'application/xml'}},body);return true;
+      const body='<CORSConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">'+rules+'<CORSRule><ID>mofid-academy-video</ID><AllowedOrigin>'+xmlEscape(origin)+'</AllowedOrigin><AllowedMethod>GET</AllowedMethod><AllowedMethod>HEAD</AllowedMethod><AllowedMethod>PUT</AllowedMethod><AllowedHeader>*</AllowedHeader><ExposeHeader>ETag</ExposeHeader><ExposeHeader>Content-Range</ExposeHeader><MaxAgeSeconds>3600</MaxAgeSeconds></CORSRule></CORSConfiguration>';
+      await request(config,{method:'PUT',query:{cors:''},headers:{'content-type':'application/xml','content-md5':createHash('md5').update(body).digest('base64')}},body);return true;
     }
   };
 }
