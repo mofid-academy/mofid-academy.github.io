@@ -37,3 +37,31 @@ body{margin:0;min-height:100svh;background:radial-gradient(ellipse at 0% 0%,#fff
 .academy-home-tags{flex-wrap:wrap}
 @media(max-width:1000px){.academy-home-modules{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.academy-home-modules{grid-template-columns:1fr}}
+
+/* From Uiverse.io by Smit-Prajapati — adapted for the three academy sections. */
+.academy-hub-card{position:relative;width:200px;height:200px;background:lightgrey;border-radius:30px;overflow:hidden;box-shadow:rgba(100,100,111,.2) 0 7px 29px 0;transition:transform 1s ease-in-out;isolation:isolate}
+.academy-hub-background{position:absolute;inset:0;background:radial-gradient(circle at 100% 107%,#ff89cc 0%,#9cb8ec 30%,#00ffee 60%,#62c2fe 100%)}
+.academy-hub-logo{position:absolute;right:50%;bottom:50%;transform:translate(50%,50%);display:flex;align-items:center;gap:8px;color:#fff;pointer-events:none;transition:all .6s ease-in-out;z-index:1}
+.academy-hub-logo-svg{fill:currentColor;width:30px;height:44px;flex-shrink:0}
+.academy-hub-logo>span{font-size:23px;font-weight:850;line-height:1.5;white-space:nowrap;text-shadow:0 2px 10px #287e9133}
+.academy-hub-logo small{display:block;font-size:9px;font-weight:500;letter-spacing:2px}
+.academy-hub-icon{position:relative;display:inline-block;width:24px;height:24px;z-index:1;vertical-align:top;line-height:1}
+.academy-hub-icon .svg{width:100%;height:100%;fill:none;stroke:rgba(255,255,255,.9);stroke-linecap:round;stroke-linejoin:round;transition:all .5s ease-in-out}
+.academy-hub-box{position:absolute;display:block;padding:10px;text-align:right;background:rgba(255,255,255,.389);border-top:2px solid #fff;border-right:1px solid #fff;border-radius:10% 13% 42% 0%/10% 12% 75% 0%;box-shadow:rgba(100,100,111,.364) -7px 7px 29px 0;transform-origin:bottom left;transition:all 1s ease-in-out;line-height:1;text-decoration:none;z-index:2}
+.academy-hub-box::before{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .5s ease-in-out;pointer-events:none}
+.academy-hub-box1{width:70%;height:70%;bottom:-70%;left:-70%}
+.academy-hub-box1::before{background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#ff53d4 60%,#62c2fe 90%)}
+.academy-hub-box2{width:50%;height:50%;bottom:-50%;left:-50%;transition-delay:.2s}
+.academy-hub-box2::before{background:radial-gradient(circle at 30% 107%,#91e9ff 0%,#00acee 90%)}
+.academy-hub-box3{width:30%;height:30%;bottom:-30%;left:-30%;transition-delay:.4s}
+.academy-hub-box3::before{background:radial-gradient(circle at 30% 107%,#969fff 0%,#b349ff 90%)}
+.academy-hub-box4{width:10%;height:10%;bottom:-10%;left:-10%;padding:0;transition-delay:.6s;pointer-events:none}
+.academy-hub-card:is(:hover,:focus-within){transform:scale(1.1)}
+.academy-hub-card:is(:hover,:focus-within) .academy-hub-box{bottom:-1px;left:-1px}
+.academy-hub-card:is(:hover,:focus-within) .academy-hub-logo{transform:translate(0,0);bottom:20px;right:20px;gap:0}
+.academy-hub-card:is(:hover,:focus-within) .academy-hub-logo>span{width:0;opacity:0;overflow:hidden}
+.academy-hub-box:is(:hover,:focus-visible)::before{opacity:1}
+.academy-hub-box:is(:hover,:focus-visible) .svg{stroke:#fff;filter:drop-shadow(0 0 5px #fff)}
+.academy-hub-box:focus-visible{outline:2px solid #fff;outline-offset:-5px}
+@media(hover:none),(pointer:coarse){.academy-hub-card .academy-hub-box{bottom:-1px;left:-1px}.academy-hub-card .academy-hub-logo{transform:translate(0,0);bottom:20px;right:20px;gap:0}.academy-hub-card .academy-hub-logo>span{width:0;opacity:0;overflow:hidden}.academy-hub-card:is(:hover,:focus-within){transform:none}}
+@media(prefers-reduced-motion:reduce){.academy-hub-card,.academy-hub-card *,.academy-hub-card ::before{transition:none!important}.academy-hub-card:is(:hover,:focus-within){transform:none}.academy-hub-card .academy-hub-box{bottom:-1px;left:-1px}.academy-hub-card .academy-hub-logo{transform:translate(0,0);bottom:20px;right:20px;gap:0}.academy-hub-card .academy-hub-logo>span{width:0;opacity:0;overflow:hidden}}
