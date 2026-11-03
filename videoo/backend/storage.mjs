@@ -53,6 +53,7 @@ export function createStorage({fetchImpl=fetch,now=()=>new Date()}={}){
       return {size:Number(r.headers.get('content-length'))||0,type:r.headers.get('content-type')||'video/mp4'};
     },
     play(config,key){return signedURL(config,{key,now:now(),expires:3600,query:{'response-content-disposition':'inline'}});},
+    put(config,key,type){return signedURL(config,{method:'PUT',key,now:now(),expires:900,headers:{'content-type':type}});},
     async begin(config,key,type){
       const r=await request(config,{method:'POST',key,query:{uploads:''},headers:{'content-type':type}});
       const id=tag(await r.text(),'UploadId');if(!id)throw Error('INVALID_STORAGE_RESPONSE');return id;

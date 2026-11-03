@@ -17,6 +17,7 @@ test('active server client authenticates through the new API and only imports br
   let catalog={revision:0,courses:[]};const progress=new Map();
   const api=createApi({config:{adminUsername:username,adminKeyHash:createHash('sha256').update(password).digest('hex'),signingKey:'test-only-signing-key-at-least-32-characters',siteOrigin:'https://mofid-academy.github.io'},db:async(action,d={})=>{
     if(action==='rate_limit')return true;
+    if(action==='settings_read')return {release_enabled:false};
     if(action==='catalog')return structuredClone(catalog);
     if(action==='catalog_save'){assert.equal(d.revision,catalog.revision);catalog={revision:catalog.revision+1,courses:structuredClone(d.courses)};return structuredClone(catalog);}
     if(action==='storage_read')return null;

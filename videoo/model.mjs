@@ -20,7 +20,7 @@ export function moveLesson(courses,lessonId,courseId,sectionId){
   const s=c.sections.find(x=>x.id===sectionId)||c.sections[0];if(!s)throw Error('ابتدا یک فصل بسازید.');
   if(!item)throw Error('قسمت پیدا نشد.');s.lessons.push(item);return item;
 }
-export function nextToWatch(c,progress){const list=lessons(c),started=list.filter(l=>progress[l.id]?.position&&!completed(progress[l.id])).sort((a,b)=>String(progress[b.id].updated_at||'').localeCompare(String(progress[a.id].updated_at||'')));return started[0]||list.find(l=>!completed(progress[l.id])&&l.objectKey)||list.find(l=>l.objectKey)||list[0];}
+export function nextToWatch(c,progress){const list=lessons(c),started=list.filter(l=>progress[l.id]?.position&&!completed(progress[l.id])).sort((a,b)=>String(progress[b.id].updated_at||'').localeCompare(String(progress[a.id].updated_at||'')));return started[0]||list.find(l=>!completed(progress[l.id])&&(l.objectKey||l.available))||list.find(l=>l.objectKey||l.available)||list[0];}
 export function newCourse(kind='course'){
   return {id:uid(),title:kind==='single'?'ویدیوی مستقل جدید':'مجموعهٔ جدید',description:'',category:'عمومی',instructor:'',level:'همهٔ سطوح',kind,status:'draft',art:kind==='single'?'video':'data',sections:[{id:uid(),title:kind==='single'?'ویدیو':'فصل اول',lessons:kind==='single'?[newLesson()]:[]}]};
 }

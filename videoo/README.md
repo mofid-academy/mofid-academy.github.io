@@ -1,41 +1,45 @@
 # Academy video library
 
-Public entry: https://mofid-academy.github.io/videoo/
+Public / learner entry: https://mofid-academy.github.io/videoo/
 
-Owner preview: https://mofid-academy.github.io/videoo/admin.html
+Management: https://mofid-academy.github.io/videoo/admin.html
 
-The public route always renders Coming Soon and contains no private catalogue or playback URL. The shared academy header and home card link to this route. Branding reuses Pinar VF, the academy logo, mint/green colours, and the existing entry effects.
+## Owner workflow
 
-## Current deployment status
+1. Open **مدیریت مجموعه‌ها → مجموعهٔ جدید**. A collection is the teaching folder; for example, **آموزش تحلیل صنایع**.
+2. Add a section with **فصل جدید**, then use **افزودن قسمت** for each episode, such as **قسمت اول** and **قسمت دوم**.
+3. For each episode, use **انتخاب از آروان** for an existing private object, or **آپلود فیلم** to upload directly. Save the collection.
+4. Use **افزودن عکس جلد** for a JPG, PNG or WebP image up to 5 MiB. It is uploaded privately to Arvan and saved with the collection.
+5. Press **انتشار مجموعه**. Publishing requires a saved playable video and checks the first object's availability.
+6. In **کاربران و انتشار**, create the learner accounts and press **فعال‌کردن نمایش برای کاربران** when ready.
+7. Give each person their video-library username and password and the public entry URL. After login they select a collection and an episode. Their playback position and watched episodes are saved separately.
 
-`client.mjs` has `BACKEND_MODE='server'`. The `academy-video-api` Edge Function was deployed after the owner's explicit approval on 2026-11-03. Management uses the existing management username and password, with scoped signed sessions checked by the new handler. Catalogue edits and owner-preview watch progress are stored in the private Supabase tables. Public release remains disabled.
+The global switch remains **off by default**. The public page displays Coming Soon until the owner explicitly enables it. Publishing a collection alone does not turn on the learner portal. An active learner account can see all published collections, while drafts remain management-only. The accounts created here belong to the video library and do not change survey, exam or learning-studio accounts.
 
-The Supabase schema in `backend/schema.sql` has been applied, with RLS and no anonymous/authenticated table or RPC access. No existing Edge Function was modified. The live API health check succeeds, while unauthenticated catalogue, storage, playback, progress and upload requests return 401.
+## Deployed architecture
 
-The Arvan settings form is now available after management login. No real Arvan credentials have been supplied or saved yet, so Arvan playback and uploads still require the owner to complete this private form. The handler tests the connection before storing credentials. Do not describe the Arvan connection as complete until that test succeeds.
+`academy-video-api` runs in the existing Supabase project. Existing management credentials authenticate the owner with purpose-scoped signed sessions. Learner accounts are created only by the owner, with unique salted PBKDF2-HMAC-SHA256 hashes at 600,000 iterations. Passwords and hashes are never returned by the API. Password changes and activation changes rotate a server-checked session version, invalidating existing learner sessions. No registration endpoint is public.
 
-## Existing browser drafts
+`backend/schema.sql` defines the private catalogue, progress and rate limits. `backend/publishing.sql` adds private learner accounts and the global publication switch. All tables have RLS and no anonymous/authenticated table or RPC grants; only the backend service role accesses them. This deployment does not modify existing survey APIs or accounts. The backend verifies custom signed sessions, so the platform JWT check remains disabled as explicitly approved by the owner.
 
-Encrypted drafts from the former browser preview remain intact. After successful management login, an existing draft can be decrypted with the owner's supplied password and its key retained only for that session. A notice offers an explicit transfer to the server; nothing is silently imported or deleted. Import preserves current server courses, remaps conflicting copies and their lesson progress together, and records completion only after all writes succeed. The encrypted browser backup is retained. A password mismatch does not block server login and does not overwrite the old backup.
+The anonymous health endpoint returns only the portal state. Learner bootstrap filters published courses and playable lessons, removes object keys, signs private covers only for authorized learners, and returns only the caller's progress. Playback checks publication and account status again. Management operations, storage configuration, file listing and uploads reject learner sessions. Turning off the portal blocks subsequent API access; an already-issued S3 bearer URL can remain usable until its one-hour expiry.
 
-## Server implementation
+## Arvan storage
 
-The backend source is in `backend/`: scoped management sessions, optimistic catalogue revisions, per-actor progress, encrypted Vault storage for Arvan credentials, S3 V4 signatures, private playback, object selection and multipart uploads. It reads the existing management configuration through the service-role-only `zr_runtime_config` RPC. Platform JWT validation is disabled because this application's signed management sessions are verified in the handler. The owner explicitly approved this authentication and privilege boundary before deployment.
+The owner configured the connection through the private settings form. Real credentials remain encrypted in Supabase Vault and never enter GitHub or browser-readable catalogue records. Both bucket and object public access must stay disabled. The settings form tests credentials before saving. Existing CORS rules are preserved; the academy origin is added for GET, HEAD and PUT with ETag exposure.
 
-The deployed bundle includes `index.ts`, `core.mjs`, `storage.mjs`, and `deno.json`. Configure Arvan using the owner's private settings form; never put actual credentials in GitHub, chat, screenshots, or browser-readable catalogue records. Authenticated behavior is covered by fixture-based tests; an actual owner login and real Arvan operations still need verification with the owner's credentials.
+Video uploads use direct 10 MiB multipart parts, progress, bounded retries, pause/resume within the page and cancellation. The in-site video size limit is 500 MiB. Cover images use short-lived, content-type-bound signed PUT URLs, with size/type verified before attachment. Signed media URLs are temporary bearer capabilities, not DRM. Catalogue deletion/unpublishing does not delete original objects in Arvan.
 
-## Arvan setup
+Collections and sections organize catalogue metadata; creating a collection does not require moving the video into a physical Arvan folder. The original private objects can be reused or moved between collections through metadata.
 
-Bucket: `mofid-academy-videos`. Existing private test object: `J1.mp4`. Both bucket and object public access must remain disabled. Copy the actual endpoint and signing region from the Arvan account. The default UI endpoint reflects the region label seen in the current account and must be verified by the connection test.
+## Progress and existing drafts
 
-The server tests the credentials before saving them in Vault. Optional CORS setup preserves other bucket rules and adds only the academy origin. Browser uploads use 10 MiB multipart chunks with progress, bounded retries, pause/resume within the current page, and cancellation. Uploads do not pass through GitHub or Supabase Storage. Existing files uploaded in Arvan can be selected separately and connected to lessons. Signed playback URLs are bearer capabilities and expire; they are not DRM or protection against screen recording.
+Progress is keyed by the authenticated learner ID (or the owner for management preview), unions watched intervals, remembers position and completes at 90% of watched duration. Seeking to the end alone does not complete an episode. Moving an episode between collections retains its identity and progress.
 
-## Course and progress model
-
-Courses contain sections and lessons; standalone videos use the same model. Sections and lessons can be reordered, lessons moved between collections, and titles/descriptions edited. Deletes affect catalogue metadata, not original Arvan objects. Public release remains disabled even when a course is marked ready.
-
-Progress retains the lesson identity across moves, remembers position, merges watched intervals, and marks completion at 90% of watched duration. Seeking to the end alone does not complete a lesson. Server progress uses the authenticated actor, not a client-supplied identity. This release is restricted to management preview; student accounts and public course access are not enabled.
+Encrypted drafts from the former browser preview remain intact. Successful management login can decrypt an existing draft and offer an explicit server transfer. Import preserves server courses, remaps conflicting copies with their progress, and records completion only after all writes succeed. The encrypted backup is retained; password mismatches do not overwrite it. Learner sessions never read management browser drafts.
 
 ## Verification
 
-Run `node --test videoo/tests/*.test.mjs` from the repository root. Tests cover authentication/expiry/forgery, catalogue conflicts, private storage failure handling, credential redaction, endpoint restrictions, upload signing, CORS preservation, watch progress, course movement, encrypted draft migration and the public coming-soon boundary. The live API was checked separately for health and anonymous denials. Managed preview could not run because the `sites-previewd` daemon mailbox was unavailable; no alternate browser runtime or server was installed.
+Run `node --test videoo/tests/*.test.mjs` from the repository root. Tests cover authentication and purpose checks, management/learner boundaries, publication gates, session revocation, per-user progress, private storage failures, cover upload restrictions, upload signing, CORS integrity, XSS escaping, existing draft migration and the public Coming Soon boundary.
+
+Managed browser preview is unavailable because the `sites-previewd` mailbox is missing. No alternate browser server or runtime was installed. The published public route is checked separately; full owner/learner browser interaction and a real media upload require actual account credentials and files.

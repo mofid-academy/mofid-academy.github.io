@@ -3,7 +3,7 @@ import {uid,lessons} from './model.mjs';
 // Import a browser draft without replacing any server course. Remap a colliding
 // course as a separate copy, preserving the lesson-to-progress relationship.
 export function planDraftImport(serverCourses,snapshot){
-  const canonical=v=>Array.isArray(v)?'['+v.map(canonical).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canonical(v[k])).join(',')+'}':JSON.stringify(v);
+  const canonical=v=>Array.isArray(v)?'['+v.map(canonical).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).filter(k=>k!=='coverUrl'&&!(k==='coverObjectKey'&&!v[k])).sort().map(k=>JSON.stringify(k)+':'+canonical(v[k])).join(',')+'}':JSON.stringify(v);
   const courses=structuredClone(serverCourses),lessonIds=new Map();let added=0;
   const ids=c=>[c.id,...c.sections.flatMap(s=>[s.id,...s.lessons.map(l=>l.id)])];
   const used=new Set(courses.flatMap(ids));

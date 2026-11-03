@@ -1,5 +1,5 @@
-import {openDraft,hasDraft} from './draft-store.mjs?v=20261103-server-1';
-import {planDraftImport} from './migration.mjs?v=20261103-server-1';
+import {openDraft,hasDraft} from './draft-store.mjs?v=20261103-publish-1';
+import {planDraftImport} from './migration.mjs?v=20261103-publish-1';
 export const API='https://siwmzffadbbhcyyppwzn.supabase.co/functions/v1/academy-video-api';
 // The owner API is active; the public catalogue remains Coming Soon.
 export const BACKEND_MODE='server';
@@ -39,7 +39,7 @@ export async function request(action,data={},token){
     try{draft=await openDraft(result.username,data.password);result.draftKey=draft.exportedKey;draftMessage='';}
     catch{draftMessage='پیش‌نویس قبلی این مرورگر با رمز فعلی باز نشد. نسخهٔ رمزگذاری‌شده حفظ شده است.';}
   }
-  if(action==='bootstrap'){
+  if(action==='bootstrap'&&result.role!=='student'){
     const stored=session();
     if(!draft&&stored?.draftKey&&hasDraft(result.username)){
       try{draft=await openDraft(result.username,undefined,stored.draftKey);}catch{draftMessage='برای بازیابی پیش‌نویس مرورگر، یک بار خارج و دوباره وارد شوید.';}

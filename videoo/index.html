@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fa" dir="rtl" data-academy-app="videos" data-mofid-entry="home">
+<html lang="fa" dir="rtl" data-academy-app="videos" data-mofid-entry="home" data-video-mode="student">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -10,9 +10,10 @@
   <link rel="stylesheet" href="/academy-assets/navigation.css?v=20261102-video-1">
   <link rel="stylesheet" href="/academy-assets/home.css?v=20261027-1">
   <link rel="stylesheet" href="/academy-assets/entry-ui.css?v=20261028-7">
-  <link rel="stylesheet" href="/videoo/style.css?v=20261102-1">
+  <link rel="stylesheet" href="/videoo/style.css?v=20261103-publish-1">
   <script defer src="/academy-assets/navigation.js?v=20261102-video-1" data-academy-section="videos"></script>
   <script defer src="/academy-assets/entry-ui.js?v=20261028-7" data-entry-surface="home"></script>
+  <script type="module" src="/videoo/portal.mjs?v=20261103-publish-1"></script>
 </head>
 <body>
   <main id="academyHome" class="video-public">
@@ -27,5 +28,8 @@
     </section>
     <footer class="video-footer"><span>آکادمی مفید · برای یادگیری ماندگار</span><a href="/videoo/admin.html">ورود مدیریت</a></footer>
   </main>
+  <main id="videoApp" aria-live="polite" hidden></main>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <dialog id="videoDialog" class="video-dialog"></dialog>
 </body>
 </html>

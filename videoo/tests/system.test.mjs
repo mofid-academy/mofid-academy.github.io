@@ -14,6 +14,7 @@ function fixture(){
   const db=async(action,data={})=>{
     calls.push({action,data});
     if(action==='rate_limit')return true;
+    if(action==='settings_read')return {release_enabled:false};
     if(action==='catalog')return structuredClone(catalog);
     if(action==='catalog_save'){if(data.revision!==catalog.revision){const e=Error('Conflict');e.code='REVISION_CONFLICT';throw e;}catalog={courses:data.courses,revision:catalog.revision+1};return structuredClone(catalog);}
     if(action==='storage_read')return savedStorage;
@@ -30,7 +31,7 @@ function fixture(){
 }
 
 test('every catalogue, video, upload and configuration action requires server authentication',async()=>{
-  const f=fixture();for(const action of ['bootstrap','catalog_save','storage_status','storage_files','storage_connect','video_play','progress_save','upload_begin','upload_part','upload_complete','upload_abort'])await assert.rejects(f.api.handle({action}),e=>e.status===401);
+  const f=fixture();for(const action of ['bootstrap','catalog_save','storage_status','storage_files','storage_connect','video_play','progress_save','upload_begin','upload_part','upload_complete','upload_abort','cover_upload_begin','cover_upload_complete','course_publish','release_set','student_list','student_create','student_update'])await assert.rejects(f.api.handle({action}),e=>e.status===401);
   assert.equal(f.calls.length,0,'unauthenticated requests must not read any private rows or Vault');
 });
 test('forged signatures, wrong audiences, upload tokens and expired tokens cannot act as administrator',async()=>{
