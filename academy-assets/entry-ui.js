@@ -87,7 +87,7 @@
   function mountLogin(card) {
     if(!card)return ()=>{};
     if(mounted.has(card))return mounted.get(card);
-    const cleanupBackground=mountBackground('login'),cleanupSpotlight=mountSpotlights(card,[card]);
+    const cleanupBackground=document.documentElement.dataset.academyApp==='videos'?()=>{}:mountBackground('login'),cleanupSpotlight=mountSpotlights(card,[card]);
     const reset=()=>{card.style.setProperty('--card-rx','0deg');card.style.setProperty('--card-ry','0deg');};
     const tilt=event=>{
       if(reduced.matches||!fine.matches||card.matches(':focus-within')){reset();return;}
@@ -99,7 +99,7 @@
     mounted.set(card,cleanup);return cleanup;
   }
   function initHome() {
-    const main=document.getElementById('academyHome');if(!main||mounted.has(main))return;
+    const main=document.getElementById('academyHome')||(document.documentElement.dataset.academyApp==='videos'?document.getElementById('videoApp'):null);if(!main||mounted.has(main))return;
     const cleanups=[mountBackground('home'),mountSpotlights(main.querySelector('.academy-home-modules'),[...main.querySelectorAll('.academy-module')])];
     main.querySelectorAll('.mofid-metal').forEach(surface=>cleanups.push(mountMetal(surface,surface.closest('a')||surface)));
     mounted.set(main,()=>cleanups.forEach(cleanup=>cleanup()));
