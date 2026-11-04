@@ -24,14 +24,4 @@
 @media(max-width:900px){.access-layout{grid-template-columns:1fr}.publishing-panel{align-items:flex-start;flex-direction:column}.cover-editor{grid-template-columns:200px 1fr}.workspace-tabs{overflow-x:auto}.workspace-tabs button{white-space:nowrap;flex-shrink:0}}
 @media(max-width:560px){.cover-editor{grid-template-columns:1fr}.cover-editor .course-cover{height:180px}.student-row{align-items:flex-start;flex-direction:column}.student-row .button-group{justify-content:flex-start}.workspace-actions{flex-wrap:wrap}.workspace-tabs{width:100%}}
 
-/* From Uiverse.io by jubayer-10 — scoped, accessible Mofid play control. */
-.mofid-video-play{display:block;width:83px;height:83px;padding:0;margin:0 auto 18px;border:0;border-radius:50%;background:transparent;cursor:pointer;line-height:1;-webkit-tap-highlight-color:transparent}
-.mofid-video-play-ring{position:relative;display:grid;place-items:center;width:83px;height:83px;border-radius:50%;background:#e6f5ec;box-shadow:inset 0 0 1px 1px #164d3b4d,2px 3px 5px #0000001a}
-.mofid-video-play-shadow{position:absolute;width:72px;height:72px;top:5px;left:50%;transform:translateX(-50%);background:#071d15;border-radius:50%;filter:blur(1px);z-index:1}
-.mofid-video-play-face{position:absolute;display:grid;place-items:center;width:72px;height:72px;top:5px;left:50%;transform:translateX(-50%);border-radius:50%;background:linear-gradient(180deg,#0f8273,#35b998);box-shadow:inset 0 4px 2px #6ed5b6,inset 0 -4px 0 #075747,0 0 2px #000a;z-index:2;transition:box-shadow .12s,transform .12s}
-.mofid-video-play-glyph{display:block;width:32px;height:32px;color:#e5fff3;filter:drop-shadow(0 2px 2px #0008);transition:width .12s;transform:translateX(2px)}
-.mofid-video-play .mofid-video-play-glyph svg{display:block;width:100%;height:100%;fill:currentColor}
-.mofid-video-play:active .mofid-video-play-face{transform:translate(-50%,1px);box-shadow:inset 0 4px 2px #6ed5b680,inset 0 -4px 2px #0f827380,0 0 2px #000a}
-.mofid-video-play:active .mofid-video-play-glyph{width:31px}
-.mofid-video-play:focus-visible{outline:3px solid #86dcb3;outline-offset:5px}
-@media(prefers-reduced-motion:reduce){.mofid-video-play *{transition:none}}
+.syllabus-cover{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;background:var(--surface,#f4faf6);border-bottom:1px solid var(--line,#d5e5db)}
