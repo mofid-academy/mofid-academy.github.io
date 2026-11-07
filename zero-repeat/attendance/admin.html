@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#123c35"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src https://siwmzffadbbhcyyppwzn.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>مدیریت حضوری و آنلاین | ZERO REPEAT</title>
+  <link rel="icon" href="../brand/logo.webp" type="image/webp"><link rel="stylesheet" href="attendance.css?v=20261107.1"><script type="module" src="admin.mjs?v=20261107.1"></script>
+</head>
+<body>
+  <header class="site-header"><div class="header-inner"><div class="brand"><img src="../brand/logo.webp" alt="نشان مفید آکادمی" width="56" height="56"><div><strong>مفید آکادمی</strong><span lang="en" dir="ltr">MOFID ACADEMY</span></div></div><a class="header-label" href="./">فرم شرکت در کلاس‌ها</a></div></header>
+  <main class="admin-main">
+    <section id="login-panel" class="form-card login-card" aria-labelledby="login-title">
+      <span class="eyebrow" dir="ltr">ZERO REPEAT</span><h1 id="login-title">مدیریت نحوهٔ شرکت</h1><p class="card-caption">با حساب مدیریت فعلی ZERO REPEAT وارد شوید.</p>
+      <form id="login-form"><label class="field"><span>نام کاربری مدیریت</span><input id="admin-username" name="username" dir="ltr" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="64" required></label><label class="field"><span>رمز مدیریت</span><input id="admin-secret" name="password" type="password" autocomplete="current-password" maxlength="256" required></label><div id="login-error" class="error" role="alert" hidden></div><button id="login-button" class="button primary" type="submit">ورود به مدیریت</button></form>
+    </section>
+    <section id="admin-panel" hidden>
+      <div class="admin-title"><div><span class="eyebrow" dir="ltr">ZERO REPEAT</span><h1>نحوهٔ شرکت در کلاس‌ها</h1><p>فهرست پاسخ‌های حضوری و آنلاین</p></div><div class="admin-buttons"><button id="refresh-button" class="button secondary" type="button">به‌روزرسانی</button><button id="export-button" class="button primary" type="button" disabled>خروجی اکسل این نما</button><button id="logout-button" class="button secondary" type="button">خروج</button></div></div>
+      <div class="stats"><div class="stat"><span>کل پاسخ‌ها</span><strong id="stat-total">—</strong></div><div class="stat"><span>حضوری</span><strong id="stat-in-person">—</strong></div><div class="stat"><span>آنلاین</span><strong id="stat-online">—</strong></div></div>
+      <div class="admin-card"><div class="filters"><input id="search-filter" class="filter-input" type="search" placeholder="جست‌وجوی نام یا نام سازمانی" aria-label="جست‌وجوی نام یا نام سازمانی"><select id="mode-filter" class="filter-select" aria-label="فیلتر نحوهٔ شرکت"><option value="">همهٔ پاسخ‌ها</option value="in_person">حضوری</option><option value="online">آنلاین</option></select><button id="clear-filters" class="button secondary" type="button">پاک‌کردن فیلترها</button></div>
+        <p id="admin-status" class="status" role="status" hidden></p><p id="admin-error" class="error" role="alert" hidden></p>
+        <div class="table-wrap"><table><caption class="muted">پاسخ‌های ثبت‌شده برای کلاس‌های ZERO REPEAT</caption><thead><tr><th scope="col">ردیف</th><th scope="col">نام و نام خانوادگی</th><th scope="col">نام سازمانی</th><th scope="col">نحوهٔ شرکت</th><th scope="col">زمان ثبت (تهران)</th><th scope="col">مدیریت</th></tr></thead><tbody id="entry-rows"></tbody></table></div><p id="empty-state" class="empty-state" hidden>پاسخی مطابق این فیلترها وجود ندارد.</p><p id="table-count" class="table-status"></p>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><span>کلاس‌های ZERO REPEAT · مفید آکادمی</span><a href="./">بازگشت به فرم</a></footer>
+</body>
+</html>
