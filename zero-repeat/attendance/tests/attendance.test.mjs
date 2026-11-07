@@ -15,12 +15,20 @@ function fixture(){
   const db=async(action,args)=>{calls.push({action,args});if(action==='rate')return {allowed:true};if(action==='health')return {ready:true};if(action==='submit'){const previous=rows.get(args.id);if(previous&&previous.fingerprint!==args.fingerprint)throw Error('ID_CONFLICT');rows.set(args.id,previous||args);return {stored:true,id:args.id,attendance_mode:args.attendance_mode,created_at:new Date(now).toISOString()};}if(action==='list')return {entries:[...rows.values()],total:rows.size,has_more:false,snapshot:new Date(now).toISOString()};if(action==='delete')return {id:args.id,deleted_at:new Date(now).toISOString()};throw Error(action);};
   return {api:createApi({db,config,now:()=>now}),db,calls,rows,advance:ms=>{now+=ms;}};
 }
-test('attendance is required, accepts only the two modes, and organizational name is optional',()=>{
-  assert.deepEqual(normalizeEntry({...entry,username:''}),{...entry,username:''});
+test('attendance and organizational name are required; only the two modes are accepted',()=>{
+  for(const username of [undefined,null,'','  '])assert.throws(()=>normalizeEntry({...entry,username}),/نام سازمانی الزامی/);
   assert.equal(normalizeEntry(entry).username,'example.test');
   assert.equal(normalizeEntry({...entry,attendance_mode:'online'}).attendance_mode,'online');
   for(const attendance_mode of [undefined,'','حضوری','both',null])assert.throws(()=>normalizeEntry({...entry,attendance_mode}));
   assert.throws(()=>normalizeEntry({...entry,full_name:' '}));assert.throws(()=>normalizeEntry({...entry,username:'person@example.test'}));
+});
+test('requests without an organizational name are rejected before any database operation',async()=>{
+  const f=fixture(),handler=createHandler(f.api);
+  for(const username of [undefined,'','   ']){
+    const response=await handler(new Request('https://example.test',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://mofid-academy.github.io'},body:JSON.stringify({action:'submit',request_id:id,data:{...entry,username}})}));
+    assert.equal(response.status,400);assert.match((await response.json()).message,/نام سازمانی الزامی/);
+  }
+  assert.equal(f.calls.length,0);
 });
 test('a retry keeps one record and the receipt confirms the exact ID and mode',async()=>{
   const f=fixture(),request={action:'submit',request_id:id,data:entry};

@@ -11,22 +11,30 @@
   <title>حضوری یا آنلاین | کلاس‌های ZERO REPEAT</title>
   <link rel="icon" href="../brand/logo.webp" type="image/webp">
   <link rel="stylesheet" href="attendance.css?v=20261107.1">
-  <script type="module" src="register.mjs?v=20261107.1"></script>
+  <link rel="stylesheet" href="attendance-design.css?v=20261107.2">
+  <script type="module" src="register.mjs?v=20261107.2"></script>
 </head>
-<body>
+<body class="attendance-page">
   <header class="site-header"><div class="header-inner">
     <div class="brand"><img src="../brand/logo.webp" alt="نشان مفید آکادمی" width="56" height="56"><div><strong>مفید آکادمی</strong><span lang="en" dir="ltr">MOFID ACADEMY</span></div></div>
     <span class="header-label" lang="en" dir="ltr">ZERO REPEAT</span>
   </div></header>
   <main class="public-main">
     <div id="preview-note" class="preview-note" hidden>حالت پیش‌نمایش؛ هیچ اطلاعاتی ذخیره نمی‌شود.</div>
-    <section class="intro"><span class="eyebrow">اعلام نحوهٔ شرکت در کلاس‌ها</span><h1>کلاس‌های <bdi lang="en">ZERO REPEAT</bdi></h1><p>چطور در کلاس‌ها همراه ما هستید؟<br>نام خود را بنویسید و نحوهٔ شرکتتان را انتخاب کنید.</p></section>
-    <section class="form-card" aria-labelledby="form-title">
+    <div class="attendance-layout">
+    <section class="intro course-card">
+      <div class="course-meta"><span class="course-status"><i aria-hidden="true"></i>مفید آکادمی</span><span class="course-category" lang="en" dir="ltr">LEARN TOGETHER</span></div>
+      <div class="course-art"><img src="attendance-illustration.svg?v=20261107.2" alt="" width="500" height="300" aria-hidden="true"></div>
+      <span class="eyebrow">اعلام نحوهٔ شرکت در کلاس‌ها</span><h1>کلاس‌های <bdi lang="en">ZERO REPEAT</bdi></h1><p>حضوری یا آنلاین،<br>در مسیر یادگیری کنار هم هستیم.</p>
+      <div class="course-bottom"><span class="course-monogram" aria-hidden="true">ZR</span><div><strong>همراهی از هر جا</strong><span id="selection-status" aria-live="polite">نحوهٔ شرکتتان را در فرم انتخاب کنید.</span></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg></div>
+    </section>
+    <section class="form-card entry-card" aria-labelledby="form-title">
       <form id="attendance-form">
-        <h2 id="form-title">انتخاب شما</h2><p class="card-caption">فقط چند لحظه تا ثبت پاسخ</p>
+        <div class="entry-heading"><span class="entry-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 21v-3a6.5 6.5 0 0 1 13 0v3m3-14v8m-4-4h8"/></svg></span><span class="entry-step">حضوری / آنلاین</span></div>
+        <h2 id="form-title">چطور همراه ما هستید؟</h2><p class="card-caption">مشخصات خود را وارد کنید و نحوهٔ شرکتتان را بگویید.</p>
         <div class="name-fields">
           <label class="field"><span>نام و نام خانوادگی <span class="required">*</span></span><input id="full-name" name="full_name" autocomplete="name" maxlength="120" minlength="2" required placeholder="نام و نام خانوادگی شما"></label>
-          <label class="field"><span>نام سازمانی <small>(اختیاری)</small></span><input id="username" name="username" dir="ltr" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" pattern="[a-zA-Z][a-zA-Z0-9._\-]{0,63}" placeholder="M.mirsheri" title="نام سازمانی را با حروف انگلیسی و بدون ایمیل وارد کنید."></label>
+          <label class="field"><span>نام سازمانی <span class="required">*</span></span><input id="username" name="username" dir="ltr" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" pattern="[a-zA-Z][a-zA-Z0-9._\-]{0,63}" placeholder="M.mirsheri" title="نام سازمانی را با حروف انگلیسی و بدون ایمیل وارد کنید." aria-describedby="username-hint" required><small id="username-hint">با حروف انگلیسی و بدون نشانی ایمیل</small></label>
         </div>
         <fieldset class="mode-fieldset"><legend>نحوهٔ شرکت در کلاس‌ها <span class="required">*</span></legend>
           <div class="mode-options">
@@ -35,7 +43,7 @@
           </div>
         </fieldset>
         <div id="form-error" class="error" role="alert" hidden></div>
-        <button id="submit-button" class="button primary submit" type="submit"><span>ثبت نحوهٔ شرکت</span><span aria-hidden="true">←</span></button>
+        <button id="submit-button" class="button primary submit gradient-button" type="submit"><span>ثبت نحوهٔ شرکت</span><span class="button-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M19 12H5m6-6-6 6 6 6"/></svg></span></button>
         <p class="privacy-note">پاسخ شما برای برنامه‌ریزی کلاس‌ها در اختیار مفید آکادمی قرار می‌گیرد.</p>
       </form>
       <section id="receipt" class="receipt" tabindex="-1" aria-live="polite" hidden>
@@ -43,7 +51,8 @@
       </section>
       <noscript><p class="error">برای ثبت نحوهٔ شرکت، جاوااسکریپت مرورگر را فعال کنید.</p></noscript>
     </section>
-    <p class="below-card">هر دو شیوه، یک مسیر یادگیری.</p>
+    </div>
+    <p class="below-card"><span aria-hidden="true">◇</span> هر دو شیوه، یک مسیر یادگیری.</p>
   </main>
   <footer class="site-footer"><span>کلاس‌های ZERO REPEAT · مفید آکادمی</span><a href="admin.html">مدیریت پاسخ‌ها</a></footer>
 </body>

@@ -11,7 +11,8 @@ export function normalizeEntry(input){
   if(!input||typeof input!=='object'||Array.isArray(input))fail('اطلاعات ثبت معتبر نیست.');
   const full_name=text(input.full_name,120),username=text(input.username,64).toLowerCase();
   if(full_name.length<2)fail('نام و نام خانوادگی را وارد کنید.');
-  if(username&&!/^[a-z][a-z0-9._-]{0,63}$/.test(username))fail('نام سازمانی را مانند M.mirsheri و بدون نشانی ایمیل وارد کنید.');
+  if(!username)fail('نام سازمانی الزامی است؛ آن را مانند M.mirsheri وارد کنید.');
+  if(!/^[a-z][a-z0-9._-]{0,63}$/.test(username))fail('نام سازمانی را مانند M.mirsheri و بدون نشانی ایمیل وارد کنید.');
   if(!['in_person','online'].includes(input.attendance_mode))fail('یکی از گزینه‌های حضوری یا آنلاین را انتخاب کنید.');
   return {full_name,username,attendance_mode:input.attendance_mode};
 }
@@ -29,7 +30,7 @@ export function createApi({db,config,now=Date.now}){
   async function rate(kind,ip){const result=await db('rate',{key:createHmac('sha256',config.signingKey).update('attendance:'+kind+':'+ip).digest('hex'),limit:kind==='login'?12:600});if(result?.allowed!==true)fail('تعداد تلاش‌ها زیاد است؛ چند دقیقه بعد دوباره تلاش کنید.',429);}
   return {async handle(body,{ip='unknown'}={}){
     if(!body||typeof body!=='object'||Array.isArray(body))fail('درخواست معتبر نیست.');
-    if(body.action==='health'){await db('health');return {ok:true,ready:true,version:'zero-repeat-attendance/1'};}
+    if(body.action==='health'){await db('health');return {ok:true,ready:true,version:'zero-repeat-attendance/2'};}
     if(body.action==='submit'){
       const id=uuid(body.request_id),entry=normalizeEntry(body.data);await rate('submit',ip);
       const receipt=await db('submit',{id,...entry,fingerprint:hash(JSON.stringify(entry))});

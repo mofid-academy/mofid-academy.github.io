@@ -4,6 +4,9 @@ const preview=new URLSearchParams(location.search).get('preview')==='1';
 const form=$('#attendance-form'),button=$('#submit-button'),error=$('#form-error');
 let pending=null,busy=false,completed=false;
 $('#preview-note').hidden=!preview;
+for(const input of form.querySelectorAll('[name="attendance_mode"]'))input.addEventListener('change',()=>{
+  $('#selection-status').textContent='انتخاب شما: '+modes[input.value];
+});
 form.addEventListener('submit',async event=>{
   event.preventDefault();if(busy||completed||!form.reportValidity())return;
   const data=pending?.data||{full_name:$('#full-name').value.trim(),username:$('#username').value.trim().toLowerCase(),attendance_mode:new FormData(form).get('attendance_mode')};
