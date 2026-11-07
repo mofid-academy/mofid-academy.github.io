@@ -25,3 +25,10 @@
 @media(max-width:560px){.cover-editor{grid-template-columns:1fr}.cover-editor .course-cover{height:180px}.student-row{align-items:flex-start;flex-direction:column}.student-row .button-group{justify-content:flex-start}.workspace-actions{flex-wrap:wrap}.workspace-tabs{width:100%}}
 
 .syllabus-cover{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;background:var(--surface,#f4faf6);border-bottom:1px solid var(--line,#d5e5db)}
+
+.manage-item>.n8n-logo{width:30px;height:24px;flex-shrink:0}
+.course-cover.n8n{background:linear-gradient(140deg,#e3f6ed,#c4e9dd)}
+.player-controls{display:flex;justify-content:flex-start;padding:13px 0 0}
+.playback-speed{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--muted)}
+.playback-speed select{min-width:112px;min-height:38px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;font-size:12px;cursor:pointer}
+.playback-speed select:focus-visible{outline:2px solid var(--green);outline-offset:3px}
