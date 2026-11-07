@@ -1,8 +1,8 @@
 import {createHash,createHmac,timingSafeEqual} from 'node:crypto';
 import {Buffer} from 'node:buffer';
 
-export class AttendanceError extends Error {constructor(message,status=400){super(message);this.status=status;}}
-const fail=(message,status=400)=>{throw new AttendanceError(message,status);};
+export class AttendanceError extends Error {constructor(message,status=400,code){super(message);this.status=status;this.code=code;}}
+const fail=(message,status=400,code)=>{throw new AttendanceError(message,status,code);};
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const equal=(a,b)=>{const x=Buffer.from(String(a)),y=Buffer.from(String(b));return x.length===y.length&&timingSafeEqual(x,y);};
 const uuid=value=>{if(typeof value!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value))fail('شناسهٔ ثبت معتبر نیست؛ صفحه را تازه کنید.');return value.toLowerCase();};
@@ -30,7 +30,13 @@ export function createApi({db,config,now=Date.now}){
   async function rate(kind,ip){const result=await db('rate',{key:createHmac('sha256',config.signingKey).update('attendance:'+kind+':'+ip).digest('hex'),limit:kind==='login'?12:600});if(result?.allowed!==true)fail('تعداد تلاش‌ها زیاد است؛ چند دقیقه بعد دوباره تلاش کنید.',429);}
   return {async handle(body,{ip='unknown'}={}){
     if(!body||typeof body!=='object'||Array.isArray(body))fail('درخواست معتبر نیست.');
-    if(body.action==='health'){await db('health');return {ok:true,ready:true,version:'zero-repeat-attendance/2'};}
+    if(body.action==='health'){await db('health');return {ok:true,ready:true,version:'zero-repeat-attendance/3'};}
+    if(body.action==='availability'){
+      const result=await db('availability');
+      if(!Number.isSafeInteger(result?.registered)||result.registered<0)fail('ظرفیت حضوری قابل‌بررسی نیست؛ دوباره تلاش کنید.',503);
+      const registered=result.registered;
+      return {ok:true,capacity:{limit:15,registered,remaining:Math.max(0,15-registered),full:registered>=15}};
+    }
     if(body.action==='submit'){
       const id=uuid(body.request_id),entry=normalizeEntry(body.data);await rate('submit',ip);
       const receipt=await db('submit',{id,...entry,fingerprint:hash(JSON.stringify(entry))});
@@ -65,7 +71,7 @@ export function createStore({url,key,fetchImpl=fetch}){
     let response,result;
     try{response=await fetchImpl(url+'/rest/v1/rpc/zr_attendance_store',{method:'POST',headers,body:JSON.stringify({p_action:action,p_args:args}),signal:AbortSignal.timeout(20000)});result=await response.json();}
     catch{fail('ارتباط با سامانه برقرار نشد؛ دوباره تلاش کنید.',503);}
-    if(!response.ok){if(String(result?.message).includes('ID_CONFLICT'))fail('این پاسخ قبلاً ثبت شده است. برای ثبت شخص دیگری صفحه را دوباره باز کنید.',409);if(String(result?.message).includes('NOT_FOUND'))fail('پاسخ پیدا نشد.',404);fail('دریافت یا ذخیرهٔ اطلاعات تأیید نشد؛ دوباره تلاش کنید.',503);}
+    if(!response.ok){if(String(result?.message).includes('IN_PERSON_FULL'))fail('ظرفیت حضوری تکمیل شده است؛ شما می‌توانید به‌صورت آنلاین شرکت کنید.',409,'IN_PERSON_FULL');if(String(result?.message).includes('ID_CONFLICT'))fail('این پاسخ قبلاً ثبت شده است. برای ثبت شخص دیگری صفحه را دوباره باز کنید.',409);if(String(result?.message).includes('NOT_FOUND'))fail('پاسخ پیدا نشد.',404);fail('دریافت یا ذخیرهٔ اطلاعات تأیید نشد؛ دوباره تلاش کنید.',503);}
     return result;
   };
 }
@@ -81,6 +87,6 @@ export function createHandler(api,{origin='https://mofid-academy.github.io'}={})
       try{while(true){const chunk=await reader.read();if(chunk.done)break;size+=chunk.value.length;if(size>12288){await reader.cancel();fail('حجم درخواست بیش از حد مجاز است.',413);}chunks.push(chunk.value);}}finally{reader.releaseLock();}
       let body;try{body=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{fail('درخواست معتبر نیست.');}
       return Response.json(await api.handle(body,{ip:request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown'}),{headers});
-    }catch(error){return Response.json({ok:false,message:error instanceof AttendanceError?error.message:'سامانه موقتاً در دسترس نیست؛ دوباره تلاش کنید.'},{status:error instanceof AttendanceError?error.status:503,headers});}
+    }catch(error){return Response.json({ok:false,message:error instanceof AttendanceError?error.message:'سامانه موقتاً در دسترس نیست؛ دوباره تلاش کنید.',...(error instanceof AttendanceError&&error.code?{code:error.code}:{})},{status:error instanceof AttendanceError?error.status:503,headers});}
   };
 }

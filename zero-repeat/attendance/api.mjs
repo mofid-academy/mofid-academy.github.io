@@ -4,7 +4,7 @@ export async function call(body,fetchImpl=fetch){
   let response,result;
   try{response=await fetchImpl(API_URL,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(30000),credentials:'omit',cache:'no-store'});result=await response.json();}
   catch{throw Error('ارتباط با سامانه برقرار نشد. اینترنت را بررسی و دوباره تلاش کنید.');}
-  if(!response.ok||result?.ok!==true){const error=Error(result?.message||'عملیات تأیید نشد؛ دوباره تلاش کنید.');error.status=response.status;throw error;}
+  if(!response.ok||result?.ok!==true){const error=Error(result?.message||'عملیات تأیید نشد؛ دوباره تلاش کنید.');error.status=response.status;error.code=result?.code;throw error;}
   return result;
 }
 export async function loadEntries(callApi,token){
