@@ -33,3 +33,5 @@
 - https://21st.dev/@ohmfordev/components/hero
 - https://21st.dev/@manuarora700/components/lamp
 - https://ui.aceternity.com/components/lamp-effect
+
+مسیر عمومی `/learning-studio/` از پروژهٔ Pages مستقلِ `mofid-academy/learning-studio` منتشر می‌شود. ادغام نور در `lightingHead` همان مخزن اعمال شده است؛ آدرس دارایی‌های مشترک همچنان `/academy-assets/` است. نسخهٔ کپی‌شدهٔ استودیو در مخزن صفحهٔ اصلی، منبع انتشار این مسیر نیست و دست‌نخورده می‌ماند.
