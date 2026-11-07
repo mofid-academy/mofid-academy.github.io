@@ -104,7 +104,7 @@
     main.querySelectorAll('.mofid-metal').forEach(surface=>cleanups.push(mountMetal(surface,surface.closest('a')||surface)));
     mounted.set(main,()=>cleanups.forEach(cleanup=>cleanup()));
   }
-  window.MofidEntryUI=Object.freeze({mountLogin,initHome,version:'20261028-7'});
+  window.MofidEntryUI=Object.freeze({mountLogin,initHome,mountSpotlights,version:'20261107-lighting-1'});
   if(script?.dataset.entrySurface==='home'){
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initHome,{once:true});else initHome();
   }

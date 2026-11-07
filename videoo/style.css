@@ -32,3 +32,9 @@
 .playback-speed{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--muted)}
 .playback-speed select{min-width:112px;min-height:38px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;font-size:12px;cursor:pointer}
 .playback-speed select:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+
+/* Mouse-following mint spotlight, adapted from @jahed/spotlight-card. */
+.course-card>.mofid-spotlight-glow{z-index:2;background:radial-gradient(360px circle at var(--mofid-spot-x) var(--mofid-spot-y),rgba(43,189,146,.12),rgba(117,222,203,.04) 48%,transparent 74%)}
+.course-card>.mofid-spotlight-edge{z-index:3;padding:2px}
+.course-card:focus-within>.mofid-spotlight-edge{opacity:1}
+html[data-academy-theme="dark"] .course-card>.mofid-spotlight-glow{background:radial-gradient(360px circle at var(--mofid-spot-x) var(--mofid-spot-y),rgba(89,225,176,.14),transparent 74%)}

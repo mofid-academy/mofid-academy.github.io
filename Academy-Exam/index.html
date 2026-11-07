@@ -97,6 +97,7 @@ async function readLiveTiming(options={}){
   ]);
   if(!baseR.ok) throw new Error('base '+baseR.status);
   let base=await baseR.text();
+  base=base.replace("</head>",'<link rel="stylesheet" href="/academy-assets/lighting.css?v=20261107-lighting-1">\n<script defer src="/academy-assets/lighting.js?v=20261107-lighting-1"><\/script>\n'+"</head>");
   base=base.replace(/https:\/\/(?:azmoon|miladmirsheriseyed|miladmirsheriii|miladmmirsheri|miladmirsheriam)\.app\.n8n\.cloud\b/g,"https://azmonmofid.app.n8n.cloud");
   base=base.replace(/(<script id="academy-question-bank"[^>]*>[\s\S]*?"submitApproved"\s*:\s*)false/, '$1true');
   base=patchArchiveRuntime(patchSubmissionRuntime(base));

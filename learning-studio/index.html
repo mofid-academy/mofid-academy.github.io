@@ -28,7 +28,7 @@ small{display:block;margin-top:8px;opacity:.65}
       }));
       pieces.push(texts.join("")+"\n");
     }
-    const html=pieces.join("");
+    const html=pieces.join("").replace("</head>",'<link rel="stylesheet" href="/academy-assets/lighting.css?v=20261107-lighting-1">\n<script defer src="/academy-assets/lighting.js?v=20261107-lighting-1"><\/script>\n'+"</head>");
     document.open();
     document.write(html);
     document.close();
