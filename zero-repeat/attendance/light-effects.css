@@ -1,0 +1,102 @@
+/* Owner-selected references: @jahed/spotlight-card and @ohmfordev/hero.
+   Original CSS adaptation for the existing light, green attendance page. */
+.attendance-page { position: relative; isolation: isolate; }
+.attendance-page > .site-header,
+.attendance-page > .public-main,
+.attendance-page > .site-footer { position: relative; z-index: 1; }
+.page-light {
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 auto;
+  height: 380px;
+  overflow: hidden;
+  pointer-events: none;
+  background: radial-gradient(ellipse 75% 100% at 50% -25%, #46786028, transparent 85%);
+}
+.light-source {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: clamp(190px, 37vw, 500px);
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 9px 3px #ffffff, 0 15px 35px 16px #ffffffb3, 0 40px 95px 35px #e0fff1a6;
+}
+.light-wash {
+  position: absolute;
+  top: -90px;
+  left: 50%;
+  width: min(1000px, 95vw);
+  height: 370px;
+  transform: translateX(-50%);
+  border-radius: 0 0 50% 50%;
+  background: radial-gradient(ellipse at 50% 0%, #fffffff5 8%, #f3fff6db 31%, #daf4e68c 52%, #d5efe117 70%, transparent 80%);
+  filter: blur(22px);
+  animation: header-light-breathe 9s ease-in-out infinite alternate;
+}
+.entry-card.spotlight-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  --spotlight-x: 50%;
+  --spotlight-y: 32%;
+}
+.entry-card.spotlight-card > * { position: relative; z-index: 1; }
+.entry-card.spotlight-card::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(390px circle at var(--spotlight-x) var(--spotlight-y), #83c69e35 0%, #b4dfbd1a 36%, transparent 70%);
+  opacity: 0;
+  transition: opacity .25s ease;
+  pointer-events: none;
+}
+@supports ((mask-composite: exclude) or (-webkit-mask-composite: xor)) {
+  .entry-card.spotlight-card::after {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    padding: 2px;
+    border-radius: inherit;
+    background: radial-gradient(250px circle at var(--spotlight-x) var(--spotlight-y), #41a77b 0%, #93c9a5b3 35%, transparent 74%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity .25s ease;
+    pointer-events: none;
+  }
+}
+.entry-card.spotlight-card[data-spotlight-active]::before,
+.entry-card.spotlight-card[data-spotlight-active]::after { opacity: 1; }
+.entry-card.spotlight-card:focus-within::before,
+.entry-card.spotlight-card:focus-within::after { opacity: .65; }
+@keyframes header-light-breathe {
+  from { opacity: .8; transform: translateX(-50%) scaleX(.94); }
+  to { opacity: 1; transform: translateX(-50%) scaleX(1.06); }
+}
+@media (max-width: 700px) {
+  .page-light { height: 280px; }
+  .light-wash { top: -70px; height: 270px; width: 120vw; }
+  .light-source { width: 47vw; min-width: 155px; }
+}
+@media (hover: none), (pointer: coarse) {
+  .entry-card.spotlight-card::before,
+  .entry-card.spotlight-card::after { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .light-wash { animation: none; }
+  .entry-card.spotlight-card::before,
+  .entry-card.spotlight-card::after { opacity: 0 !important; transition: none; }
+}
+@media (forced-colors: active) {
+  .page-light,
+  .entry-card.spotlight-card::before,
+  .entry-card.spotlight-card::after { display: none; }
+}

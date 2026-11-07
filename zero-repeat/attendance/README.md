@@ -31,3 +31,5 @@ RPC با قفل تراکنشی مشترک، ثبت و حذف را هماهنگ �
 - [Glassmorphism Profile Card — Berat Berkay Gökdemir](https://21st.dev/@beratberkayg/components/glassmorphism-profile-card): کارت نیمه‌شفاف، وضعیت بالای کارت و قاب تصویری.
 
 پیاده‌سازی HTML/CSS و تصویر SVG این سایت مستقل و متناسب با فرم فارسی است؛ کد نیازمند ورود نمونه‌ها کپی نشده است. فونت Pinar و نشان موجود مفید حفظ شده‌اند. حرکت‌ها با تنظیم کاهش حرکت مرورگر خاموش می‌شوند.
+
+نور کارت فرم بر اساس [Spotlight Card — Hossain Jahed](https://21st.dev/@jahed/components/spotlight-card) به موقعیت نشانگر واکنش نشان می‌دهد. نور بالای صفحه از [Hero — ohmfordev](https://21st.dev/@ohmfordev/components/hero) الهام گرفته است؛ فقط نور تزئینی استفاده شده و متن یا دکمه‌ای از نمونه به فرم اضافه نشده است. `light-effects.mjs` و `light-effects.css` مستقل از ثبت و ظرفیت‌اند. لایه‌های نور کلیک‌ها را دریافت نمی‌کنند؛ دنبال‌کردن نشانگر برای لمس و حالت کاهش حرکت خاموش است.

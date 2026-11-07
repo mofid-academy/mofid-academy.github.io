@@ -12,9 +12,12 @@
   <link rel="icon" href="../brand/logo.webp" type="image/webp">
   <link rel="stylesheet" href="attendance.css?v=20261107.1">
   <link rel="stylesheet" href="attendance-design.css?v=20261107.3">
+  <link rel="stylesheet" href="light-effects.css?v=20261107.4">
   <script type="module" src="register.mjs?v=20261107.3"></script>
+  <script type="module" src="light-effects.mjs?v=20261107.4"></script>
 </head>
 <body class="attendance-page">
+  <div class="page-light" aria-hidden="true"><span class="light-wash"></span><span class="light-source"></span></div>
   <header class="site-header"><div class="header-inner">
     <div class="brand"><img src="../brand/logo.webp" alt="نشان مفید آکادمی" width="56" height="56"><div><strong>مفید آکادمی</strong><span lang="en" dir="ltr">MOFID ACADEMY</span></div></div>
     <span class="header-label" lang="en" dir="ltr">ZERO REPEAT</span>
@@ -27,7 +30,7 @@
       <div class="course-art"><img src="attendance-illustration.svg?v=20261107.2" alt="" width="500" height="300" aria-hidden="true"></div>
       <span class="eyebrow">اعلام نحوهٔ شرکت در کلاس‌ها</span><h1><bdi lang="en">ZERO REPEAT</bdi></h1><p>حضوری یا آنلاین،<br>در مسیر یادگیری کنار هم هستیم.</p>
     </section>
-    <section class="form-card entry-card" aria-labelledby="form-title">
+    <section class="form-card entry-card spotlight-card" data-spotlight-card aria-labelledby="form-title">
       <form id="attendance-form">
         <div class="entry-heading"><span class="entry-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 21v-3a6.5 6.5 0 0 1 13 0v3m3-14v8m-4-4h8"/></svg></span><span class="entry-step">حضوری / آنلاین</span></div>
         <h2 id="form-title">چطور همراه ما هستید؟</h2><p class="card-caption">مشخصات خود را وارد کنید و نحوهٔ شرکتتان را بگویید.</p>
