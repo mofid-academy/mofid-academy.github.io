@@ -1,0 +1,112 @@
+/* Mofid chapter and lesson adaptation of Magic UI's Rainbow Button.
+   https://21st.dev/@dillionverma/components/rainbow-button
+   https://github.com/magicuidesign/magicui
+MIT License
+
+Copyright (c) Magic UI
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
+html[data-academy-app="videos"] .syllabus{
+  --syllabus-lesson-face:#f6fcf8;
+  --syllabus-lesson-ink:#235c47;
+  --syllabus-lesson-muted:#567d69;
+  --syllabus-chapter-face:#175e4b;
+  --syllabus-chapter-ink:#f1fff7;
+  --syllabus-chapter-muted:#c5efda;
+  --syllabus-active-face:#0e725c;
+  --syllabus-active-ink:#f2fff8;
+  --syllabus-active-muted:#d0f6e2;
+  --syllabus-complete:#168254;
+  --syllabus-band:linear-gradient(110deg,#0f7c72,#b6f0cd,#2cb29c,#77cda5,#0f7c72);
+}
+html[data-academy-app="videos"][data-academy-theme="dark"] .syllabus{
+  --syllabus-lesson-face:#1c382a;
+  --syllabus-lesson-ink:#dbf2e2;
+  --syllabus-lesson-muted:#accbb7;
+  --syllabus-chapter-face:#224a35;
+  --syllabus-chapter-ink:#edfff4;
+  --syllabus-chapter-muted:#bfe8cd;
+  --syllabus-active-face:#176f54;
+  --syllabus-active-ink:#f1fff6;
+  --syllabus-active-muted:#d4f7df;
+  --syllabus-complete:#8cdbac;
+  --syllabus-band:linear-gradient(110deg,#3cbe9d,#d1f7d8,#4ccfc2,#93e1b7,#3cbe9d);
+}
+html[data-academy-app="videos"] .syllabus .mofid-rainbow-control{
+  --rainbow-face:var(--syllabus-lesson-face);
+  --rainbow-ink:var(--syllabus-lesson-ink);
+  --rainbow-muted:var(--syllabus-lesson-muted);
+  position:relative;isolation:isolate;
+  min-height:48px;border:1.5px solid transparent;border-radius:12px;
+  background-image:linear-gradient(var(--rainbow-face),var(--rainbow-face)),var(--syllabus-band);
+  background-origin:border-box;background-clip:padding-box,border-box;
+  background-size:100% 100%,200% 100%;background-position:0 0;
+  color:var(--rainbow-ink);cursor:pointer;text-align:right;
+  box-shadow:0 3px 9px #14543b0a;
+  animation:mofid-syllabus-rainbow 5s linear infinite;
+  transition:box-shadow .2s,transform .2s;
+}
+html[data-academy-app="videos"] .syllabus .mofid-rainbow-control:before{
+  content:"";position:absolute;bottom:-4px;left:20%;width:60%;height:7px;
+  z-index:-1;border-radius:50%;pointer-events:none;
+  background-image:var(--syllabus-band);background-size:200% 100%;
+  filter:blur(7px);opacity:.18;
+  animation:mofid-syllabus-rainbow 5s linear infinite;
+  transition:opacity .2s;
+}
+html[data-academy-app="videos"] .syllabus .mofid-rainbow-control:hover{box-shadow:0 4px 14px #1477571c}
+html[data-academy-app="videos"] .syllabus .mofid-rainbow-control:hover:before{opacity:.3}
+html[data-academy-app="videos"] .syllabus .mofid-rainbow-control:focus-visible{outline:2px solid #269e80;outline-offset:3px}
+html[data-academy-app="videos"] .syllabus .syllabus-section{border-bottom:0}
+html[data-academy-app="videos"] .syllabus .mofid-rainbow-chapter{
+  --rainbow-face:var(--syllabus-chapter-face);
+  --rainbow-ink:var(--syllabus-chapter-ink);
+  --rainbow-muted:var(--syllabus-chapter-muted);
+  margin:8px 10px;padding:11px 12px;align-items:center;gap:10px;
+}
+html[data-academy-app="videos"] .syllabus .mofid-rainbow-chapter::-webkit-details-marker{display:none}
+html[data-academy-app="videos"] .syllabus .syllabus-chapter-title{display:flex;align-items:center;gap:8px;min-width:0;flex:1;color:inherit;font-size:12px}
+html[data-academy-app="videos"] .syllabus .syllabus-chapter-title strong{font-weight:700;line-height:1.9;overflow-wrap:anywhere}
+html[data-academy-app="videos"] .syllabus .syllabus-chapter-title svg{width:16px;height:16px;flex-shrink:0;transition:transform .2s}
+html[data-academy-app="videos"] .syllabus .syllabus-section[open]>.mofid-rainbow-chapter .syllabus-chapter-title svg{transform:rotate(180deg)}
+html[data-academy-app="videos"] .syllabus .syllabus-chapter-count{font-size:10px;font-weight:500;color:var(--rainbow-muted);white-space:nowrap}
+html[data-academy-app="videos"] .syllabus .syllabus-lessons{display:grid;gap:8px;padding:4px 10px 12px}
+html[data-academy-app="videos"] .syllabus .syllabus-lesson{padding:11px 12px}
+html[data-academy-app="videos"] .syllabus .syllabus-lesson>span{min-width:0}
+html[data-academy-app="videos"] .syllabus .syllabus-lesson strong{font-size:12px;font-weight:600;line-height:1.9;overflow-wrap:anywhere}
+html[data-academy-app="videos"] .syllabus .syllabus-lesson small{color:var(--rainbow-muted);font-size:10px}
+html[data-academy-app="videos"] .syllabus .syllabus-lesson>svg{color:var(--rainbow-muted)}
+html[data-academy-app="videos"] .syllabus .syllabus-lesson.complete>svg{color:var(--syllabus-complete)}
+html[data-academy-app="videos"] .syllabus .syllabus-lesson.active{
+  --rainbow-face:var(--syllabus-active-face);
+  --rainbow-ink:var(--syllabus-active-ink);
+  --rainbow-muted:var(--syllabus-active-muted);
+  box-shadow:0 0 0 1px #2193734d,0 5px 14px #0f715a20;
+}
+html[data-academy-app="videos"] .syllabus .syllabus-lesson.active strong{font-weight:750}
+html[data-academy-app="videos"] .syllabus .syllabus-lesson.active>svg{color:var(--rainbow-muted)}
+@keyframes mofid-syllabus-rainbow{to{background-position:200% 0}}
+@media(prefers-reduced-motion:reduce){
+  html[data-academy-app="videos"] .syllabus .mofid-rainbow-control,
+  html[data-academy-app="videos"] .syllabus .mofid-rainbow-control:before{animation:none;transition:none}
+  html[data-academy-app="videos"] .syllabus .syllabus-chapter-title svg{transition:none}
+}
+
