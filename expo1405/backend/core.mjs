@@ -10,6 +10,7 @@ const messages = {
   active_question:'ابتدا به صفحهٔ انتظار بروید؛ سپس سؤال را حذف کنید.',
   invalid_question:'متن سؤال و بین ۲ تا ۸ گزینهٔ معتبر وارد کنید.',
   invalid_settings:'تنظیمات معتبر نیست.',
+  invalid_name:'نام نمایشی باید حداکثر ۸۰ نویسه باشد.',
   question_not_found:'سؤال پیدا نشد.',
 };
 export async function digest(s) {
@@ -101,19 +102,25 @@ export function makeHandler({url,key,fetcher=fetch}) {
         const allowed=await rpc('rate_limit',{p_key:await digest('join:'+key+':'+ip),p_limit:500,p_seconds:900});
         if(!allowed)return json({error:'تعداد درخواست‌ها زیاد است؛ کمی بعد تلاش کنید.'},429);
         const token=crypto.randomUUID()+crypto.randomUUID();
-        const id=await rpc('join',{p_room:ROOM,p_hash:await digest(token),p_name:name});
+        const id=await rpc('join_with_credits',{p_room:ROOM,p_hash:await digest(token),p_name:name,p_shared:body.shareOnScreen===true});
         return json({token,id,name});
       }
-      if(path==='/me'||path==='/vote') {
+      if(path==='/me'||path==='/vote'||path==='/profile') {
         const token=req.headers.get('x-participant-token')||'';
         if(token.length<32||token.length>160)return json({error:messages.invalid_participant},401);
         const hash=await digest(token);
-        const people=await db('expo1405_participants?room_id=eq.'+ROOM+'&token_hash=eq.'+hash+'&select=id,display_name');
+        const people=await db('expo1405_participants?room_id=eq.'+ROOM+'&token_hash=eq.'+hash+'&select=id,display_name,share_on_screen');
         if(!people.length)return json({error:messages.invalid_participant},401);
         if(req.method==='GET'&&path==='/me') {
           const rooms=await db('expo1405_rooms?id=eq.'+ROOM+'&select=round');
           const votes=await db('expo1405_votes?room_id=eq.'+ROOM+'&round=eq.'+rooms[0].round+'&participant_id=eq.'+people[0].id+'&select=question_id,choice');
-          return json({id:people[0].id,name:people[0].display_name,round:rooms[0].round,votes});
+          return json({id:people[0].id,name:people[0].display_name,shareOnScreen:people[0].share_on_screen,round:rooms[0].round,votes});
+        }
+        if(req.method==='POST'&&path==='/profile') {
+          const raw=await req.text();if(raw.length>2000)return json({error:'درخواست بزرگ است.'},413);
+          const body=JSON.parse(raw),name=typeof body.name==='string'?body.name.trim():null;
+          const result=await rpc('profile',{p_room:ROOM,p_hash:hash,p_name:name,p_shared:body.shareOnScreen===true});
+          return json({ok:true,...result});
         }
         if(req.method==='POST'&&path==='/vote') {
           const raw=await req.text();if(raw.length>2000)return json({error:'درخواست بزرگ است.'},413);

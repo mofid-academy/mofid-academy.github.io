@@ -18,3 +18,11 @@ Synthetic participant records and votes were archived in a private, isolated QA 
 
 The test exercised 100 concurrent vote submissions and three live subscribers, not 100 physical devices on the venue Wi-Fi. Identity is browser-session based; it does not establish one verified human per vote.
 
+
+## Live credits upgrade — 2026-11-08
+
+- Five API regression tests passed: legacy-client consent defaults, strict boolean opt-in, and authenticated profile changes.
+- Transactional database assertions passed for private names, opted-in name/answer pairs, anonymous policy, withdrawal, future-question isolation, and clearing the feed on a question change. Test fixtures were rolled back.
+- The existing isolated 100-vote QA fixture produced 100 sanitized credits within a 128 KB payload budget; the live room was unchanged.
+- Frontend syntax and local-asset/HTML checks passed.
+- No new security warnings were reported; service-only tables intentionally have no public policies.

@@ -1,16 +1,20 @@
 import {API_URL,PROJECT_URL,PUBLIC_KEY} from './config.mjs';
+import {CreditsRoll} from './credits.mjs?v=2';
 const $=s=>document.querySelector(s),all=s=>document.querySelectorAll(s),view=document.body.dataset.view;
 const fa=n=>Number(n||0).toLocaleString('fa-IR');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read=(key,session=false)=>{try{return (session?sessionStorage:localStorage).getItem(key)||''}catch{return ''}};
 const save=(key,value,session=false)=>{try{const s=session?sessionStorage:localStorage;value?s.setItem(key,value):s.removeItem(key)}catch{}};
 let state=null,revision=0,lastSuccess=0,realtime=false,hostData=null,hostKey=read('expo1405-host',true),token=read('expo1405-participant'),joined=false,myRound=0,myVotes={},voteBusy=false,joinBusy=false,hostBusy=false,toastTimer,hostLoading=false,lastMeKey='',refreshBusy=false;
+let meInfo={name:null,shareOnScreen:false},profileDirty=false,creditsRoll=null,screenMode=read('expo1405-screen-mode')==='chart'?'chart':'credits';
+const demoMode=view==='screen'&&new URL(location.href).searchParams.get('demo')==='credits';
+if(demoMode)screenMode='credits';
 const joinUrl=new URL('./',location.href).href;
 function notify(message,error=false){const t=$('#toast');t.textContent=message;t.classList.toggle('error',error);t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.hidden=true,6500)}
 async function api(path,{method='GET',body,exportFile=false}={}) {
   const headers={};if(body!==undefined)headers['Content-Type']='application/json';
   if(path.startsWith('/host'))headers['X-Host-Key']=hostKey;
-  if(token&&(path==='/me'||path==='/vote'))headers['X-Participant-Token']=token;
+  if(token&&(path==='/me'||path==='/vote'||path==='/profile'))headers['X-Participant-Token']=token;
   const r=await fetch(API_URL+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(20000),cache:'no-store'});
   if(exportFile&&r.ok)return r.blob();
   let b;try{b=await r.json()}catch{b={};}
@@ -28,6 +32,7 @@ function renderResults(){const node=$('#resultsBody');if(!node)return;if(!state?
 }
 function renderParticipant(){
   if(!$('#entryCard'))return;$('#entryCard').hidden=joined;$('#questionCard').hidden=!joined;$('#participantNote').hidden=!joined;$('#joinButton').disabled=!state||joinBusy;
+  if($('#screenIdentity')){$('#screenIdentity').hidden=!joined||state?.namePolicy==='anonymous';$('#identitySummary').textContent=meInfo.shareOnScreen?'نام من در تیتراژ: '+meInfo.name:'تنظیم نام من در تیتراژ';}
   if(state){const policy=state.namePolicy;$('#anonymousWrap').hidden=policy!=='optional';if(policy==='anonymous')$('#anonymous').checked=true;if(policy==='named')$('#anonymous').checked=false;$('#nameWrap').hidden=$('#anonymous').checked;$('#displayName').required=!$('#anonymous').checked;}
   if(!joined)return;const body=$('#questionBody');
   if(!state?.question){const done=state?.phase==='finished';body.innerHTML='<div class="waiting-state"><span class="waiting-icon" aria-hidden="true">'+(done?'✓':'◌')+'</span><h2>'+(done?'ممنون که هم‌صدا شدید.':'منتظر شروع مجری هستیم')+'</h2><p>'+(done?'گفت‌وگوی این نوبت به پایان رسید.':'صفحه را باز نگه دارید؛ سؤال همین‌جا ظاهر می‌شود.')+'</p></div>';return;}
@@ -46,9 +51,13 @@ function renderHost(){if(!hostData||!state)return;$('#voteCount').textContent=fa
   all('[data-delete]').forEach(b=>b.addEventListener('click',async()=>{if(await confirmAction('حذف این سؤال؟','سؤال از صف اجرا کنار می‌رود؛ پاسخ‌های بایگانی‌شده حفظ می‌شوند.'))await hostAction({action:'delete',questionId:b.dataset.delete})}));
   const select=$('#exportRound'),previous=select.value;if(select.options.length!==state.round){select.innerHTML=Array.from({length:state.round},(_,i)=>'<option value="'+(i+1)+'">اجرای '+fa(i+1)+'</option>').reverse().join('');select.value=previous&&Number(previous)<=state.round?previous:String(state.round)}
 }
-function renderScreen(){if(!state)return;const done=state.phase==='finished';$('#screenQuestion').innerHTML=state.question?'<span class="eyebrow">پرسش '+fa(state.question.position)+' از '+fa(state.questionCount)+'</span><h1 class="active-title">'+esc(state.question.text)+'</h1>':'<span class="eyebrow">گفت‌وگو با نگاه شما</span><h1>'+(done?'ممنون که<br><em>هم‌صدا شدید.</em>':'یک سؤال.<br><em>صد نگاه تازه.</em>')+'</h1><p class="muted">'+(done?'به امید گفت‌وگوهای بعدی.':'با اسکن کد، به نظرسنجی زنده بپیوندید.')+'</p>';$('#screenPhase').textContent=phaseLabel()}
+function renderScreen(){if(!state)return;const done=state.phase==='finished';$('#screenQuestion').innerHTML=state.question?'<span class="eyebrow">پرسش '+fa(state.question.position)+' از '+fa(state.questionCount)+'</span><h1 class="active-title">'+esc(state.question.text)+'</h1>':'<span class="eyebrow">گفت‌وگو با نگاه شما</span><h1>'+(done?'ممنون که<br><em>هم‌صدا شدید.</em>':'یک سؤال.<br><em>صد نگاه تازه.</em>')+'</h1><p class="muted">'+(done?'به امید گفت‌وگوهای بعدی.':'با اسکن کد، به نظرسنجی زنده بپیوندید.')+'</p>';$('#screenPhase').textContent=phaseLabel();
+  document.body.dataset.screenMode=screenMode;$('#creditsStage').hidden=!state.question||screenMode!=='credits';$('#creditsControls').hidden=!state.question||screenMode!=='credits';$('#resultsBody').hidden=!state.question||screenMode!=='chart';$('#creditsTally').textContent=fa(state.total)+' پاسخ';
+  $('#modeCredits').setAttribute('aria-pressed',String(screenMode==='credits'));$('#modeChart').setAttribute('aria-pressed',String(screenMode==='chart'));
+  creditsRoll?.sync(state.credits||[],state.round+':'+(state.question?.id||'waiting'));
+}
 function render(){all('[data-participants]').forEach(e=>e.textContent=fa(state?.participants));renderResults();if(view==='participant')renderParticipant();if(view==='host')renderHost();if(view==='screen')renderScreen();updateConnection();tick()}
-async function refreshMe(){if(!token)return;try{const me=await api('/me');joined=true;myRound=me.round;myVotes=Object.fromEntries(me.votes.map(v=>[v.question_id,v.choice]));renderParticipant()}catch(e){if(e.status===401){token='';joined=false;save('expo1405-participant','');renderParticipant()}else throw e}}
+async function refreshMe(){if(!token)return;try{const me=await api('/me');joined=true;myRound=me.round;myVotes=Object.fromEntries(me.votes.map(v=>[v.question_id,v.choice]));meInfo={name:me.name,shareOnScreen:me.shareOnScreen===true};if($('#identityName')&&!profileDirty){$('#identityName').value=me.name||'';$('#identityShare').checked=meInfo.shareOnScreen;$('#identityName').required=meInfo.shareOnScreen;}renderParticipant()}catch(e){if(e.status===401){token='';joined=false;save('expo1405-participant','');renderParticipant()}else throw e}}
 async function castVote(choice){if(!isOpen()||voteBusy||!joined)return;const q=state.question,round=state.round;voteBusy=true;renderParticipant();try{const r=await api('/vote',{method:'POST',body:{questionId:q.id,round,choice}});if(state.round===round){if(myRound!==round)myVotes={};myRound=round;myVotes[q.id]=r.choice;}notify(r.already?'پاسخ قبلی شما ثبت شده است.':'پاسخ شما ثبت شد.');await refreshState()}catch(e){notify(e.message,true);await refreshState()}finally{voteBusy=false;renderParticipant()}}
 async function loadHost(){if(!hostKey||hostLoading)return;hostLoading=true;try{const data=await api('/host');hostData=data;snapshot(data);$('#loginCard').hidden=true;$('#dashboard').hidden=false;$('#logout').hidden=false;save('expo1405-host',hostKey,true);renderHost()}finally{hostLoading=false}}
 async function hostAction(body){if(hostBusy)return;hostBusy=true;renderHost();try{await api('/host/action',{method:'POST',body});await loadHost();await refreshState();return true}catch(e){notify(e.message,true);return false}finally{hostBusy=false;renderHost()}}
@@ -57,7 +66,9 @@ function openEditor(id=''){const q=hostData?.questions.find(q=>q.id===id);$('#qu
 function tick(){updateConnection();const seconds=state?.deadline?Math.max(0,Math.ceil((Date.parse(state.deadline)-Date.now())/1000)):null;all('[data-countdown]').forEach(n=>n.textContent=state?.phase==='open'&&seconds!==null?fa(seconds)+' ثانیه':'');if(state?.phase==='open'&&seconds===0){if(view==='participant'&&isOpen._expired!==state.deadline){isOpen._expired=state.deadline;renderParticipant()}if(view==='host'&&$('#phaseLabel'))$('#phaseLabel').textContent=phaseLabel();if(view==='screen')$('#screenPhase').textContent=phaseLabel()}}
 if(view==='participant'){
   $('#joinButton').disabled=true;$('#anonymous').addEventListener('change',()=>{$('#nameWrap').hidden=$('#anonymous').checked;$('#displayName').required=!$('#anonymous').checked});
-  $('#joinForm').addEventListener('submit',async e=>{e.preventDefault();if(joinBusy||!state)return;joinBusy=true;$('#joinButton').disabled=true;try{const name=$('#anonymous').checked?null:$('#displayName').value.trim();const data=await api('/join',{method:'POST',body:{name}});token=data.token;save('expo1405-participant',token);await refreshMe();await refreshState()}catch(e){notify(e.message,true)}finally{joinBusy=false;renderParticipant()}});
+  $('#joinForm').addEventListener('submit',async e=>{e.preventDefault();if(joinBusy||!state)return;joinBusy=true;$('#joinButton').disabled=true;try{const anonymous=$('#anonymous').checked,name=anonymous?null:$('#displayName').value.trim();const data=await api('/join',{method:'POST',body:{name,shareOnScreen:!anonymous&&$('#joinShare').checked}});token=data.token;save('expo1405-participant',token);await refreshMe();await refreshState()}catch(e){notify(e.message,true)}finally{joinBusy=false;renderParticipant()}});
+  $('#identityForm').addEventListener('input',()=>{profileDirty=true;$('#identityName').required=$('#identityShare').checked;});
+  $('#identityForm').addEventListener('submit',async e=>{e.preventDefault();const button=$('#saveIdentity');button.disabled=true;try{const data=await api('/profile',{method:'POST',body:{name:$('#identityName').value.trim()||null,shareOnScreen:$('#identityShare').checked}});meInfo={name:data.name,shareOnScreen:data.shareOnScreen};profileDirty=false;$('#screenIdentity').open=false;await refreshState();renderParticipant();notify(data.shareOnScreen?'نام و پاسخ شما در تیتراژ نمایش داده می‌شود.':'نام شما در تیتراژ نمایش داده نمی‌شود.')}catch(e){notify(e.message,true)}finally{button.disabled=false;}});
 }
 if(view==='host'){
   const fragment=new URLSearchParams(location.hash.slice(1));const invite=fragment.get('key');if(invite){hostKey=invite;history.replaceState(null,'',location.pathname+location.search)}
@@ -74,11 +85,23 @@ if(view==='host'){
   setInterval(()=>{if(hostData)loadHost().catch(()=>{})},12000);
 }
 if(view==='screen'){
+  creditsRoll=new CreditsRoll($('#creditsStage'));
+  $('#modeCredits').addEventListener('click',()=>{screenMode='credits';save('expo1405-screen-mode',screenMode);renderScreen()});$('#modeChart').addEventListener('click',()=>{screenMode='chart';save('expo1405-screen-mode',screenMode);renderScreen()});
+  $('#creditsSpeed').addEventListener('change',()=>creditsRoll.setSpeed($('#creditsSpeed').value));$('#creditsPause').addEventListener('click',()=>{creditsRoll.setPaused(!creditsRoll.paused);$('#creditsPause').textContent=creditsRoll.paused?'ادامهٔ حرکت ▶':'مکث حرکت Ⅱ';$('#creditsPause').setAttribute('aria-pressed',String(creditsRoll.paused));});
   $('#joinLink').textContent=joinUrl.replace('https://','');$('#joinLink').href=joinUrl;
   if(window.qrcode){const qr=window.qrcode(0,'M');qr.addData(joinUrl);qr.make();$('#joinQr').innerHTML=qr.createSvgTag({cellSize:4,margin:0,scalable:true,alt:'ورود به نظرسنجی هم‌صدا'})}
   $('#fullscreen').addEventListener('click',async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch{notify('از گزینهٔ تمام‌صفحهٔ مرورگر استفاده کنید.')}});
 }
 if(view==='participant'&&token)refreshMe().catch(()=>{});
+if(demoMode){
+  $('#demoBanner').hidden=false;$('#demoBanner').textContent='پیش‌نمایش تیتراژ · نام‌ها و پاسخ‌ها فرضی‌اند';$('#demoLiveLink').hidden=false;
+  const answers=['یادگیری و تجربهٔ تازه','گفت‌وگو با کارشناسان','شرکت در کارگاه‌های کوتاه','آشنایی با خدمات نوین'];
+  const names=['مریم رضایی','علی احمدی','شرکت‌کنندهٔ ناشناس','سارا محمدی','امیر کریمی','نرگس موسوی','شرکت‌کنندهٔ ناشناس','رضا کریمی'];
+  const entries=names.map((name,i)=>({id:'demo-credit-'+i,name,answer:answers[i%answers.length]}));let n=3;
+  const show=()=>{lastSuccess=Date.now();state={phase:'open',round:0,questionCount:1,participants:Math.max(8,n),total:n,credits:entries.slice(0,n),question:{id:'demo-only',position:1,text:'دوست دارید در نمایشگاه چه تجربه‌ای داشته باشید؟',options:answers.map((label,i)=>({label,index:i,count:entries.slice(0,n).filter((_,j)=>j%4===i).length}))}};render();};show();setInterval(()=>{if(n<entries.length)n++;show()},3000);
+}else{
 await refreshState();
 try{if(window.supabase){const db=window.supabase.createClient(PROJECT_URL,PUBLIC_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});const channel=db.channel('expo1405-visible').on('postgres_changes',{event:'UPDATE',schema:'public',table:'expo1405_public',filter:'id=eq.main'},e=>snapshot(e.new)).subscribe(status=>{realtime=status==='SUBSCRIBED';updateConnection();if(realtime)refreshState()});window.addEventListener('pagehide',()=>db.removeChannel(channel),{once:true})}}catch{}
-setInterval(refreshState,8000);setInterval(tick,1000);window.addEventListener('online',refreshState);document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshState();if(view==='participant'&&token)refreshMe().catch(()=>{})}});
+setInterval(refreshState,8000);window.addEventListener('online',refreshState);document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshState();if(view==='participant'&&token)refreshMe().catch(()=>{})}});
+}
+setInterval(tick,1000);
