@@ -63,3 +63,7 @@ html[data-academy-theme="dark"] .course-card>.mofid-spotlight-glow{background:ra
 .lesson-description-more[open]>summary .description-less-label{display:inline}
 .lesson-description-more[open]>summary svg{transform:rotate(180deg)}
 .lesson-description-full{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:9px}
+
+/* Show the complete uploaded artwork at every card/editor width. */
+.course-cover.photo-cover{height:auto;aspect-ratio:16/9;flex-shrink:0;background:var(--surface,#f4faf6)}
+.course-cover.photo-cover img{object-fit:contain;object-position:center}
