@@ -26,3 +26,13 @@ The test exercised 100 concurrent vote submissions and three live subscribers, n
 - The existing isolated 100-vote QA fixture produced 100 sanitized credits within a 128 KB payload budget; the live room was unchanged.
 - Frontend syntax and local-asset/HTML checks passed.
 - No new security warnings were reported; service-only tables intentionally have no public policies.
+
+## Private admin, display-only results, Aurora and themes — 2026-11-08
+
+- Sixteen current API/unit checks passed, including denial of archives and exports to moderators, protected display activation, and removal of results from participant and moderator state.
+- Rollback-only database assertions passed: votes do not change public-state revisions, raw tables and report RPCs deny public roles, and private display/report data remain available to their authorized endpoints.
+- Read-only checks against the deployed API passed. The owner export contained six question worksheets plus summary and all eight responses present at verification time. The workbook loaded successfully in openpyxl.
+- A synthetic export preserved an unanswered question worksheet, RTL views, filters, and names beginning with `=` as plain text.
+- The React/TypeScript/Tailwind build passed. Production assets contain no Node environment references and need no external runtime assets.
+- RLS advisories for service-only tables are informational; no public policies were added to private response tables.
+- Supabase organization membership could not be audited through the available management tool; account-level administrator access was not changed.

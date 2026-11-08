@@ -1,0 +1,5 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root{--white:#fff;--black:#000;--transparent:transparent;--mofid-500:#12968a;--mofid-300:#75cdb1;--mofid-200:#b7e4d2;--mofid-600:#0f8b77;--mofid-400:#17a18c}
+.aurora-mount{position:fixed;inset:0;z-index:-2;pointer-events:none;overflow:hidden}.aurora-mount>main{height:100%}.aurora-vignette{position:fixed;inset:0;background:linear-gradient(180deg,#f2faf540,#f2faf5b8 80%);z-index:-1;pointer-events:none}.dark .aurora-vignette{background:linear-gradient(180deg,#071d1755,#071d17e8 85%)}.theme-toggle{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:35px;padding:7px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:10px;cursor:pointer}.theme-toggle svg{height:16px;width:16px;flex:none}.theme-toggle:hover{border-color:var(--mint)}
