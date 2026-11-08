@@ -1,0 +1,115 @@
+/* Mofid adaptation of the public GradientButton visual by Abishekaraj Immanuel.
+ * Reference: https://21st.dev/@abishek1512/components/button-1
+ * Independently implemented from the public preview: rotating conic rim + pill face.
+ * Scoped to watch/resume controls; no third-party runtime or component source.
+ */
+@property --mofid-watch-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+html[data-academy-app="videos"] .btn.mofid-watch-button {
+  --watch-rim: #d5e9df;
+  --watch-accent: #16826b;
+  --watch-face: linear-gradient(145deg, #f8fdf9, #edf7f1);
+  --watch-ink: #155e49;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  min-height: 38px;
+  min-width: 124px;
+  max-width: 100%;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: conic-gradient(from var(--mofid-watch-angle), var(--watch-rim) 0%, var(--watch-accent) 10%, var(--watch-rim) 20%);
+  color: var(--watch-ink);
+  box-shadow: 0 3px 10px rgba(16, 93, 66, .04);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.6;
+  cursor: pointer;
+  animation: mofid-watch-orbit 3s linear infinite;
+  transition: transform .2s ease, box-shadow .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html[data-academy-app="videos"] .mofid-watch-button::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--watch-face);
+  pointer-events: none;
+  transition: opacity .3s linear;
+}
+
+html[data-academy-app="videos"] .mofid-watch-label {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+html[data-academy-app="videos"] .mofid-watch-label svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+html[data-academy-app="videos"] .mofid-watch-button:is([data-action="next"], [data-action="open-lesson"]) .mofid-watch-label {
+  flex-direction: row-reverse;
+}
+
+@media (hover: hover) {
+  html[data-academy-app="videos"] .mofid-watch-button:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(16, 113, 83, .12);
+  }
+  html[data-academy-app="videos"] .mofid-watch-button:not(:disabled):hover::after { opacity: .88; }
+}
+
+html[data-academy-app="videos"] .mofid-watch-button:not(:disabled):active { transform: translateY(1px); }
+html[data-academy-app="videos"] .mofid-watch-button:focus-visible { outline: 2px solid var(--watch-accent); outline-offset: 4px; }
+html[data-academy-app="videos"] .mofid-watch-button:disabled {
+  --watch-accent: var(--watch-rim);
+  opacity: .5;
+  box-shadow: none;
+  cursor: not-allowed;
+  animation: none;
+}
+
+html[data-academy-app="videos"][data-academy-theme="dark"] .btn.mofid-watch-button {
+  --watch-rim: #2a5140;
+  --watch-accent: #83d8b5;
+  --watch-face: linear-gradient(145deg, #1a3a2d, #132b22);
+  --watch-ink: #d4f2e3;
+}
+html[data-academy-app="videos"][data-academy-theme="dark"] .mofid-watch-button:disabled { --watch-accent: var(--watch-rim); }
+
+@keyframes mofid-watch-orbit { to { --mofid-watch-angle: 360deg; } }
+
+@media (max-width: 540px) {
+  html[data-academy-app="videos"] .btn.mofid-watch-button { min-width: 112px; padding: 0 13px; font-size: 10px; }
+  html[data-academy-app="videos"] .mofid-watch-label { gap: 6px; }
+}
+@media (pointer: coarse) {
+  html[data-academy-app="videos"] .btn.mofid-watch-button { height: 44px; min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-academy-app="videos"] .btn.mofid-watch-button,
+  html[data-academy-app="videos"] .mofid-watch-button::after { animation: none; transition: none; }
+  html[data-academy-app="videos"] .mofid-watch-button:not(:disabled):is(:hover, :active) { transform: none; }
+}
+@media (forced-colors: active) {
+  html[data-academy-app="videos"] .btn.mofid-watch-button { border: 1px solid ButtonText; background: ButtonFace; color: ButtonText; animation: none; }
+  html[data-academy-app="videos"] .mofid-watch-button::after { display: none; }
+}
