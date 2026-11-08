@@ -46,3 +46,20 @@ html[data-academy-theme="dark"] .course-card>.mofid-spotlight-glow{background:ra
 .video-stage>.video-placeholder{position:relative;z-index:2}
 .video-stage>.stage-label{z-index:3}
 @media(prefers-reduced-motion:reduce){.video-stage>.video-stage-preview{transition:none}}
+
+/* Compact episode/course descriptions, expanded only on request. */
+.lesson-description{white-space:normal}
+.lesson-description-preview{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;max-height:4.6em;line-height:2.3;margin:0;overflow-wrap:anywhere}
+.lesson-description-more>summary{display:inline-flex;align-items:center;gap:6px;width:fit-content;min-height:32px;padding:3px 0;margin-top:7px;color:var(--green,#198468);font-size:11px;font-weight:650;line-height:1.8;list-style:none;cursor:pointer}
+.lesson-description-more>summary::-webkit-details-marker{display:none}
+.lesson-description-more>summary::marker{content:""}
+.lesson-description-more>summary svg{width:14px;height:14px;transition:transform .2s ease}
+.lesson-description-more>summary:hover{text-decoration:underline;text-underline-offset:4px}
+.lesson-description-more>summary:focus-visible{outline:2px solid var(--green,#198468);outline-offset:4px;border-radius:4px}
+.description-less-label{display:none}
+.lesson-description:has(>.lesson-description-more[open])>.lesson-description-preview{display:none}
+.lesson-description-more[open]>summary{margin-top:0}
+.lesson-description-more[open]>summary .description-more-label{display:none}
+.lesson-description-more[open]>summary .description-less-label{display:inline}
+.lesson-description-more[open]>summary svg{transform:rotate(180deg)}
+.lesson-description-full{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:9px}
