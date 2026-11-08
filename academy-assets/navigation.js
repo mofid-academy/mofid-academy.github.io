@@ -34,13 +34,13 @@
   nav.setAttribute('aria-label', 'بخش‌های آکادمی مفید');
   const modules = [
     ['home', '/', 'خانه'],
-    ['studio', '/learning-studio/?portal=participant', 'مفید استودیو'],
+    ['studio', '/learning-studio/', 'مفید استودیو'],
     ['exam', '/Academy-Exam/', 'آزمون‌ها'],
     ['videos', '/videoo/', 'ویدیوهای آموزشی']
   ];
-  const protectCurrentPage = section === 'exam' || section === 'studio';
+  const protectCurrentPage = section === 'exam';
   function protect(link) {
-    if (!protectCurrentPage) return;
+    if (!protectCurrentPage || new URL(link.href, location.href).pathname.startsWith('/learning-studio/')) return;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.title = 'باز شدن در تب جدید؛ صفحهٔ فعلی باز می‌ماند';
