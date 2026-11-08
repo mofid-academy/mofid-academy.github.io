@@ -1,0 +1,44 @@
+-- All fixtures and operations roll back, including the original room title/phase.
+begin;
+set local role service_role;
+do $$
+declare source text; copy_id text; blank_id text; qa uuid; qb uuid; person uuid;
+ before_votes bigint; before_phase text; before_questions bigint; payload jsonb; initial jsonb; rejected boolean;
+ request_id uuid:=gen_random_uuid();
+begin
+ select count(*) into before_votes from public.expo1405_votes where room_id='main';
+ select phase into before_phase from public.expo1405_rooms where id='main';
+ select count(*) into before_questions from public.expo1405_questions where room_id='main';
+ source=(public.expo1405_create_class('main','Isolated source',false,false,gen_random_uuid())->>'id');
+ perform public.expo1405_host_action(source,jsonb_build_object('action','save','text','سؤال فرضی کلاس اول','options',jsonb_build_array('پاسخ اول','پاسخ دوم')));
+ select id into qa from public.expo1405_questions where room_id=source;
+ person=public.expo1405_join_with_credits(source,'CLASS_TEST_HASH_A','TEST_PERSON_A',true);
+ perform public.expo1405_host_action(source,jsonb_build_object('action','activate','questionId',qa,'seconds',0));
+ perform public.expo1405_vote(source,'CLASS_TEST_HASH_A',qa,1,0);
+ copy_id=(public.expo1405_create_class(source,'Copied class',true,true,request_id)->>'id');
+ if copy_id<>(public.expo1405_create_class(source,'Copied class',true,true,request_id)->>'id') then raise exception 'Creation retry made another class'; end if;
+ blank_id=(public.expo1405_create_class(source,'Blank class',false,false,gen_random_uuid())->>'id');
+ select id into qb from public.expo1405_questions where room_id=copy_id;
+ if qb=qa or qb is null then raise exception 'Question identities were reused'; end if;
+ if exists(select 1 from public.expo1405_questions where room_id=blank_id) then raise exception 'Blank class has questions'; end if;
+ select d.payload into initial from public.expo1405_display d where d.id=copy_id;
+ if initial->>'phase'<>'waiting' or (initial->>'total')::int<>0 or (initial->>'participants')::int<>0 or initial->'credits'<>'[]'::jsonb or initial->'question'<>'null'::jsonb then raise exception 'Copied class inherited activity'; end if;
+ if (select phase from public.expo1405_rooms where id=source)<>'finished' then raise exception 'Previous class remained open'; end if;
+ if (public.expo1405_admin_summary(copy_id,null)->>'totalResponses')::int<>0 then raise exception 'Archive crossed class'; end if;
+ if (public.expo1405_admin_summary(source,null)->>'totalResponses')::int<>1 then raise exception 'Previous response was lost'; end if;
+ perform public.expo1405_host_action(copy_id,jsonb_build_object('action','activate','questionId',qb,'seconds',0));
+ rejected=false;
+ begin perform public.expo1405_vote(copy_id,'CLASS_TEST_HASH_A',qb,1,0);exception when others then if sqlerrm like '%invalid_participant%' then rejected=true;else raise;end if;end;
+ if not rejected then raise exception 'Identity crossed class';end if;
+ person=public.expo1405_join_with_credits(copy_id,'CLASS_TEST_HASH_B','TEST_PERSON_B',true);
+ rejected=false;
+ begin perform public.expo1405_vote(copy_id,'CLASS_TEST_HASH_B',qa,1,0);exception when others then if sqlerrm like '%voting_closed%' then rejected=true;else raise;end if;end;
+ if not rejected then raise exception 'Question crossed class';end if;
+ perform public.expo1405_vote(copy_id,'CLASS_TEST_HASH_B',qb,1,1);
+ select d.payload into payload from public.expo1405_display d where d.id=copy_id;
+ if payload::text like '%TEST_PERSON_A%' or (payload->>'total')::int<>1 then raise exception 'Display crossed class';end if;
+ if (public.expo1405_admin_report(copy_id,null)->'responses'->0->>'participant_id')<>person::text then raise exception 'Excel crossed class';end if;
+ if (select count(*) from public.expo1405_votes where room_id='main')<>before_votes or (select phase from public.expo1405_rooms where id='main')<>before_phase or (select count(*) from public.expo1405_questions where room_id='main')<>before_questions then raise exception 'Original data changed';end if;
+ if has_table_privilege('anon','public.expo1405_public','select') or has_function_privilege('anon','public.expo1405_classes()','execute') then raise exception 'Public class directory access';end if;
+end $$;
+rollback;

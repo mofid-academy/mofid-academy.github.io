@@ -12,11 +12,11 @@ export function buildWorkbook(report){
  const questions=report.questions||[],responses=report.responses||[],exportedAt=report.exportedAt||new Date().toISOString();
  const scope=report.selectedRound==null?'همهٔ اجراها':'اجرای '+Number(report.selectedRound).toLocaleString('fa-IR');
  const names=['خلاصه',...questions.map((q,i)=>'سؤال '+(i+1).toLocaleString('fa-IR'))];
- const summary=[['گزارش خصوصی نظرسنجی نمایشگاه ۱۴۰۵'],['محدودهٔ گزارش',scope],['زمان تهیه به وقت تهران',tehranDate(exportedAt)],['مجموع پاسخ‌های ثبت‌شده',responses.length],['شماره','متن سؤال','تعداد پاسخ','شیت پاسخ‌ها','وضعیت'],...questions.map((q,i)=>[i+1,q.text,responses.filter(v=>v.question_id===q.id).length,names[i+1],q.archived?'بایگانی':'فعال'])];
+ const summary=[['گزارش خصوصی | '+(report.title||'نظرسنجی')],['کلاس',report.title||'','محدودهٔ گزارش',scope],['زمان تهیه به وقت تهران',tehranDate(exportedAt)],['مجموع پاسخ‌های ثبت‌شده',responses.length],['شماره','متن سؤال','تعداد پاسخ','شیت پاسخ‌ها','وضعیت'],...questions.map((q,i)=>[i+1,q.text,responses.filter(v=>v.question_id===q.id).length,names[i+1],q.archived?'بایگانی':'فعال'])];
  const sheets=[worksheet(summary,{widths:[18,85,20,25,20],merges:['A1:E1']})];
  for(const [i,q] of questions.entries()){
    const votes=responses.filter(v=>v.question_id===q.id);
-   const rows=[['پاسخ‌های '+names[i+1]+' | '+q.text],['محدودهٔ گزارش',scope],['تعداد پاسخ',votes.length,'زمان تهیه',tehranDate(exportedAt)],['آرشیو خصوصی ادمین؛ نام‌ها همان نام ثبت‌شده هنگام پاسخ هستند.'],['ردیف','اجرا','نام هنگام ثبت','پاسخ ثبت‌شده','تاریخ و ساعت تهران','شناسهٔ پاسخ‌گو','متن سؤال هنگام پاسخ'],...votes.map((v,j)=>[j+1,v.round,v.display_name||'شرکت‌کنندهٔ ناشناس',v.option_text,tehranDate(v.created_at),v.participant_id,v.question_text])];
+   const rows=[['پاسخ‌های '+names[i+1]+' | '+q.text],['کلاس',report.title||'','محدودهٔ گزارش',scope],['تعداد پاسخ',votes.length,'زمان تهیه',tehranDate(exportedAt)],['آرشیو خصوصی ادمین؛ نام‌ها همان نام ثبت‌شده هنگام پاسخ هستند.'],['ردیف','اجرا','نام هنگام ثبت','پاسخ ثبت‌شده','تاریخ و ساعت تهران','شناسهٔ پاسخ‌گو','متن سؤال هنگام پاسخ'],...votes.map((v,j)=>[j+1,v.round,v.display_name||'شرکت‌کنندهٔ ناشناس',v.option_text,tehranDate(v.created_at),v.participant_id,v.question_text])];
    sheets.push(worksheet(rows,{widths:[12,12,30,62,30,42,85],merges:['A1:G1','A4:G4']}));
  }
  const files={};

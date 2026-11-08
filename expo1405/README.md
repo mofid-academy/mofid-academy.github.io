@@ -10,10 +10,22 @@ A Persian, RTL live poll with separate participant, moderator, display, and priv
 | `screen.html` | Requires a display capability issued from the moderator panel. Live movie credits and chart modes are both available. |
 | `screen.html?demo=credits` | Clearly labeled fictional preview; never calls the real results API. |
 
+## کلاس‌ها و فاصلهٔ کوتاه بین اجراها
+
+۱. در پنل، «کلاس بعد با همین سؤال‌ها» را بزنید. کلاس قبلی پایان می‌یابد و سؤال‌ها در یک کلاس مستقل کپی می‌شوند؛ پاسخ‌ها و افراد کپی نمی‌شوند.
+۲. از زبانهٔ «کلاس‌ها · لینک و QR»، لینک همین کلاس را کپی کنید یا تصویر PNG کد QR را بگیرید. هیچ انتشار دوباره‌ای لازم نیست.
+۳. برای سؤال‌های متفاوت، «کلاس خالی» بسازید یا سؤال‌های کپی‌شده را ویرایش کنید. می‌توانید کلاس‌ها را از قبل بسازید و گزینهٔ پایان کلاس فعلی را بردارید.
+۴. نمایشگر را برای کلاس انتخاب‌شده باز کنید. پنجرهٔ نمایشگری که از همین پنل باز شده، هنگام تغییر کلاس با لینک کلاس تازه باز می‌شود؛ در دستگاه دیگر، لینک خصوصی همان کلاس را باز کنید.
+۵. در ادمین، ابتدا کلاس را از بالای پنل انتخاب کنید، سپس گزارش و اکسل همان کلاس را بگیرید. نام کلاس در فایل و هر شیت ثبت می‌شود. کلاس قبلی و پاسخ‌هایش باقی می‌مانند.
+
+Class URLs use `?class=cls-<uuid>`. The original `main` class and old URLs keep working. Host/admin codes remain the same across managed classes; display tokens, participant storage, questions, round counts, reports and Realtime topics are class-specific. Class creation is transactional and uses an idempotency UUID to avoid duplicates on a network retry. The protected class directory excludes isolated QA rooms. Finished or invalid class links never redirect to another class.
+
+The participant introduction slogans have been removed. Each page identifies the selected class. All QR rendering and PNG generation run locally. Polls skip hidden tabs; finished participant pages disconnect from Realtime and check less frequently. The vote path authenticates inside the vote RPC, eliminating a redundant database round trip. Concurrent public reads are coalesced per class inside each Edge isolate, without a stale TTL cache.
+
 ## Data boundaries
 
-- Participant requests and the public Supabase table expose only the active question and voting phase. Option counts, totals, participant counts, and credits are absent.
-- Joins and votes do not update the public row's revision, so the public Realtime channel does not disclose a vote-by-vote activity feed.
+- Participant requests expose only the active question and voting phase for the URL’s class. The backing state table has no browser-role grants. Option counts, totals, participant counts, and credits are absent.
+- Joins and votes do not update the public row's revision, so the class-scoped Realtime channel does not disclose a vote-by-vote activity feed. Broadcasts contain only an empty question-state invalidation; clients fetch authoritative state instead of trusting broadcast payloads.
 - `expo1405_display` stores the full current results; it has RLS and no `anon` or `authenticated` grants. The screen reads it through an authenticated endpoint once per second.
 - Raw questions, participants, votes, room credentials, and report RPCs are service-only. The service key never reaches browser code.
 - A moderator can issue a dedicated display capability. This does not grant archive access. Links carry this capability in a URL fragment, which is removed after activation; it is sent to the API only in a header.
@@ -57,7 +69,7 @@ The palette follows the existing Academy hub: Mofid teal and green, light mint s
 
 ## Database upgrades
 
-Initial schema: `backend/schema.sql`. Append-only upgrades, in order: `credits.sql`, `admin.sql`, `display-private.sql`. Do not replay applied upgrades. Runtime code is deployed as `expo1405-api`; it uses Supabase's runtime-owned server key.
+Initial schema: `backend/schema.sql`. Append-only upgrades, in order: `credits.sql`, `admin.sql`, `display-private.sql`, `classes.sql`. Do not replay applied upgrades. Runtime code is deployed as `expo1405-api`; it uses Supabase's runtime-owned server key.
 
 ## Verification
 

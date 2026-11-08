@@ -36,3 +36,10 @@ The test exercised 100 concurrent vote submissions and three live subscribers, n
 - The React/TypeScript/Tailwind build passed. Production assets contain no Node environment references and need no external runtime assets.
 - RLS advisories for service-only tables are informational; no public policies were added to private response tables.
 - Supabase organization membership could not be audited through the available management tool; account-level administrator access was not changed.
+
+## Independent classes — 2026-11-08
+
+- Twenty-four API/unit checks passed, including class-scoped URLs/storage, root-code authentication, class-only reports and display-token rejection across classes.
+- `tests/classes.sql` passed with service_role and rollback-only fixtures: same-question and blank classes, safe creation retries, zero copied activity, independent question IDs, cross-class identity/question rejection, class-only display/export, protected directory, and unchanged original votes/questions/phase.
+- React/TypeScript build and HTML/binding checks passed. The introductory slogans are absent from participant and display pages.
+- One actual next class was prepared with six copied questions, no responses and phase waiting. The original class remained open. No test votes were added to either delivered class.

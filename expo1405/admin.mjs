@@ -2,8 +2,8 @@ const $=s=>document.querySelector(s),fa=n=>Number(n||0).toLocaleString('fa-IR');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=v=>new Intl.DateTimeFormat('fa-IR',{timeZone:'Asia/Tehran',dateStyle:'short',timeStyle:'medium'}).format(new Date(v));
 export class AdminPanel {
- constructor({request,authenticate,isAuthenticated,onLock,notify}){
-  Object.assign(this,{request,authenticate,isAuthenticated,onLock,notify});this.summary=null;this.page=1;this.total=0;this.busy=false;this.visible=false;this.loadedRound='';this.generation=0;
+ constructor({request,className,authenticate,isAuthenticated,onLock,notify}){
+  Object.assign(this,{request,className,authenticate,isAuthenticated,onLock,notify});this.summary=null;this.page=1;this.total=0;this.busy=false;this.visible=false;this.loadedRound='';this.generation=0;
   $('#adminLoginForm').addEventListener('submit',async e=>{e.preventDefault();const b=$('#adminLoginButton');b.disabled=true;$('#adminLoginError').hidden=true;try{await this.authenticate($('#adminCode').value.trim());$('#adminCode').value='';await this.show();}catch(e){$('#adminLoginError').textContent=e.message;$('#adminLoginError').hidden=false;}finally{b.disabled=false;}});
   $('#adminRound').addEventListener('change',()=>{this.page=1;this.refresh().catch(e=>this.notify(e.message,true));});
   $('#adminQuestion').addEventListener('change',()=>{this.page=1;this.loadResponses().catch(e=>this.notify(e.message,true));});
@@ -11,11 +11,11 @@ export class AdminPanel {
   $('#adminPrevious').addEventListener('click',()=>{if(this.page>1){this.page--;this.loadResponses().catch(e=>this.notify(e.message,true));}});
   $('#adminNext').addEventListener('click',()=>{if(this.page*50<this.total){this.page++;this.loadResponses().catch(e=>this.notify(e.message,true));}});
   $('#adminExport').addEventListener('click',()=>this.download());$('#lockAdmin').addEventListener('click',()=>this.onLock());
-  this.timer=setInterval(()=>{if(this.visible&&this.isAuthenticated())this.refresh().catch(()=>{});},15000);
+  this.timer=setInterval(()=>{if(this.visible&&!document.hidden&&this.isAuthenticated())this.refresh().catch(()=>{});},15000);
  }
  async show(){this.visible=true;$('#adminLoginSection').hidden=this.isAuthenticated();$('#adminWorkspace').hidden=!this.isAuthenticated();if(this.isAuthenticated())await this.refresh();}
  hide(){this.visible=false;}
- clear(){this.generation++;this.summary=null;this.page=1;this.total=0;this.loadedRound='';$('#adminCode').value='';$('#adminRows').replaceChildren();$('#adminQuestionCards').replaceChildren();$('#adminQuestion').replaceChildren();$('#adminRound').replaceChildren();$('#adminWorkspace').hidden=true;$('#adminLoginSection').hidden=false;}
+ clear(){this.generation++;this.busy=false;this.summary=null;this.page=1;this.total=0;this.loadedRound='';$('#adminCode').value='';$('#adminRows').replaceChildren();$('#adminQuestionCards').replaceChildren();$('#adminQuestion').replaceChildren();$('#adminRound').replaceChildren();$('#adminWorkspace').hidden=true;$('#adminLoginSection').hidden=false;}
  async refresh(){
   if(this.busy||!this.isAuthenticated())return;this.busy=true;const generation=this.generation;$('#adminLoading').hidden=false;
   try{
@@ -27,8 +27,8 @@ export class AdminPanel {
    $('#adminTotal').textContent=fa(data.totalResponses);$('#adminPeople').textContent=fa(data.totalPeople);$('#adminQuestionsCount').textContent=fa(data.questions.length);
    $('#adminQuestionCards').innerHTML=data.questions.map((q,i)=>'<button class="admin-question-card" data-admin-question="'+q.id+'"><span>سؤال '+fa(i+1)+(q.archived?' · بایگانی':'')+'</span><strong>'+esc(q.text)+'</strong><small>'+fa(q.responseCount)+' پاسخ ثبت‌شده</small></button>').join('');
    document.querySelectorAll('[data-admin-question]').forEach(b=>b.addEventListener('click',()=>{$('#adminQuestion').value=b.dataset.adminQuestion;this.page=1;this.loadResponses().catch(e=>this.notify(e.message,true));}));
-   this.loadedRound=selectedRound;await this.loadResponses();$('#adminTimestamp').textContent='آخرین دریافت: '+date(new Date());
-  }finally{this.busy=false;$('#adminLoading').hidden=true;}
+   this.loadedRound=selectedRound;await this.loadResponses();if(generation!==this.generation)return;$('#adminTimestamp').textContent='آخرین دریافت: '+date(new Date());
+  }finally{if(generation===this.generation){this.busy=false;$('#adminLoading').hidden=true;}}
  }
  async loadResponses(){
   if(!this.isAuthenticated())return;
@@ -40,6 +40,6 @@ export class AdminPanel {
  async download(){
   if(!this.isAuthenticated())return;
   const button=$('#adminExport'),label=button.textContent;button.disabled=true;button.textContent='در حال ساخت اکسل…';
-  try{const generation=this.generation,round=$('#adminRound').value||this.loadedRound,blob=await this.request('/admin/export?round='+encodeURIComponent(round),{exportFile:true});if(generation!==this.generation||!this.isAuthenticated())return;const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='expo1405-'+round+'.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),20000);this.notify('اکسل شامل خلاصه و شیت جداگانهٔ هر سؤال آماده شد.');}catch(e){this.notify(e.message,true);}finally{button.disabled=false;button.textContent=label;}
+  try{const generation=this.generation,round=$('#adminRound').value||this.loadedRound,blob=await this.request('/admin/export?round='+encodeURIComponent(round),{exportFile:true});if(generation!==this.generation||!this.isAuthenticated())return;const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=(this.className()||'class').replace(/[\\/:*?"<>|]/g,'-')+'-اجرای-'+round+'.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),20000);this.notify('اکسل شامل خلاصه و شیت جداگانهٔ هر سؤال آماده شد.');}catch(e){this.notify(e.message,true);}finally{button.disabled=false;button.textContent=label;}
  }
 }
