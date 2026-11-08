@@ -5,6 +5,7 @@ export class CreditsRoll {
   constructor(stage,{speed=65,reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches}={}) {
     this.stage=stage;this.layer=stage.querySelector('[data-credit-layer]');this.empty=stage.querySelector('[data-credit-empty]');
     this.history=new Map();this.pending=[];this.active=[];this.key='';this.speed=speed;this.paused=false;this.lastTime=0;this.idleSince=0;this.reducedMotion=reducedMotion;
+    this.onVisibility=()=>{this.lastTime=0;};document.addEventListener('visibilitychange',this.onVisibility);
     this.frame=requestAnimationFrame(t=>this.tick(t));
   }
   makeRow(entry,index) {
@@ -33,7 +34,7 @@ export class CreditsRoll {
   setPaused(value){this.paused=!!value;}
   setSpeed(value){this.speed=Math.max(25,Math.min(150,Number(value)||65));}
   tick(time){
-    const dt=this.lastTime?Math.min((time-this.lastTime)/1000,.08):0;this.lastTime=time;
+    const dt=this.lastTime?Math.min((time-this.lastTime)/1000,1):0;this.lastTime=time;
     if(!this.reducedMotion&&!this.paused&&this.stage.offsetParent&&this.history.size){
       const factor=1+Math.min(1.4,this.pending.filter(p=>p.fresh).length/35),speed=this.speed*factor;
       for(const row of this.active){row.y-=speed*dt;row.node.style.transform='translate3d(0,'+row.y+'px,0)';}
@@ -41,11 +42,11 @@ export class CreditsRoll {
       const last=this.active.at(-1),height=this.stage.clientHeight;
       if(this.pending.length&&(!last||last.y+last.height+28<=height)){
         const item=this.pending.shift(),entry=this.history.get(item.id);
-        if(entry){const index=[...this.history.keys()].indexOf(item.id),node=this.makeRow(entry,index);node.style.transform='translate3d(0,'+height+'px,0)';this.layer.append(node);this.active.push({id:item.id,node,y:height,height:node.offsetHeight});}
+        if(entry){const index=[...this.history.keys()].indexOf(item.id),node=this.makeRow(entry,index);this.layer.append(node);const rowHeight=node.offsetHeight,y=this.active.length?height:Math.max(18,height-rowHeight-28);node.style.transform='translate3d(0,'+y+'px,0)';this.active.push({id:item.id,node,y,height:rowHeight});}
       }
       if(!this.pending.length&&!this.active.length){if(!this.idleSince)this.idleSince=time;if(time-this.idleSince>1800){this.pending=[...this.history.keys()].map(id=>({id,fresh:false}));this.idleSince=0;}}
     }
     this.frame=requestAnimationFrame(t=>this.tick(t));
   }
-  destroy(){cancelAnimationFrame(this.frame);this.layer.replaceChildren();this.history.clear();this.pending=[];this.active=[];}
+  destroy(){cancelAnimationFrame(this.frame);document.removeEventListener('visibilitychange',this.onVisibility);this.layer.replaceChildren();this.history.clear();this.pending=[];this.active=[];}
 }

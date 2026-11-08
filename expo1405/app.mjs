@@ -1,5 +1,5 @@
 import {API_URL,PROJECT_URL,PUBLIC_KEY} from './config.mjs';
-import {CreditsRoll} from './credits.mjs?v=2';
+import {CreditsRoll} from './credits.mjs?v=3';
 const $=s=>document.querySelector(s),all=s=>document.querySelectorAll(s),view=document.body.dataset.view;
 const fa=n=>Number(n||0).toLocaleString('fa-IR');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -23,7 +23,7 @@ async function api(path,{method='GET',body,exportFile=false}={}) {
 }
 function isOpen(){return !!state&&state.phase==='open'&&(!state.deadline||Date.parse(state.deadline)>Date.now())}
 function phaseLabel(){if(!state)return 'در حال اتصال';return state.phase==='open'?(isOpen()?'رأی‌گیری باز است':'زمان پاسخ تمام شد'):({waiting:'در انتظار شروع مجری',closed:'رأی‌گیری بسته است',finished:'پایان گفت‌وگو'}[state.phase]||'انتظار')}
-function updateConnection(){const fresh=Date.now()-lastSuccess<20000;all('[data-connection]').forEach(e=>{e.classList.toggle('online',fresh);e.classList.toggle('offline',!!lastSuccess&&!fresh);e.textContent=fresh?(realtime?'متصل · زنده':'متصل · همگام‌سازی خودکار'):(lastSuccess?'ارتباط قطع است · تلاش دوباره':'در حال اتصال…')})}
+function updateConnection(){const fresh=Date.now()-lastSuccess<20000;all('[data-connection]').forEach(e=>{e.classList.toggle('online',fresh);e.classList.toggle('offline',!!lastSuccess&&!fresh);e.textContent=demoMode?'پیش‌نمایش نمایشی':fresh?(realtime?'متصل · زنده':'متصل · همگام‌سازی خودکار'):(lastSuccess?'ارتباط قطع است · تلاش دوباره':'در حال اتصال…')})}
 function snapshot(row){if(!row?.payload||Number(row.revision||0)<revision)return;revision=Number(row.revision||revision);state=row.payload;lastSuccess=Date.now();render();const k=state.round+':'+(state.question?.id||'waiting');if(view==='participant'&&joined&&k!==lastMeKey){lastMeKey=k;refreshMe().catch(e=>notify(e.message,true))}}
 async function refreshState(){if(refreshBusy)return;refreshBusy=true;try{const row=await api('/state');snapshot(row)}catch{}finally{refreshBusy=false;updateConnection()}}
 function emptyChart(){return '<div class="empty-chart"><span class="chart-lines"><i></i><i></i><i></i><i></i></span><h3>هر رأی، یک تغییر</h3><p>با شروع سؤال، نتیجه‌ها اینجا شکل می‌گیرند.</p></div>'}
