@@ -13,7 +13,7 @@ export const AuroraBackground=({className,children,showRadialGradient=true,...pr
     absolute -inset-[10px] opacity-50 blur-[10px] invert-0 will-change-transform dark:invert-0
     after:absolute after:inset-0 after:content-[""] after:[background-image:var(--white-gradient),var(--aurora)]
     dark:after:[background-image:var(--dark-gradient),var(--aurora)] after:[background-size:200%,_100%]
-    after:animate-aurora after:[background-attachment:fixed] after:mix-blend-difference motion-reduce:after:animate-none
+    after:animate-aurora after:[background-attachment:fixed] after:mix-blend-normal motion-reduce:after:animate-none
    `,showRadialGradient&&'[mask-image:radial-gradient(ellipse_at_100%_0%,black_10%,var(--transparent)_70%)]')}/></div>
   {children}
  </div></main>;
