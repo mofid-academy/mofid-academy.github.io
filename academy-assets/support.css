@@ -1,0 +1,5 @@
+.academy-support-footer{position:relative;box-sizing:border-box;clear:both;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;width:min(1220px,calc(100% - 40px));max-width:100%;margin:18px auto 0;padding:15px 0 20px;border-top:1px solid #cfe3d7;color:#527865;font:500 12px/1.8 "Pinar VF",Tahoma,Arial,sans-serif;text-align:center}
+.academy-support-footer bdi{font-weight:700;letter-spacing:.03em;color:#176750}
+html[data-academy-theme="dark"] .academy-support-footer,html[data-theme="dark"] .academy-support-footer{border-color:#365845;color:#accbb9}
+html[data-academy-theme="dark"] .academy-support-footer bdi,html[data-theme="dark"] .academy-support-footer bdi{color:#a0dfc3}
+@media(max-width:540px){.academy-support-footer{width:calc(100% - 30px);margin-top:12px;padding:13px 0 18px;font-size:11px}}
