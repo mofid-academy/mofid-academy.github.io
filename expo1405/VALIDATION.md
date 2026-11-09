@@ -54,3 +54,10 @@ The test exercised 100 concurrent vote submissions and three live subscribers, n
 ## Panel terminology — 2026-11-09
 
 All Persian interface labels, dialogs, notifications, QR labels, server error messages and workbook headings now use «پنل». Newly generated titles use the same term. Existing automatically numbered class titles are renamed; custom names, IDs, URLs, credentials, questions and responses are preserved.
+
+## Mofid artwork and Pinar VF entries — 2026-11-09
+
+- Existing 34 role, privacy, consent, lifecycle and Excel checks passed.
+- Participant, moderator, admin and display forms retain their original element IDs and handlers. HTML structure and unique-ID checks passed.
+- Pinar-VF font family and its DSTY, wght and KSHD axes were inspected. Supplied artwork retains its alpha channel and is served locally as WebP.
+- Scene switching changes presentation text/artwork only. No backend, database schema, answers or panel identifiers were changed.

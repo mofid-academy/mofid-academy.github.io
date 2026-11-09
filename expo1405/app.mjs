@@ -1,9 +1,11 @@
+import {initEntryScenes} from './entry-scenes.mjs?v=10';
 import {API_URL,PROJECT_URL,PUBLIC_KEY} from './config.mjs';
 import {CreditsRoll} from './credits.mjs?v=3';
 import {AdminPanel} from './admin.mjs?v=7';
 import {ClassesPanel} from './classes.mjs?v=9';
 import {roomFromUrl,roomStorageKey,classUrl} from './class-context.mjs?v=7';
 const $=s=>document.querySelector(s),all=s=>document.querySelectorAll(s),view=document.body.dataset.view;
+initEntryScenes();
 const fa=n=>Number(n||0).toLocaleString('fa-IR');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read=(key,session=false)=>{try{return (session?sessionStorage:localStorage).getItem(key)||''}catch{return ''}};
@@ -126,7 +128,7 @@ if(view==='host'){
   classesPanel=new ClassesPanel({request:api,current:()=>classId,switchClass,confirm:confirmAction,notify});
   adminPanel=new AdminPanel({request:api,className:()=>state?.title||classId,authenticate:authenticateOwner,isAuthenticated:()=>!!adminKey,onLock:logoutPanel,notify});
   if(panelTab==='admin')$('#loginRole').value='admin';
-  const setRoleLabel=()=>{$('#loginKeyLabel').textContent=$('#loginRole').value==='admin'?'کد اختصاصی ادمین':'کد ورود مجری';};setRoleLabel();$('#loginRole').addEventListener('change',setRoleLabel);
+  const setRoleLabel=()=>{const admin=$('#loginRole').value==='admin';$('#loginKeyLabel').textContent=admin?'کد اختصاصی ادمین':'کد ورود مجری';$('#loginCard').dataset.entryScene=admin?'vault':'jet';$('#loginCard').querySelector('[data-entry-title]').textContent=admin?'ورود ادمین':'ورود برگزارکننده';};setRoleLabel();$('#loginRole').addEventListener('change',setRoleLabel);
   $('#tabExecution').addEventListener('click',()=>showPanel('execution'));$('#tabClasses').addEventListener('click',()=>showPanel('classes'));$('#tabAdmin').addEventListener('click',()=>showPanel('admin'));$('#openAdminReport').addEventListener('click',()=>showPanel('admin'));
   const fragment=new URLSearchParams(location.hash.slice(1));const invite=fragment.get('key');if(invite){hostKey=invite;history.replaceState(null,'',location.pathname+location.search)}
   $('#loginForm').addEventListener('submit',async e=>{e.preventDefault();const code=$('#hostKey').value.trim();$('#loginButton').disabled=true;$('#loginError').hidden=true;try{if($('#loginRole').value==='admin'){panelTab='admin';await authenticateOwner(code);showPanel('admin');}else{hostKey=code;await loadHost();}$('#hostKey').value=''}catch(e){$('#loginError').textContent=e.message;$('#loginError').hidden=false}finally{$('#loginButton').disabled=false}});

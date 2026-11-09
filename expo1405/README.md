@@ -80,3 +80,9 @@ Initial schema: `backend/schema.sql`. Append-only upgrades, in order: `credits.s
 `tests/private-live-check.py` performs read-only checks against the deployed API and validates the exported workbook. It prompts for moderator and owner credentials without echoing them. `tests/private-results.sql` checks visibility and grants with rollback-only fixtures. Unit tests exercise role boundaries, display capabilities, consent, Excel structure, and formula-injection prevention.
 
 `tests/integration.mjs` is a historical, mutating capacity-test harness. Do not run it against an active event; the current operational check is the read-only private-live-check script.
+
+## Mofid immersive entry screens
+
+The participant entry uses five clearly named, manually selected scenes: Mofid Card for joining, Ayar for name consent, BV for the current-question concept, Jet for live execution and EasyTrader ribbon for participation. The moderator login uses Jet; selecting owner/admin uses Ayar. The embedded admin login uses Ayar, the authorized display login uses the ribbon, and the participant waiting state uses BV.
+
+All scenes use the same Mofid teal/mint/forest day/night palette. Pinar-VF is loaded locally and applies to the forms, buttons and scene labels, with DSTY 0 and KSHD 100. Supplied transparent artwork is served as local WebP assets. No carousel auto-advance or extra network library is used; participants can join immediately from every scene. Presentation controls never replace forms, modify credentials or access future questions.
