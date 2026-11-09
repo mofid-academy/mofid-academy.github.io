@@ -81,12 +81,14 @@ Initial schema: `backend/schema.sql`. Append-only upgrades, in order: `credits.s
 
 `tests/integration.mjs` is a historical, mutating capacity-test harness. Do not run it against an active event; the current operational check is the read-only private-live-check script.
 
-## Mofid immersive entry screens
+## Compact question artwork
 
-The participant entry uses five clearly named, manually selected scenes: Mofid Card for joining, Ayar for name consent, BV for the current-question concept, Jet for live execution and EasyTrader ribbon for participation. The moderator login uses Jet; selecting owner/admin uses Ayar. The embedded admin login uses Ayar, the authorized display login uses the ribbon, and the participant waiting state uses BV.
+The five introduction scenes and their navigation are removed from all entry documents. `question-art.mjs` selects one local WebP from the current question position. Participants receive no additional questions or API requests. The participant, host current question, hall display and private host queue use the same mapping. `question-layout.css` contains the image with `object-fit: contain`: 144 px on desktop, 104 px on mobile and 88 px at 320–360 px widths. Forms, consent, owner reports and panel separation keep their existing handlers.
 
-All scenes use the same Mofid teal/mint/forest day/night palette. Pinar-VF is loaded locally and applies to the forms, buttons and scene labels, with DSTY 0 and KSHD 100. Supplied transparent artwork is served as local WebP assets. No carousel auto-advance or extra network library is used; participants can join immediately from every scene. Presentation controls never replace forms, modify credentials or access future questions.
+`question-preview.html` compares the actual question markup at mobile and desktop widths using a synthetic question generated from `renderParticipant`. Preview documents omit the polling app and have `connect-src 'none'`; clicks stay local and cannot join or vote in a real panel. They are optional review pages and do not appear in participant navigation.
+
+The background uses soft Mofid lighting and glass surfaces. No third-party WebGL runtime or paid-template source is included. Earlier `entry-scenes` files remain unused for compatibility with cached older app versions.
 
 ## Supplied Pinar VF source
 
-The three public entry documents preload `assets/Pinar-VF-97e7c962.ttf`, the exact user-supplied `Pinar-VF(5).ttf` (SHA-256 `97e7c962e88a3e808bd48312a207bdee0ae46507ef967b929643839aa58b1a99`). The shared CSS family is `Pinar VF`, including native controls and the entry scenes. The content-hashed filename and v11 stylesheet URLs avoid reuse of the previous font response. No app logic or response data changes.
+The three public entry documents preload `assets/Pinar-VF-97e7c962.ttf`, the exact user-supplied `Pinar-VF(5).ttf` (SHA-256 `97e7c962e88a3e808bd48312a207bdee0ae46507ef967b929643839aa58b1a99`). The shared CSS family is `Pinar VF`, including native controls and question cards. The content-hashed filename and versioned stylesheet URLs avoid reuse of the previous font response. No app logic or response data changes.

@@ -65,3 +65,11 @@ All Persian interface labels, dialogs, notifications, QR labels, server error me
 ## Uploaded Pinar VF font — 2026-11-09
 
 The provided TTF is copied byte for byte and referenced directly as `Pinar VF` in shared and entry CSS. Font metadata reports Pinar-VF Version 3.0, variable weight 300–900, DSTY and KSHD axes. All three documents preload the same content-hashed font URL and use v11 stylesheets. Font integrity, CSS references, unique IDs and deployment are checked; application behavior is unchanged.
+
+## Compact question cards — 2026-11-09
+
+- The five introductory tabs, scene controls and full-size entry artwork are removed from participant, host, admin and display HTML. Original form markup and IDs remain.
+- All 34 existing role, privacy, consent, class lifecycle and Excel checks pass.
+- The actual participant, host and display render functions were exercised for 12 question positions: exactly one current-question image, escaped question titles, consistent local asset paths, and preserved open, voted and closed option states. Waiting states do not add a question illustration.
+- Images use fixed contained boxes of 144 px on desktop, 104 px on mobile and 88 px on the narrowest screens. No question API, Supabase data, identifiers or authentication changes were made. The uploaded Pinar VF font remains byte-identical.
+- Optional read-only mobile/web preview markup is generated from the participant render function using a synthetic question; preview pages cannot connect to the API.
