@@ -10,17 +10,17 @@ A Persian, RTL live poll with separate participant, moderator, display, and priv
 | `screen.html` | Requires a display capability issued from the moderator panel. Live movie credits and chart modes are both available. |
 | `screen.html?demo=credits` | Clearly labeled fictional preview; never calls the real results API. |
 
-## کلاس‌ها و فاصلهٔ کوتاه بین اجراها
+## پنل‌ها و فاصلهٔ کوتاه بین اجراها
 
-۱. در پنل، «کلاس بعد با همین سؤال‌ها» را بزنید. کلاس قبلی پایان می‌یابد و سؤال‌ها در یک کلاس مستقل کپی می‌شوند؛ پاسخ‌ها و افراد کپی نمی‌شوند.
-۲. از زبانهٔ «کلاس‌ها · لینک و QR»، لینک همین کلاس را کپی کنید یا تصویر PNG کد QR را بگیرید. هیچ انتشار دوباره‌ای لازم نیست.
-۳. برای سؤال‌های متفاوت، «کلاس خالی» بسازید یا سؤال‌های کپی‌شده را ویرایش کنید. می‌توانید کلاس‌ها را از قبل بسازید و گزینهٔ پایان کلاس فعلی را بردارید.
-۴. نمایشگر را برای کلاس انتخاب‌شده باز کنید. پنجرهٔ نمایشگری که از همین پنل باز شده، هنگام تغییر کلاس با لینک کلاس تازه باز می‌شود؛ در دستگاه دیگر، لینک خصوصی همان کلاس را باز کنید.
-۵. در ادمین، ابتدا کلاس را از بالای پنل انتخاب کنید، سپس گزارش و اکسل همان کلاس را بگیرید. نام کلاس در فایل و هر شیت ثبت می‌شود. کلاس قبلی و پاسخ‌هایش باقی می‌مانند.
+۱. در پنل، «پنل بعد با همین سؤال‌ها» را بزنید. پنل قبلی پایان می‌یابد و سؤال‌ها در یک پنل مستقل کپی می‌شوند؛ پاسخ‌ها و افراد کپی نمی‌شوند.
+۲. از زبانهٔ «پنل‌ها · لینک و QR»، لینک همین پنل را کپی کنید یا تصویر PNG کد QR را بگیرید. هیچ انتشار دوباره‌ای لازم نیست.
+۳. برای سؤال‌های متفاوت، «پنل خالی» بسازید یا سؤال‌های کپی‌شده را ویرایش کنید. می‌توانید پنل‌ها را از قبل بسازید و گزینهٔ پایان پنل فعلی را بردارید.
+۴. نمایشگر را برای پنل انتخاب‌شده باز کنید. پنجرهٔ نمایشگری که از همین پنل باز شده، هنگام تغییر پنل با لینک پنل تازه باز می‌شود؛ در دستگاه دیگر، لینک خصوصی همان پنل را باز کنید.
+۵. در ادمین، ابتدا پنل را از بالای پنل انتخاب کنید، سپس گزارش و اکسل همان پنل را بگیرید. نام پنل در فایل و هر شیت ثبت می‌شود. پنل قبلی و پاسخ‌هایش باقی می‌مانند.
 
-برای بازگرداندن کلاس پایان‌یافته، در زبانهٔ «کلاس‌ها · لینک و QR» دکمهٔ «بازگرداندن کلاس» را بزنید و تأیید کنید. همان کلاس با همان لینک، سؤال‌ها، پاسخ‌ها و شمارهٔ اجرا به صفحهٔ انتظار برمی‌گردد؛ سپس از زبانهٔ «اجرای مجری» سؤال را باز کنید.
+برای بازگرداندن پنل پایان‌یافته، در زبانهٔ «پنل‌ها · لینک و QR» دکمهٔ «بازگرداندن پنل» را بزنید و تأیید کنید. همان پنل با همان لینک، سؤال‌ها، پاسخ‌ها و شمارهٔ اجرا به صفحهٔ انتظار برمی‌گردد؛ سپس از زبانهٔ «اجرای مجری» سؤال را باز کنید.
 
-برای حذف، «حذف کلاس» را بزنید، نام دقیق همان کلاس را در پنجرهٔ تأیید وارد کنید و دکمهٔ حذف را بزنید. کلاس به «حذف‌شده‌ها» منتقل می‌شود. برای برگرداندن، آن بخش را باز کنید و «بازیابی کلاس» را بزنید. حذف دائمی وجود ندارد و پاسخ‌ها پاک نمی‌شوند. حتی اگر همهٔ کلاس‌ها حذف شوند، ورود و بازیابی یا ساخت کلاس خالی همچنان ممکن است.
+برای حذف، «حذف پنل» را بزنید، نام دقیق همان پنل را در پنجرهٔ تأیید وارد کنید و دکمهٔ حذف را بزنید. پنل به «حذف‌شده‌ها» منتقل می‌شود. برای برگرداندن، آن بخش را باز کنید و «بازیابی پنل» را بزنید. حذف دائمی وجود ندارد و پاسخ‌ها پاک نمی‌شوند. حتی اگر همهٔ پنل‌ها حذف شوند، ورود و بازیابی یا ساخت پنل خالی همچنان ممکن است.
 
 Class URLs use `?class=cls-<uuid>`. The original `main` class and old URLs keep working. Host/admin codes remain the same across managed classes; display tokens, participant storage, questions, round counts, reports and Realtime topics are class-specific. Class creation is transactional and uses an idempotency UUID to avoid duplicates on a network retry. The protected class directory excludes isolated QA rooms. Finished, deleted or invalid class links never redirect to another class. Deleted class links return HTTP 410 and clear question/results views. Reopening and restoring preserve prior votes and question identities; use a new class for a new group. Deletion requires server-validated class-name confirmation and is a soft deletion, including for the original root class.
 
@@ -73,7 +73,7 @@ The palette follows the existing Academy hub: Mofid teal and green, light mint s
 
 ## Database upgrades
 
-Initial schema: `backend/schema.sql`. Append-only upgrades, in order: `credits.sql`, `admin.sql`, `display-private.sql`, `classes.sql`, `class-lifecycle.sql`. Do not replay applied upgrades. Runtime code is deployed as `expo1405-api`; it uses Supabase's runtime-owned server key.
+Initial schema: `backend/schema.sql`. Append-only upgrades, in order: `credits.sql`, `admin.sql`, `display-private.sql`, `classes.sql`, `class-lifecycle.sql`, `panel-terminology.sql`. Do not replay applied upgrades. Runtime code is deployed as `expo1405-api`; it uses Supabase's runtime-owned server key.
 
 ## Verification
 

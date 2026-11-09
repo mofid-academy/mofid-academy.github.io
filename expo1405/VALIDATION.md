@@ -50,3 +50,7 @@ The test exercised 100 concurrent vote submissions and three live subscribers, n
 - Rollback-only lifecycle assertions passed using service_role: reopening preserves the round and responses; deletion requires the matching name; deleted classes reject joins, duplicate votes and host actions; repeated deletion/restoration is safe; restoration clears public/display tombstones and preserves question IDs and complete response reports. Root class recovery also preserves authentication hashes and reports.
 - No real class was deleted, reopened or reset during testing. Existing classes and responses remain in their original states.
 - HTML structure, IDs and UI bindings passed. Database advisory output contains informational RLS-without-policy findings for intentionally service-only tables. No public grants were added.
+
+## Panel terminology — 2026-11-09
+
+All Persian interface labels, dialogs, notifications, QR labels, server error messages and workbook headings now use «پنل». Newly generated titles use the same term. Existing automatically numbered class titles are renamed; custom names, IDs, URLs, credentials, questions and responses are preserved.

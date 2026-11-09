@@ -13,12 +13,12 @@ const messages = {
   invalid_settings:'تنظیمات معتبر نیست.',
   invalid_name:'نام نمایشی باید حداکثر ۸۰ نویسه باشد.',
   question_not_found:'سؤال پیدا نشد.',
-  invalid_class_title:'نام کلاس باید بین ۲ تا ۱۰۰ نویسه باشد.',
-  class_not_found:'کلاس پیدا نشد؛ لینک این کلاس را بررسی کنید.',
-  invalid_class:'شناسهٔ کلاس معتبر نیست.',
-  class_deleted:'این کلاس حذف شده است؛ از بخش حذف‌شده‌ها آن را بازیابی کنید.',
-  class_confirmation_required:'برای حذف، نام دقیق همین کلاس را وارد کنید.',
-  invalid_class_action:'عملیات کلاس معتبر نیست.',
+  invalid_class_title:'نام پنل باید بین ۲ تا ۱۰۰ نویسه باشد.',
+  class_not_found:'پنل پیدا نشد؛ لینک این پنل را بررسی کنید.',
+  invalid_class:'شناسهٔ پنل معتبر نیست.',
+  class_deleted:'این پنل حذف شده است؛ از بخش حذف‌شده‌ها آن را بازیابی کنید.',
+  class_confirmation_required:'برای حذف، نام دقیق همین پنل را وارد کنید.',
+  invalid_class_action:'عملیات پنل معتبر نیست.',
 };
 export async function digest(s) {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -77,12 +77,12 @@ export function makeHandler({url,key,fetcher=fetch}) {
       if(!/^(main|cls-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.test(room))return json({error:messages.class_not_found},404);
       if(req.method==='GET'&&path==='/state') {
         const rows=await publicState(room);
-        if(rows[0]?.payload?.deleted)return json({error:'این کلاس حذف شده است. لینک کلاس را از برگزارکننده بگیرید.'},410);
+        if(rows[0]?.payload?.deleted)return json({error:'این پنل حذف شده است. لینک پنل را از برگزارکننده بگیرید.'},410);
         return rows[0]?json(withoutResults(rows[0])):json({error:messages.class_not_found},404);
       }
       if(req.method==='GET'&&path==='/display/state'){
         const token=req.headers.get('x-display-key')||'';
-        if(!token||!constantEqual(token,await displayToken(room)))return json({error:'نمایشگر را از پنل همین کلاس باز کنید یا کد نمایشگر این کلاس را وارد کنید.'},401);
+        if(!token||!constantEqual(token,await displayToken(room)))return json({error:'نمایشگر را از بخش مدیریت همین پنل باز کنید یا کد نمایشگر آن را وارد کنید.'},401);
         const rows=await db('expo1405_display?id=eq.'+room+'&select=payload,revision');
         if(rows[0]?.payload?.deleted)return json({error:messages.class_deleted},410);
         return rows[0]?json(rows[0]):json({error:messages.class_not_found},404);
