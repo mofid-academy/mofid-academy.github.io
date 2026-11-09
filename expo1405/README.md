@@ -18,7 +18,11 @@ A Persian, RTL live poll with separate participant, moderator, display, and priv
 ۴. نمایشگر را برای کلاس انتخاب‌شده باز کنید. پنجرهٔ نمایشگری که از همین پنل باز شده، هنگام تغییر کلاس با لینک کلاس تازه باز می‌شود؛ در دستگاه دیگر، لینک خصوصی همان کلاس را باز کنید.
 ۵. در ادمین، ابتدا کلاس را از بالای پنل انتخاب کنید، سپس گزارش و اکسل همان کلاس را بگیرید. نام کلاس در فایل و هر شیت ثبت می‌شود. کلاس قبلی و پاسخ‌هایش باقی می‌مانند.
 
-Class URLs use `?class=cls-<uuid>`. The original `main` class and old URLs keep working. Host/admin codes remain the same across managed classes; display tokens, participant storage, questions, round counts, reports and Realtime topics are class-specific. Class creation is transactional and uses an idempotency UUID to avoid duplicates on a network retry. The protected class directory excludes isolated QA rooms. Finished or invalid class links never redirect to another class.
+برای بازگرداندن کلاس پایان‌یافته، در زبانهٔ «کلاس‌ها · لینک و QR» دکمهٔ «بازگرداندن کلاس» را بزنید و تأیید کنید. همان کلاس با همان لینک، سؤال‌ها، پاسخ‌ها و شمارهٔ اجرا به صفحهٔ انتظار برمی‌گردد؛ سپس از زبانهٔ «اجرای مجری» سؤال را باز کنید.
+
+برای حذف، «حذف کلاس» را بزنید، نام دقیق همان کلاس را در پنجرهٔ تأیید وارد کنید و دکمهٔ حذف را بزنید. کلاس به «حذف‌شده‌ها» منتقل می‌شود. برای برگرداندن، آن بخش را باز کنید و «بازیابی کلاس» را بزنید. حذف دائمی وجود ندارد و پاسخ‌ها پاک نمی‌شوند. حتی اگر همهٔ کلاس‌ها حذف شوند، ورود و بازیابی یا ساخت کلاس خالی همچنان ممکن است.
+
+Class URLs use `?class=cls-<uuid>`. The original `main` class and old URLs keep working. Host/admin codes remain the same across managed classes; display tokens, participant storage, questions, round counts, reports and Realtime topics are class-specific. Class creation is transactional and uses an idempotency UUID to avoid duplicates on a network retry. The protected class directory excludes isolated QA rooms. Finished, deleted or invalid class links never redirect to another class. Deleted class links return HTTP 410 and clear question/results views. Reopening and restoring preserve prior votes and question identities; use a new class for a new group. Deletion requires server-validated class-name confirmation and is a soft deletion, including for the original root class.
 
 The participant introduction slogans have been removed. Each page identifies the selected class. All QR rendering and PNG generation run locally. Polls skip hidden tabs; finished participant pages disconnect from Realtime and check less frequently. The vote path authenticates inside the vote RPC, eliminating a redundant database round trip. Concurrent public reads are coalesced per class inside each Edge isolate, without a stale TTL cache.
 
@@ -69,7 +73,7 @@ The palette follows the existing Academy hub: Mofid teal and green, light mint s
 
 ## Database upgrades
 
-Initial schema: `backend/schema.sql`. Append-only upgrades, in order: `credits.sql`, `admin.sql`, `display-private.sql`, `classes.sql`. Do not replay applied upgrades. Runtime code is deployed as `expo1405-api`; it uses Supabase's runtime-owned server key.
+Initial schema: `backend/schema.sql`. Append-only upgrades, in order: `credits.sql`, `admin.sql`, `display-private.sql`, `classes.sql`, `class-lifecycle.sql`. Do not replay applied upgrades. Runtime code is deployed as `expo1405-api`; it uses Supabase's runtime-owned server key.
 
 ## Verification
 

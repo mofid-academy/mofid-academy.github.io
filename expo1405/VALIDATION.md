@@ -43,3 +43,10 @@ The test exercised 100 concurrent vote submissions and three live subscribers, n
 - `tests/classes.sql` passed with service_role and rollback-only fixtures: same-question and blank classes, safe creation retries, zero copied activity, independent question IDs, cross-class identity/question rejection, class-only display/export, protected directory, and unchanged original votes/questions/phase.
 - React/TypeScript build and HTML/binding checks passed. The introductory slogans are absent from participant and display pages.
 - One actual next class was prepared with six copied questions, no responses and phase waiting. The original class remained open. No test votes were added to either delivered class.
+
+## Class reopening and reversible deletion — 2026-11-09
+
+- 34 API/unit checks passed, including typed confirmation, cancellation without a request, wrong-name rejection, trash separation, deleted-link HTTP 410, root authentication when every class is deleted, and recovery navigation.
+- Rollback-only lifecycle assertions passed using service_role: reopening preserves the round and responses; deletion requires the matching name; deleted classes reject joins, duplicate votes and host actions; repeated deletion/restoration is safe; restoration clears public/display tombstones and preserves question IDs and complete response reports. Root class recovery also preserves authentication hashes and reports.
+- No real class was deleted, reopened or reset during testing. Existing classes and responses remain in their original states.
+- HTML structure, IDs and UI bindings passed. Database advisory output contains informational RLS-without-policy findings for intentionally service-only tables. No public grants were added.

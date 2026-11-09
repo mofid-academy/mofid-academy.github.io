@@ -16,6 +16,9 @@ const messages = {
   invalid_class_title:'نام کلاس باید بین ۲ تا ۱۰۰ نویسه باشد.',
   class_not_found:'کلاس پیدا نشد؛ لینک این کلاس را بررسی کنید.',
   invalid_class:'شناسهٔ کلاس معتبر نیست.',
+  class_deleted:'این کلاس حذف شده است؛ از بخش حذف‌شده‌ها آن را بازیابی کنید.',
+  class_confirmation_required:'برای حذف، نام دقیق همین کلاس را وارد کنید.',
+  invalid_class_action:'عملیات کلاس معتبر نیست.',
 };
 export async function digest(s) {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -74,12 +77,15 @@ export function makeHandler({url,key,fetcher=fetch}) {
       if(!/^(main|cls-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.test(room))return json({error:messages.class_not_found},404);
       if(req.method==='GET'&&path==='/state') {
         const rows=await publicState(room);
+        if(rows[0]?.payload?.deleted)return json({error:'این کلاس حذف شده است. لینک کلاس را از برگزارکننده بگیرید.'},410);
         return rows[0]?json(withoutResults(rows[0])):json({error:messages.class_not_found},404);
       }
       if(req.method==='GET'&&path==='/display/state'){
         const token=req.headers.get('x-display-key')||'';
         if(!token||!constantEqual(token,await displayToken(room)))return json({error:'نمایشگر را از پنل همین کلاس باز کنید یا کد نمایشگر این کلاس را وارد کنید.'},401);
-        const rows=await db('expo1405_display?id=eq.'+room+'&select=payload,revision');return rows[0]?json(rows[0]):json({error:messages.class_not_found},404);
+        const rows=await db('expo1405_display?id=eq.'+room+'&select=payload,revision');
+        if(rows[0]?.payload?.deleted)return json({error:messages.class_deleted},410);
+        return rows[0]?json(rows[0]):json({error:messages.class_not_found},404);
       }
       if(path.startsWith('/host')||path.startsWith('/admin')) {
         const adminSupplied=req.headers.get('x-admin-key')||'';
@@ -89,7 +95,7 @@ export function makeHandler({url,key,fetcher=fetch}) {
         if(supplied.length<16||supplied.length>160)return json({error:'کد ورود معتبر نیست.'},401);
         const ip=req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown';
         const ipHash=await digest((adminSupplied?'admin:':'host:')+key+':'+ip);
-        const roots=await db('expo1405_rooms?id=eq.'+ROOM+'&select=host_key_hash,admin_key_hash,round,title');
+        const roots=await db('expo1405_rooms?id=eq.'+ROOM+'&select=host_key_hash,admin_key_hash,round,title,deleted_at');
         const expected=adminSupplied?roots[0]?.admin_key_hash:roots[0]?.host_key_hash;
         if(!roots.length||!constantEqual(await digest(supplied),expected)) {
           const allowed=await rpc('rate_limit',{p_key:ipHash,p_limit:15,p_seconds:900});
@@ -99,18 +105,34 @@ export function makeHandler({url,key,fetcher=fetch}) {
         const limits=await db('expo1405_limits?key=eq.'+ipHash+'&select=bucket,hits');
         if(limits[0]&&limits[0].bucket===Math.floor(Date.now()/900000)&&limits[0].hits>15)return json({error:'تلاش‌های ورود زیاد است؛ کمی بعد دوباره تلاش کنید.'},429);
         const role=adminSupplied?'admin':'host';
-        const rooms=room===ROOM?roots:await db('expo1405_rooms?id=eq.'+room+'&parent_id=eq.main&select=round,title');
+        if(req.method==='GET'&&path==='/host/classes'){
+          const list=await rpc('classes',{});return json({role,classes:list.filter(c=>!c.deletedAt),trash:list.filter(c=>c.deletedAt)});
+        }
+        if(req.method==='POST'&&path==='/host/class-lifecycle'){
+          const raw=await req.text();if(raw.length>2000)return json({error:'درخواست بزرگ است.'},413);
+          const body=JSON.parse(raw);
+          if(!/^(main|cls-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.test(body.classId||'')||!['reopen','delete','restore'].includes(body.action))return json({error:messages.invalid_class_action},400);
+          if(body.action==='delete'&&(typeof body.confirmTitle!=='string'||!body.confirmTitle.trim()))return json({error:messages.class_confirmation_required},409);
+          return json(await rpc('class_lifecycle',{p_room:body.classId,p_action:body.action,p_confirm_title:body.confirmTitle||null}));
+        }
+        const rooms=room===ROOM?roots:await db('expo1405_rooms?id=eq.'+room+'&parent_id=eq.main&select=round,title,deleted_at');
         if(!rooms.length)return json({error:messages.class_not_found},404);
-        if(req.method==='GET'&&path==='/host/classes')return json({classes:await rpc('classes',{})});
+        if(req.method==='GET'&&path==='/admin/session')return json({role,currentRound:rooms[0].round,title:rooms[0].title,directoryOnly:!!rooms[0].deleted_at});
         if(req.method==='POST'&&(path==='/host/classes'||path==='/host/class-title')){
           const raw=await req.text();if(raw.length>2000)return json({error:'درخواست بزرگ است.'},413);
           const body=JSON.parse(raw);
-          if(path==='/host/class-title')return json(await rpc('rename_class',{p_room:room,p_title:body.title}));
+          if(path==='/host/class-title'){
+            if(rooms[0].deleted_at)return json({error:messages.class_deleted},410);
+            return json(await rpc('rename_class',{p_room:room,p_title:body.title}));
+          }
           if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.requestId||''))return json({error:'شناسهٔ درخواست معتبر نیست.'},400);
           return json(await rpc('create_class',{p_source:room,p_title:body.title||null,p_copy:body.copyQuestions!==false,p_close_previous:body.closePrevious===true,p_request:body.requestId}));
         }
+        if(rooms[0].deleted_at){
+          if(req.method==='GET'&&path==='/host')return json({role,directoryOnly:true,questions:[]});
+          return json({error:messages.class_deleted},410);
+        }
         if(req.method==='POST'&&path==='/host/display-token')return json({token:await displayToken(room)});
-        if(req.method==='GET'&&path==='/admin/session')return json({role,currentRound:rooms[0].round,title:rooms[0].title});
         const selected=requestUrl.searchParams.get('round');
         const selectedRound=selected==='all'?null:Number(selected||rooms[0].round);
         if((path.startsWith('/admin')||path==='/host/export')&&selectedRound!==null&&(!Number.isInteger(selectedRound)||selectedRound<1||selectedRound>rooms[0].round))return json({error:'شمارهٔ اجرا معتبر نیست.'},400);
@@ -159,8 +181,9 @@ export function makeHandler({url,key,fetcher=fetch}) {
         if(req.method==='GET'&&path==='/me') {
           const [people,rooms]=await Promise.all([
             db('expo1405_participants?room_id=eq.'+room+'&token_hash=eq.'+hash+'&select=id,display_name,share_on_screen'),
-            db('expo1405_rooms?id=eq.'+room+'&select=round')]);
+            db('expo1405_rooms?id=eq.'+room+'&select=round,deleted_at')]);
           if(!people.length||!rooms.length)return json({error:messages.invalid_participant},401);
+          if(rooms[0].deleted_at)return json({error:messages.class_deleted},410);
           const votes=await db('expo1405_votes?room_id=eq.'+room+'&round=eq.'+rooms[0].round+'&participant_id=eq.'+people[0].id+'&select=question_id,choice');
           return json({id:people[0].id,name:people[0].display_name,shareOnScreen:people[0].share_on_screen,round:rooms[0].round,votes});
         }
@@ -182,7 +205,7 @@ export function makeHandler({url,key,fetcher=fetch}) {
     } catch(e) {
       if(e instanceof SyntaxError)return json({error:'درخواست معتبر نیست.'},400);
       const known=Object.entries(messages).find(([code])=>String(e?.message).includes(code));
-      return json({error:known?known[1]:'ارتباط با سامانه برقرار نشد؛ دوباره تلاش کنید.'},known?(known[0]==='invalid_participant'?401:409):503);
+      return json({error:known?known[1]:'ارتباط با سامانه برقرار نشد؛ دوباره تلاش کنید.'},known?(known[0]==='invalid_participant'?401:known[0]==='class_deleted'?410:409):503);
     }
   };
 }

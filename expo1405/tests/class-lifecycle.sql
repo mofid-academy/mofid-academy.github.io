@@ -1,0 +1,52 @@
+-- Reopening, deleting and recovery checks; every write is rolled back.
+begin;
+set local role service_role;
+do $$
+declare room text; q uuid; person uuid; before_report jsonb; after_report jsonb; result jsonb; rejected boolean; before_round integer;
+begin
+ room=public.expo1405_create_class('main','Lifecycle test class',false,false,gen_random_uuid())->>'id';
+ perform public.expo1405_host_action(room,jsonb_build_object('action','save','text','یک سؤال برای آزمون بازیابی','options',jsonb_build_array('بله','خیر')));
+ select id into q from public.expo1405_questions where room_id=room;
+ person=public.expo1405_join_with_credits(room,'LIFECYCLE_TEST_HASH','TEST ONLY',true);
+ perform public.expo1405_host_action(room,jsonb_build_object('action','activate','questionId',q));
+ perform public.expo1405_vote(room,'LIFECYCLE_TEST_HASH',q,1,0);
+ before_report=public.expo1405_admin_report(room,null);
+ perform public.expo1405_host_action(room,jsonb_build_object('action','finish'));
+ perform public.expo1405_class_lifecycle(room,'reopen');
+ select d.payload into result from public.expo1405_display d where d.id=room;
+ if result->>'phase'<>'waiting' or result->'question'<>'null'::jsonb or (result->>'round')::int<>1 then raise exception 'Reopen reset the round or showed an old question';end if;
+ rejected=false;
+ begin perform public.expo1405_class_lifecycle(room,'delete','Wrong name');exception when others then if sqlerrm like '%class_confirmation_required%' then rejected=true;else raise;end if;end;
+ if not rejected or (select deleted_at is not null from public.expo1405_rooms where id=room) then raise exception 'Incorrect confirmation deleted a class';end if;
+ perform public.expo1405_class_lifecycle(room,'delete','Lifecycle test class');
+ perform public.expo1405_class_lifecycle(room,'delete','Lifecycle test class');
+ select d.payload into result from public.expo1405_display d where d.id=room;
+ if result->>'deleted'<>'true' or result->'question'<>'null'::jsonb or result ?| array['credits','total','participants'] then raise exception 'Deleted display exposes activity';end if;
+ if not exists(select 1 from jsonb_array_elements(public.expo1405_classes()) c where c->>'id'=room and c->>'deletedAt' is not null) then raise exception 'Trash class missing';end if;
+ rejected=false;
+ begin perform public.expo1405_host_action(room,jsonb_build_object('action','activate','questionId',q));exception when others then if sqlerrm like '%class_deleted%' then rejected=true;else raise;end if;end;
+ if not rejected then raise exception 'Deleted class can be activated';end if;
+ rejected=false;
+ begin perform public.expo1405_join_with_credits(room,'LIFECYCLE_BLOCKED_HASH',null,false);exception when others then if sqlerrm like '%class_deleted%' then rejected=true;else raise;end if;end;
+ if not rejected then raise exception 'Deleted class accepts participants';end if;
+ rejected=false;
+ begin perform public.expo1405_vote(room,'LIFECYCLE_TEST_HASH',q,1,0);exception when others then if sqlerrm like '%class_deleted%' then rejected=true;else raise;end if;end;
+ if not rejected then raise exception 'Deleted class accepts duplicate votes';end if;
+ perform public.expo1405_class_lifecycle(room,'restore');
+ perform public.expo1405_class_lifecycle(room,'restore');
+ select d.payload into result from public.expo1405_display d where d.id=room;
+ if result ? 'deleted' or result->>'phase'<>'waiting' then raise exception 'Restore failed to clear tombstone';end if;
+ after_report=public.expo1405_admin_report(room,null);
+ if before_report->'responses'<>after_report->'responses' or before_report->'questions'<>after_report->'questions' then raise exception 'Recovery changed questions or responses';end if;
+ if has_function_privilege('anon','public.expo1405_class_lifecycle(text,text,text)','execute') then raise exception 'Anonymous lifecycle access';end if;
+ -- Root deletion is reversible too; authentication hashes and all original data stay intact.
+ select round into before_round from public.expo1405_rooms where id='main';
+ before_report=public.expo1405_admin_report('main',null);
+ perform public.expo1405_class_lifecycle('main','delete',(select title from public.expo1405_rooms where id='main'));
+ if (select host_key_hash is null or admin_key_hash is null from public.expo1405_rooms where id='main') then raise exception 'Deleting root removed credentials';end if;
+ perform public.expo1405_class_lifecycle('main','restore');
+ if (select round from public.expo1405_rooms where id='main')<>before_round then raise exception 'Root restore changed round';end if;
+ after_report=public.expo1405_admin_report('main',null);
+ if before_report->'responses'<>after_report->'responses' or before_report->'questions'<>after_report->'questions' then raise exception 'Root recovery lost data';end if;
+end $$;
+rollback;

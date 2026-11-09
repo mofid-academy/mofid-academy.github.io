@@ -3,8 +3,8 @@ const $=s=>document.querySelector(s),fa=n=>Number(n||0).toLocaleString('fa-IR');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const phases={waiting:'آمادهٔ شروع',open:'در حال اجرا',closed:'رأی‌گیری بسته',finished:'پایان‌یافته'};
 export class ClassesPanel{
- constructor({request,current,switchClass,notify}){
-  Object.assign(this,{request,current,switchClass,notify});this.items=[];this.busy=false;this.pending=null;this.generation=0;
+ constructor({request,current,switchClass,confirm,notify}){
+  Object.assign(this,{request,current,switchClass,confirm,notify});this.items=[];this.trash=[];this.busy=false;this.pending=null;this.generation=0;this.loadSequence=0;
   $('#classSelect').addEventListener('change',()=>this.select($('#classSelect').value));
   $('#quickNextClass').addEventListener('click',()=>this.create({title:'',copyQuestions:true,closePrevious:true}));
   $('#createClassForm').addEventListener('input',()=>this.pending=null);
@@ -13,19 +13,41 @@ export class ClassesPanel{
   $('#renameClassForm').addEventListener('submit',async e=>{e.preventDefault();if(this.busy)return;this.setBusy(true);try{await this.request('/host/class-title',{method:'POST',body:{title:$('#renameClassTitle').value.trim()}});await this.load();await this.switchClass(this.current(),true);this.notify('نام کلاس ذخیره شد.');}catch(e){this.notify(e.message,true)}finally{this.setBusy(false)}});
   $('#copyClassJoin').addEventListener('click',()=>this.copy());$('#downloadClassQr').addEventListener('click',()=>this.downloadQr());
  }
- setBusy(value){this.busy=value;document.querySelectorAll('[data-class-control],#classSelect,#quickNextClass').forEach(e=>e.disabled=value);}
- clear(){this.generation++;this.items=[];this.pending=null;$('#classList').replaceChildren();$('#classSelect').replaceChildren();$('#classQr').replaceChildren();$('#classJoinUrl').textContent='';}
- async load(){const generation=this.generation,{classes}=await this.request('/host/classes');if(generation!==this.generation)return;this.items=classes;this.render();}
+ setBusy(value){this.busy=value;document.querySelectorAll('[data-class-control],#classSelect,#quickNextClass,[data-class-action],[data-select-class]').forEach(e=>e.disabled=value||(e.dataset.selectClass===this.current()));this.updateAvailability();}
+ clear(){this.generation++;this.loadSequence++;this.items=[];this.trash=[];this.pending=null;$('#classList').replaceChildren();$('#classTrashList').replaceChildren();$('#classSelect').replaceChildren();$('#classQr').replaceChildren();$('#classJoinUrl').textContent='';document.body.classList.remove('class-directory-only');}
+ async load(){const generation=this.generation,sequence=++this.loadSequence,{classes,trash=[]}=await this.request('/host/classes');if(generation!==this.generation||sequence!==this.loadSequence)return;this.items=classes;this.trash=trash;this.render();}
+ updateAvailability(){
+  const current=this.items.find(c=>c.id===this.current());document.body.classList.toggle('class-directory-only',!current);
+  $('#quickNextClass').disabled=this.busy||!current;$('#tabExecution').disabled=!current;$('#tabAdmin').disabled=!current;
+  $('#classQuestionMode').querySelector('[value="copy"]').disabled=!current;
+  if(!current){$('#classQuestionMode').value='blank';$('#closePreviousClass').checked=false;}
+  $('#closePreviousClass').disabled=this.busy||!current;$('#classSelect').disabled=this.busy||!this.items.length;
+ }
  render(){
   const current=this.items.find(c=>c.id===this.current());
-  $('#classSelect').innerHTML=this.items.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.title)+' · '+esc(phases[c.phase])+'</option>').join('');$('#classSelect').value=this.current();
-  document.querySelectorAll('[data-class-title]').forEach(e=>e.textContent=current?.title||'کلاس');
-  $('#classList').innerHTML=this.items.map(c=>'<article class="class-item '+(c.id===this.current()?'selected':'')+'"><div><strong>'+esc(c.title)+'</strong><span>'+esc(phases[c.phase])+' · '+fa(c.questionCount)+' سؤال</span></div><button class="button '+(c.id===this.current()?'ghost':'secondary')+' small" data-select-class="'+esc(c.id)+'" '+(c.id===this.current()?'disabled':'')+'>'+(c.id===this.current()?'انتخاب‌شده':'انتخاب کلاس')+'</button></article>').join('');
+  $('#classSelect').innerHTML=(!current?'<option value="">'+(this.items.length?'یک کلاس انتخاب کنید':'کلاس فعالی ندارید')+'</option>':'')+this.items.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.title)+' · '+esc(phases[c.phase])+'</option>').join('');$('#classSelect').value=current?this.current():'';
+  document.querySelectorAll('[data-class-title]').forEach(e=>e.textContent=current?.title||'مدیریت کلاس‌ها');
+  const button=(c,action,label,danger=false)=>'<button class="button '+(danger?'danger':'secondary')+' small" data-class-action="'+action+'" data-class-id="'+esc(c.id)+'">'+label+'</button>';
+  $('#classList').innerHTML=this.items.length?this.items.map(c=>'<article class="class-item '+(c.id===this.current()?'selected':'')+'"><div><strong>'+esc(c.title)+'</strong><span>'+esc(phases[c.phase])+' · '+fa(c.questionCount)+' سؤال</span></div><div class="class-item-actions"><button class="button '+(c.id===this.current()?'ghost':'secondary')+' small" data-select-class="'+esc(c.id)+'" '+(c.id===this.current()?'disabled':'')+'>'+(c.id===this.current()?'انتخاب‌شده':'انتخاب کلاس')+'</button>'+(c.phase==='finished'?button(c,'reopen','بازگرداندن کلاس'):'')+button(c,'delete','حذف کلاس',true)+'</div></article>').join(''):'<p class="muted class-empty">کلاس فعالی ندارید؛ کلاس تازه بسازید یا از بخش حذف‌شده‌ها بازیابی کنید.</p>';
+  $('#classTrashCount').textContent=fa(this.trash.length);
+  $('#classTrashList').innerHTML=this.trash.length?this.trash.map(c=>'<article class="class-item"><div><strong>'+esc(c.title)+'</strong><span>'+fa(c.questionCount)+' سؤال · قابل بازیابی</span></div>'+button(c,'restore','بازیابی کلاس')+'</article>').join(''):'<p class="muted class-empty">کلاسی در حذف‌شده‌ها نیست.</p>';
   document.querySelectorAll('[data-select-class]').forEach(b=>b.addEventListener('click',()=>this.select(b.dataset.selectClass)));
+  document.querySelectorAll('[data-class-action]').forEach(b=>b.addEventListener('click',()=>{const c=[...this.items,...this.trash].find(c=>c.id===b.dataset.classId);if(c)this.lifecycle(c,b.dataset.classAction);}));
   if(document.activeElement!==$('#renameClassTitle'))$('#renameClassTitle').value=current?.title||'';
-  this.renderQr();
+  this.updateAvailability();if(current)this.renderQr();else{$('#classQr').replaceChildren();$('#classJoinUrl').textContent='';this.qr=null;}
  }
- async select(id){if(this.busy||id===this.current())return;this.setBusy(true);try{await this.switchClass(id);this.render();this.notify('کلاس انتخاب شد؛ لینک و QR مربوط به همین کلاس است.');}catch(e){this.notify(e.message,true);this.render()}finally{this.setBusy(false)}}
+ async lifecycle(c,action){
+  if(this.busy)return;
+  if(action==='delete'&&!await this.confirm('حذف «'+c.title+'»؟','این کلاس از فهرست کلاس‌ها کنار می‌رود و لینک مخاطبان و نمایشگر آن غیرفعال می‌شود. سؤال‌ها و پاسخ‌ها حفظ می‌شوند و از بخش حذف‌شده‌ها قابل بازیابی‌اند.',{name:c.title,label:'حذف کلاس',danger:true}))return;
+  if(action==='reopen'&&!await this.confirm('بازگرداندن «'+c.title+'»؟','کلاس به صفحهٔ انتظار برمی‌گردد. لینک، سؤال‌ها، پاسخ‌ها و شمارهٔ اجرای قبلی حفظ می‌شوند.',{label:'بازگرداندن کلاس'}))return;
+  this.setBusy(true);
+  try{await this.request('/host/class-lifecycle',{method:'POST',body:{classId:c.id,action,...(action==='delete'?{confirmTitle:c.title}:{})}});await this.load();
+   if(action==='delete'&&c.id===this.current())await this.switchClass(this.items[0]?.id||c.id,true);
+   else if(action!=='delete')await this.switchClass(c.id,true);
+   this.render();this.notify(action==='delete'?'کلاس به حذف‌شده‌ها منتقل شد؛ هر زمان خواستید بازیابی کنید.':'کلاس بازگردانده شد؛ از بخش اجرای مجری سؤال را باز کنید.');
+  }catch(e){this.notify(e.message,true)}finally{this.setBusy(false)}
+ }
+ async select(id){if(!id||this.busy||id===this.current())return;this.setBusy(true);try{await this.switchClass(id);this.render();this.notify('کلاس انتخاب شد؛ لینک و QR مربوط به همین کلاس است.');}catch(e){this.notify(e.message,true);this.render()}finally{this.setBusy(false)}}
  async create(values){
   if(this.busy)return;this.setBusy(true);
   const signature=JSON.stringify([this.current(),values]);
