@@ -22,7 +22,7 @@ let panelEpoch=0,hostLoadPromise=null,classUnavailable=0;
 const demoMode=view==='screen'&&new URL(location.href).searchParams.get('demo')==='credits';
 if(demoMode)screenMode='credits';
 let joinUrl=classUrl('./',classId,location.href).href;
-all('.brand').forEach(a=>a.href=joinUrl);
+
 if(view==='host'){const url=new URL(location.href);url.searchParams.set('class',classId);history.replaceState(null,'',url);}
 function notify(message,error=false){const t=$('#toast');t.textContent=message;t.classList.toggle('error',error);t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.hidden=true,6500)}
 async function api(path,{method='GET',body,exportFile=false}={}) {
@@ -61,7 +61,7 @@ function renderParticipant(){
   if(state){const policy=state.namePolicy;$('#anonymousWrap').hidden=policy!=='optional';if(policy==='anonymous')$('#anonymous').checked=true;if(policy==='named')$('#anonymous').checked=false;$('#nameWrap').hidden=$('#anonymous').checked;$('#displayName').required=!$('#anonymous').checked;}
   if(!joined&&state?.phase==='finished'){$('#entryCard').hidden=true;$('#questionCard').hidden=false;$('#questionBody').innerHTML='<div class="waiting-state"><span class="waiting-icon">✓</span><h2>این پنل پایان یافت</h2><p>برای پنل بعد، لینک یا QR تازه از برگزارکننده دریافت کنید.</p></div>';return;}
   if(!joined)return;const body=$('#questionBody');
-  if(!state?.question){const done=state?.phase==='finished';body.innerHTML='<div class="waiting-state"><span class="waiting-icon" aria-hidden="true">'+(done?'✓':'◌')+'</span><h2>'+(done?'ممنون که هم‌صدا شدید.':'منتظر شروع مجری هستیم')+'</h2><p>'+(done?'گفت‌وگوی این نوبت به پایان رسید.':'صفحه را باز نگه دارید؛ سؤال همین‌جا ظاهر می‌شود.')+'</p></div>';return;}
+  if(!state?.question){const done=state?.phase==='finished';body.innerHTML='<div class="waiting-state"><span class="waiting-icon" aria-hidden="true">'+(done?'✓':'◌')+'</span><h2>'+(done?'از همراهی شما سپاسگزاریم.':'منتظر شروع مجری هستیم')+'</h2><p>'+(done?'گفت‌وگوی این نوبت به پایان رسید.':'صفحه را باز نگه دارید؛ سؤال همین‌جا ظاهر می‌شود.')+'</p></div>';return;}
   const q=state.question,voted=myRound===state.round&&Object.hasOwn(myVotes,q.id),choice=myVotes[q.id];
   body.innerHTML='<div class="question-heading"><div class="question-heading-copy"><div class="question-kicker"><span>پرسش '+fa(q.position)+' از '+fa(state.questionCount)+'</span><span>'+esc(phaseLabel())+'</span></div><h2 id="questionTitle">'+esc(q.text)+'</h2></div>'+questionArtMarkup(q)+'</div><div class="options">'+q.options.map((o,i)=>'<button class="option-button shiny-cta gradient-button '+(voted&&choice===i?'selected':'')+'" data-choice="'+i+'" '+(!isOpen()||voted||voteBusy?'disabled':'')+'><span class="option-letter">'+(voted&&choice===i?'✓':['الف','ب','ج','د','هـ','و','ز','ح'][i])+'</span><span>'+esc(o.label)+'</span></button>').join('')+'</div>'+(voted?'<div class="success-note" role="status">✓ پاسخ شما ثبت شد. برای سؤال بعدی منتظر مجری بمانید.</div>':'<p class="tiny">'+(voteBusy?'در حال ثبت پاسخ…':isOpen()?'با انتخاب گزینه، پاسخ شما ثبت می‌شود.':'ثبت پاسخ برای این سؤال بسته است.')+'</p>');
   all('[data-choice]').forEach(b=>b.addEventListener('click',()=>castVote(Number(b.dataset.choice))));
@@ -88,7 +88,7 @@ function showPanel(tab){if(document.body.classList.contains('class-directory-onl
 async function switchClass(id,force=false){
  if(hostBusy)throw Error('ابتدا منتظر پایان عملیات سؤال بمانید.');if(id===classId&&!force)return;
  panelEpoch++;classAbort.abort();classAbort=new AbortController();hostLoadPromise=null;hostLoading=false;state=null;revision=0;hostData=null;adminPanel?.clear();
- classId=id;joinUrl=classUrl('./',classId,location.href).href;save('expo1405-selected-class',id,true);const url=new URL(location.href);url.searchParams.set('class',id);history.replaceState(null,'',url);all('.brand').forEach(a=>a.href=joinUrl);
+ classId=id;joinUrl=classUrl('./',classId,location.href).href;save('expo1405-selected-class',id,true);const url=new URL(location.href);url.searchParams.set('class',id);history.replaceState(null,'',url);
  $('#questionList').replaceChildren();$('#hostCurrent').textContent='در حال دریافت پنل…';$('#adminTimestamp').textContent='';$('#adminTotal').textContent='۰';$('#adminPeople').textContent='۰';$('#adminQuestionsCount').textContent='۰';
  await loadHost();classesPanel?.render();
  if(!hostData?.directoryOnly&&displayWindow&&!displayWindow.closed){try{const {token}=await api('/host/display-token',{method:'POST',body:{}});const display=classUrl('./screen.html',classId,location.href);display.hash='display='+token;displayWindow.location.href=display.href;}catch{notify('برای پنل تازه، نمایشگر را دوباره از همین پنل باز کنید.',true);}}
@@ -153,7 +153,7 @@ if(view==='screen'){
   $('#creditsSpeed').addEventListener('change',()=>creditsRoll.setSpeed($('#creditsSpeed').value));$('#creditsPause').addEventListener('click',()=>{creditsRoll.setPaused(!creditsRoll.paused);$('#creditsPause').textContent=creditsRoll.paused?'ادامهٔ حرکت ▶':'مکث حرکت Ⅱ';$('#creditsPause').setAttribute('aria-pressed',String(creditsRoll.paused));});
   $('#demoLiveLink').href=classUrl('./screen.html',classId,location.href).href;
   $('#joinLink').textContent=joinUrl.replace('https://','');$('#joinLink').href=joinUrl;
-  if(window.qrcode){const qr=window.qrcode(0,'M');qr.addData(joinUrl);qr.make();setQrCard($('#joinQr'),{url:joinUrl,title:'ورود به همین پنل',svg:qr.createSvgTag({cellSize:4,margin:16,scalable:true,alt:'ورود به نظرسنجی هم‌صدا'}),compact:true})}
+  if(window.qrcode){const qr=window.qrcode(0,'M');qr.addData(joinUrl);qr.make();setQrCard($('#joinQr'),{url:joinUrl,title:'ورود به همین پنل',svg:qr.createSvgTag({cellSize:4,margin:16,scalable:true,alt:'ورود به نظرسنجی'}),compact:true})}
   $('#fullscreen').addEventListener('click',async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch{notify('از گزینهٔ تمام‌صفحهٔ مرورگر استفاده کنید.')}});
 }
 if(view==='participant'&&token)refreshMe().catch(()=>{});

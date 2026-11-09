@@ -88,3 +88,8 @@ The provided TTF is copied byte for byte and referenced directly as `Pinar VF` i
 - Four graphics-lifecycle checks cover a no-WebGL CSS fallback, bounded phone pixel count, 18 fps throttling, pausing while hidden, reduced motion, context loss and cleanup. These are simulated WebGL checks, not a benchmark of physical devices.
 - Original form identifiers and the supplied Pinar VF font remain in place. The real participant renderer retains one current-question image and preserves question and option escaping, open/voted/closed states and private result boundaries.
 - Previous v13 asset filenames are retained for clients that still have cached documents. The v14 participant entry has no QR bundle.
+
+## Remove visible site branding — 2026-11-09
+
+- Removed the logo, project name and academy name from participant, host, display and preview headers, plus matching visible entry and footer labels. Theme, status, display controls, panel titles and all forms retain their existing IDs and handlers.
+- All 42 tests pass, including QR decoding, access controls, consent, panel lifecycle and background rendering fallbacks. Preview question rendering and escaping continue to pass.

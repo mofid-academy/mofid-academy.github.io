@@ -6,6 +6,8 @@ html[data-theme=light]{background:radial-gradient(ellipse 35% 34% at 69% 44%,#ee
 html[data-theme=dark]{background:radial-gradient(ellipse 51% 42% at 54% 20%,#21b982a8,transparent 72%),radial-gradient(ellipse 42% 46% at 28% 82%,#138a60a8,transparent 73%),radial-gradient(ellipse 55% 60% at 86% 66%,#0a503e78,transparent 70%),#04140f}
 body{position:relative;isolation:isolate;background:transparent!important}
 body:before{content:none}
+.topbar.no-brand{justify-content:flex-end}
+.footer.no-brand{justify-content:flex-end}
 .participant-container{max-width:860px}
 .participant-class,.participant-layout{max-width:750px;margin-inline:auto}
 .join-card{max-width:750px;margin:0 auto 22px}
