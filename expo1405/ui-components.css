@@ -10,6 +10,8 @@
 .shiny-cta:active:not(:disabled){transform:translateY(1px)}
 .shiny-cta:disabled,.shiny-cta:disabled:after{animation:none}
 .option-button.shiny-cta{border-radius:24px;text-align:right;white-space:normal;justify-content:flex-start;background:linear-gradient(var(--shine-surface),var(--shine-surface)) padding-box,conic-gradient(from var(--mofid-shine-angle),var(--line),var(--shine-edge) 5%,var(--shine-highlight) 10%,var(--shine-edge) 15%,var(--line) 20%) border-box;border-color:transparent;color:var(--shine-ink)}
+.shiny-cta.gradient-button{border-width:3px;border-radius:30px;min-height:60px;padding:10px 14px;gap:12px;background:linear-gradient(var(--shine-surface),var(--shine-surface)) padding-box,conic-gradient(from var(--mofid-shine-angle),var(--line) 0%,var(--shine-edge) 7%,var(--shine-highlight) 12%,var(--shine-edge) 18%,var(--line) 26%) border-box}
+.option-button.shiny-cta.gradient-button>span:last-child{flex:1;min-width:0;line-height:1.85;overflow-wrap:anywhere}
 .option-button.shiny-cta.selected{--shine-surface:var(--shine-selected);border-color:var(--shine-edge);opacity:1;box-shadow:0 0 0 1px var(--shine-edge)}
 .option-button.shiny-cta:disabled:not(.selected){opacity:.7}
 .question-card{border-color:color-mix(in srgb,var(--line),#12968a 22%);box-shadow:inset 0 1px 0 #75cdb111,0 12px 50px #052c2508}
@@ -40,5 +42,5 @@
 .screen-aside .qr-code-mount{width:100%;max-width:245px;margin:18px auto}
 @keyframes mofid-shine-angle{to{--mofid-shine-angle:360deg}}
 @keyframes mofid-button-shimmer{from{transform:translateX(-28%) rotate(0deg)}to{transform:translateX(28%) rotate(360deg)}}
-@media(max-width:650px){.option-button.shiny-cta{border-radius:21px;min-height:55px}.qr-code-card>div:first-child:not(:last-child){padding:21px 18px 14px}.qr-code-card>div:last-child{padding:0 18px 20px}.qr-code-card-compact>div:last-child{padding:4px}.screen-aside .qr-code-mount{grid-row:2/5;grid-column:1;width:145px;margin:10px 0}.qr-code-card h3{font-size:18px}}
+@media(max-width:650px){.option-button.shiny-cta.gradient-button{border-radius:29px;min-height:58px;animation:none}.option-button.shiny-cta.gradient-button:after{animation-duration:10s}.qr-code-card>div:first-child:not(:last-child){padding:21px 18px 14px}.qr-code-card>div:last-child{padding:0 18px 20px}.qr-code-card-compact>div:last-child{padding:4px}.screen-aside .qr-code-mount{grid-row:2/5;grid-column:1;width:145px;margin:10px 0}.qr-code-card h3{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.shiny-cta,.shiny-cta:before,.shiny-cta:after{animation:none!important;transition:none!important}}

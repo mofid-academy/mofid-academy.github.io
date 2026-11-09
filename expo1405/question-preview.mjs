@@ -10,3 +10,8 @@ for(const frame of document.querySelectorAll('iframe')){
  frame.addEventListener('load',()=>{fit();if(frame.contentDocument?.body)new ResizeObserver(fit).observe(frame.contentDocument.body);});
  if(frame.contentDocument?.readyState==='complete')fit();
 }
+const mobileWidth=document.querySelector('#previewMobileWidth');
+if(mobileWidth)mobileWidth.addEventListener('change',()=>{
+ const frame=document.querySelector('.preview-mobile iframe');
+ if(frame)frame.style.width=`min(100%, ${mobileWidth.value==='320'?320:390}px)`;
+});

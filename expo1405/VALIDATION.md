@@ -81,3 +81,10 @@ The provided TTF is copied byte for byte and referenced directly as `Pinar VF` i
 - The 34 existing privacy, owner-only export, participant consent and panel lifecycle checks remain green. No backend or database changes were made.
 - HTML structure and unique IDs passed. New QR UI is included only in host, hall and preview documents. The Pinar VF source file remains byte-identical, and the native PNG fallback now uses the same CSS family name.
 - The actual participant renderer still preserves one contained illustration, escaped question text and open/voted/closed option states. Shiny styles respect reduced motion and native focus.
+
+## Mobile gradient options and day/night backgrounds — 2026-11-09
+
+- TypeScript checking and the Vite production build passed. All 42 automated checks passed, including QR decoding, authentication boundaries, participant consent and panel lifecycle checks.
+- Four graphics-lifecycle checks cover a no-WebGL CSS fallback, bounded phone pixel count, 18 fps throttling, pausing while hidden, reduced motion, context loss and cleanup. These are simulated WebGL checks, not a benchmark of physical devices.
+- Original form identifiers and the supplied Pinar VF font remain in place. The real participant renderer retains one current-question image and preserves question and option escaping, open/voted/closed states and private result boundaries.
+- Previous v13 asset filenames are retained for clients that still have cached documents. The v14 participant entry has no QR bundle.

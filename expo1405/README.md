@@ -102,3 +102,11 @@ The QR card is mounted only on host, hall and design preview pages. `qr-card.mjs
 `ShinyButton` and native answer/host controls share the Mofid conic border, dot pattern and shimmer. Focus, wrapping labels, selected/disabled answer states and reduced motion are preserved. React's shared bundle is reused by the background and QR entry points; the QR-specific bundle is not loaded by participants.
 
 References: QR component supplied by the user, from https://21st.dev/@user_xn1cklas/components/qr-code-generator ; shiny control styling adapted from the public preview at https://21st.dev/@designali-in/components/shiny-button . Tests use Node 24 and an independent jsQR decoder; jsQR is a development dependency only.
+
+## Day/night backgrounds and mobile option buttons
+
+The option buttons combine the conic border and rounded silhouette of `GradientButton` with the existing `ShinyButton` sheen. Native poll buttons share the same classes and retain their existing vote handlers. `components/ui/button-1.tsx` exposes the same composition for React screens. Text wraps for long Persian choices, with at least 58 px touch targets on mobile.
+
+Light mode uses a CSS Jade Sky palette based on the public 21st.dev reference (https://21st.dev/@serafimcloud/components/jade-sky). Dark mode uses the WebGL Velaris shader adapted from the author's public source (https://forgeui.in/components/velaris) with Mofid green. `lib/velaris-runtime.ts` caps the canvas at 550,000 pixels and 18 fps on phone-sized viewports, pauses when hidden, observes reduced-motion settings and releases graphics resources. The background falls back to a matching CSS gradient when WebGL is unavailable. The participant and QR React entries share the same local build chunks; versioned asset filenames preserve older caches.
+
+The design preview includes a theme switch and a 320/390 px mobile viewport selector. Its question and answer choices remain synthetic and cannot submit data.
