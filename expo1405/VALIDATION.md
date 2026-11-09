@@ -61,3 +61,7 @@ All Persian interface labels, dialogs, notifications, QR labels, server error me
 - Participant, moderator, admin and display forms retain their original element IDs and handlers. HTML structure and unique-ID checks passed.
 - Pinar-VF font family and its DSTY, wght and KSHD axes were inspected. Supplied artwork retains its alpha channel and is served locally as WebP.
 - Scene switching changes presentation text/artwork only. No backend, database schema, answers or panel identifiers were changed.
+
+## Uploaded Pinar VF font — 2026-11-09
+
+The provided TTF is copied byte for byte and referenced directly as `Pinar VF` in shared and entry CSS. Font metadata reports Pinar-VF Version 3.0, variable weight 300–900, DSTY and KSHD axes. All three documents preload the same content-hashed font URL and use v11 stylesheets. Font integrity, CSS references, unique IDs and deployment are checked; application behavior is unchanged.

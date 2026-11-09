@@ -3,7 +3,7 @@
 :root[data-theme=light]{--entry-top:#d5f1e4;--entry-bottom:#f4fbf6;--entry-paper:#ffffff;--entry-ink:#104d3c;--entry-muted:#527467;--entry-edge:#bddfce;--entry-soft:#e1f4eb}
 .entry-scene{display:grid;grid-template-columns:minmax(0,.88fr) minmax(0,1.12fr);position:relative;isolation:isolate;overflow:hidden;padding:0!important;min-height:570px;width:100%;max-width:1160px!important;margin:16px auto 30px!important;border-radius:27px!important;border:1px solid var(--entry-edge)!important;background:linear-gradient(150deg,var(--entry-top),var(--entry-bottom))!important;color:var(--entry-ink);backdrop-filter:none!important;box-shadow:0 16px 55px #0b4c3b09}
 .entry-scene [hidden]{display:none!important}
-.entry-scene,.entry-scene button,.entry-scene input,.entry-scene select,.entry-scene textarea{font-family:'Pinar-VF',Tahoma,sans-serif;font-variation-settings:'DSTY' 0,'KSHD' 100;font-synthesis:none}
+.entry-scene,.entry-scene button,.entry-scene input,.entry-scene select,.entry-scene textarea{font-family:'Pinar VF',Tahoma,sans-serif;font-variation-settings:'DSTY' 0,'KSHD' 100;font-synthesis:none}
 .entry-copy{padding:32px 33px 30px;position:relative;z-index:3;display:flex;flex-direction:column;justify-content:center;min-width:0}
 .entry-copy .eyebrow{color:var(--mint);font-size:11px}
 .entry-copy [data-entry-title]{font-size:clamp(27px,3.1vw,41px);line-height:1.85;letter-spacing:-.5px;font-weight:600;margin:10px 0 12px;overflow-wrap:anywhere}

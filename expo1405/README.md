@@ -86,3 +86,7 @@ Initial schema: `backend/schema.sql`. Append-only upgrades, in order: `credits.s
 The participant entry uses five clearly named, manually selected scenes: Mofid Card for joining, Ayar for name consent, BV for the current-question concept, Jet for live execution and EasyTrader ribbon for participation. The moderator login uses Jet; selecting owner/admin uses Ayar. The embedded admin login uses Ayar, the authorized display login uses the ribbon, and the participant waiting state uses BV.
 
 All scenes use the same Mofid teal/mint/forest day/night palette. Pinar-VF is loaded locally and applies to the forms, buttons and scene labels, with DSTY 0 and KSHD 100. Supplied transparent artwork is served as local WebP assets. No carousel auto-advance or extra network library is used; participants can join immediately from every scene. Presentation controls never replace forms, modify credentials or access future questions.
+
+## Supplied Pinar VF source
+
+The three public entry documents preload `assets/Pinar-VF-97e7c962.ttf`, the exact user-supplied `Pinar-VF(5).ttf` (SHA-256 `97e7c962e88a3e808bd48312a207bdee0ae46507ef967b929643839aa58b1a99`). The shared CSS family is `Pinar VF`, including native controls and the entry scenes. The content-hashed filename and v11 stylesheet URLs avoid reuse of the previous font response. No app logic or response data changes.
