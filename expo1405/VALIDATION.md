@@ -73,3 +73,11 @@ The provided TTF is copied byte for byte and referenced directly as `Pinar VF` i
 - The actual participant, host and display render functions were exercised for 12 question positions: exactly one current-question image, escaped question titles, consistent local asset paths, and preserved open, voted and closed option states. Waiting states do not add a question illustration.
 - Images use fixed contained boxes of 144 px on desktop, 104 px on mobile and 88 px on the narrowest screens. No question API, Supabase data, identifiers or authentication changes were made. The uploaded Pinar VF font remains byte-identical.
 - Optional read-only mobile/web preview markup is generated from the participant render function using a synthetic question; preview pages cannot connect to the API.
+
+## QR display and shiny options — 2026-11-09
+
+- TypeScript checking and the Vite production build passed. Shared local assets are copied into the published assets directory.
+- All 38 tests pass, including independent decoding of rasterized QR links for two different panels, a white quiet zone, cache reuse across refreshes, replacement when switching panels, and clearing the previous URL without destroying the React-owned card.
+- The 34 existing privacy, owner-only export, participant consent and panel lifecycle checks remain green. No backend or database changes were made.
+- HTML structure and unique IDs passed. New QR UI is included only in host, hall and preview documents. The Pinar VF source file remains byte-identical, and the native PNG fallback now uses the same CSS family name.
+- The actual participant renderer still preserves one contained illustration, escaped question text and open/voted/closed option states. Shiny styles respect reduced motion and native focus.

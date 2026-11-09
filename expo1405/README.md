@@ -92,3 +92,13 @@ The background uses soft Mofid lighting and glass surfaces. No third-party WebGL
 ## Supplied Pinar VF source
 
 The three public entry documents preload `assets/Pinar-VF-97e7c962.ttf`, the exact user-supplied `Pinar-VF(5).ttf` (SHA-256 `97e7c962e88a3e808bd48312a207bdee0ae46507ef967b929643839aa58b1a99`). The shared CSS family is `Pinar VF`, including native controls and question cards. The content-hashed filename and versioned stylesheet URLs avoid reuse of the previous font response. No app logic or response data changes.
+
+## QR cards and shiny controls
+
+The supplied `QRCodeDisplay` is integrated at `components/ui/qr-code-generator.tsx` with shadcn `card.tsx`, `button.tsx` and `shiny-button.tsx` in the existing `/components/ui` alias. Shared styles live in `ui-components.css`; Tailwind continues to compile from `src/aurora.css`. `@radix-ui/react-slot` and `class-variance-authority` are installed alongside the existing React, TypeScript and Lucide dependencies.
+
+The QR card is mounted only on host, hall and design preview pages. `qr-card.mjs` forwards the current public join URL through DOM attributes/events. Native SVG remains available while React loads, and repeated directory refreshes reuse the existing QR. Clearing or switching panels updates the same React root. The PNG is encoded locally from the real URL, with integer-sized modules and four white quiet-zone modules. No placeholder matrix or external QR service is used. Native fallback image export retains the uploaded Pinar VF family.
+
+`ShinyButton` and native answer/host controls share the Mofid conic border, dot pattern and shimmer. Focus, wrapping labels, selected/disabled answer states and reduced motion are preserved. React's shared bundle is reused by the background and QR entry points; the QR-specific bundle is not loaded by participants.
+
+References: QR component supplied by the user, from https://21st.dev/@user_xn1cklas/components/qr-code-generator ; shiny control styling adapted from the public preview at https://21st.dev/@designali-in/components/shiny-button . Tests use Node 24 and an independent jsQR decoder; jsQR is a development dependency only.

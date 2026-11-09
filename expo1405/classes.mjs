@@ -1,3 +1,4 @@
+import {setQrCard,clearQrCard} from './qr-card.mjs?v=13';
 import {classUrl} from './class-context.mjs?v=7';
 const $=s=>document.querySelector(s),fa=n=>Number(n||0).toLocaleString('fa-IR');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -14,7 +15,7 @@ export class ClassesPanel{
   $('#copyClassJoin').addEventListener('click',()=>this.copy());$('#downloadClassQr').addEventListener('click',()=>this.downloadQr());
  }
  setBusy(value){this.busy=value;document.querySelectorAll('[data-class-control],#classSelect,#quickNextClass,[data-class-action],[data-select-class]').forEach(e=>e.disabled=value||(e.dataset.selectClass===this.current()));this.updateAvailability();}
- clear(){this.generation++;this.loadSequence++;this.items=[];this.trash=[];this.pending=null;$('#classList').replaceChildren();$('#classTrashList').replaceChildren();$('#classSelect').replaceChildren();$('#classQr').replaceChildren();$('#classJoinUrl').textContent='';document.body.classList.remove('class-directory-only');}
+ clear(){this.generation++;this.loadSequence++;this.items=[];this.trash=[];this.pending=null;$('#classList').replaceChildren();$('#classTrashList').replaceChildren();$('#classSelect').replaceChildren();clearQrCard($('#classQr'));this.qr=null;this.qrLink='';$('#classJoinUrl').textContent='';document.body.classList.remove('class-directory-only');}
  async load(){const generation=this.generation,sequence=++this.loadSequence,{classes,trash=[]}=await this.request('/host/classes');if(generation!==this.generation||sequence!==this.loadSequence)return;this.items=classes;this.trash=trash;this.render();}
  updateAvailability(){
   const current=this.items.find(c=>c.id===this.current());document.body.classList.toggle('class-directory-only',!current);
@@ -34,7 +35,7 @@ export class ClassesPanel{
   document.querySelectorAll('[data-select-class]').forEach(b=>b.addEventListener('click',()=>this.select(b.dataset.selectClass)));
   document.querySelectorAll('[data-class-action]').forEach(b=>b.addEventListener('click',()=>{const c=[...this.items,...this.trash].find(c=>c.id===b.dataset.classId);if(c)this.lifecycle(c,b.dataset.classAction);}));
   if(document.activeElement!==$('#renameClassTitle'))$('#renameClassTitle').value=current?.title||'';
-  this.updateAvailability();if(current)this.renderQr();else{$('#classQr').replaceChildren();$('#classJoinUrl').textContent='';this.qr=null;}
+  this.updateAvailability();if(current)this.renderQr();else{clearQrCard($('#classQr'));this.qr=null;this.qrLink='';$('#classJoinUrl').textContent='';}
  }
  async lifecycle(c,action){
   if(this.busy)return;
@@ -59,8 +60,10 @@ export class ClassesPanel{
  renderQr(){
   const link=this.link();$('#classJoinUrl').textContent=link;$('#classJoinUrl').href=link;
   $('#participantPreview').href=link;
-  if(!window.qrcode)return;const qr=window.qrcode(0,'M');qr.addData(link);qr.make();this.qr=qr;
-  $('#classQr').innerHTML=qr.createSvgTag({cellSize:5,margin:20,scalable:true,alt:'ورود به '+(this.items.find(c=>c.id===this.current())?.title||'پنل')});
+  const title='ورود به '+(this.items.find(c=>c.id===this.current())?.title||'پنل');
+  if(!window.qrcode)return;if(this.qrLink!==link||!this.qr){const qr=window.qrcode(0,'M');qr.addData(link);qr.make();this.qr=qr;this.qrLink=link;}
+  const svg=this.qr.createSvgTag({cellSize:5,margin:20,scalable:true,alt:'ورود به نظرسنجی همین پنل'});
+  setQrCard($('#classQr'),{url:link,title,svg});
  }
  async copy(){try{await navigator.clipboard.writeText(this.link());this.notify('لینک ورود همین پنل کپی شد.')}catch{this.notify('لینک پنل: '+this.link())}}
  async downloadQr(){
@@ -69,8 +72,8 @@ export class ClassesPanel{
    const cells=this.qr.getModuleCount(),quiet=4,scale=Math.max(5,Math.floor(900/(cells+quiet*2))),size=(cells+quiet*2)*scale;
    const canvas=document.createElement('canvas');canvas.width=size;canvas.height=size+150;const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#052c25';
    for(let r=0;r<cells;r++)for(let c=0;c<cells;c++)if(this.qr.isDark(r,c))ctx.fillRect((c+quiet)*scale,(r+quiet)*scale,scale,scale);
-   ctx.direction='rtl';ctx.textAlign='center';ctx.font='600 30px "Pinar-VF", Tahoma';
-   ctx.fillText(this.items.find(c=>c.id===this.current())?.title||'پنل',size/2,size+45,size-60);ctx.font='23px "Pinar-VF", Tahoma';ctx.fillText('اسکن برای ورود به نظرسنجی',size/2,size+100,size-60);
+   ctx.direction='rtl';ctx.textAlign='center';ctx.font='600 30px "Pinar VF", Tahoma';
+   ctx.fillText(this.items.find(c=>c.id===this.current())?.title||'پنل',size/2,size+45,size-60);ctx.font='23px "Pinar VF", Tahoma';ctx.fillText('اسکن برای ورود به نظرسنجی',size/2,size+100,size-60);
    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error();const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='panel-qr-'+this.current()+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),15000);this.notify('تصویر QR همین پنل آماده شد.');
   }catch{this.notify('دریافت تصویر انجام نشد؛ دوباره تلاش کنید.',true)}
  }
