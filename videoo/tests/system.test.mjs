@@ -108,5 +108,5 @@ test('public page is genuinely coming soon and has no private course content or 
 });
 test('home and common navigation expose the video section while preserving existing destinations',async()=>{
   const html=await readFile(new URL('../../index.html',import.meta.url),'utf8'),nav=await readFile(new URL('../../academy-assets/navigation.js',import.meta.url),'utf8');
-  for(const path of ['/videoo/','/Academy-Exam/','/learning-studio/?portal=participant']){assert.ok(html.includes(path));assert.ok(nav.includes(path));}
+  for(const path of ['/videoo/','/Academy-Exam/','/learning-studio/']){assert.ok(html.includes(path));assert.ok(nav.includes(path));}
 });

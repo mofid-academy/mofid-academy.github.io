@@ -62,7 +62,7 @@ export function createApi({db,config,storage=createStorage(),now=Date.now}){
   async function handle(body,{ip='unknown'}={}){
     if(!body||typeof body!=='object'||Array.isArray(body))fail('INVALID_REQUEST','درخواست معتبر نیست.');
     const a=body.action,d=body.data||{};
-    if(a==='health')return {ok:true,version:'academy-video/2',publicState:await releaseEnabled()?'live':'coming-soon'};
+    if(a==='health')return {ok:true,version:'academy-video/3',publicState:await releaseEnabled()?'live':'coming-soon'};
     if(a==='admin_login'){
       const allowed=await db('rate_limit',{key:createHmac('sha256',key).update('login:'+ip).digest('hex')});
       if(!allowed)fail('RATE_LIMIT','تعداد تلاش‌ها زیاد است؛ کمی بعد دوباره امتحان کنید.',429);
@@ -77,24 +77,39 @@ export function createApi({db,config,storage=createStorage(),now=Date.now}){
       if(!validStudentUsername(username)||typeof d.password!=='string'||d.password.length>256)fail('LOGIN_FAILED','نام کاربری یا رمز معتبر نیست.',401);
       const account=await db('student_by_username',{username}),matches=await passwordMatches(d.password,account?.password_hash);
       if(!account?.is_active||!matches)fail('LOGIN_FAILED','نام کاربری یا رمز معتبر نیست.',401);
-      return {ok:true,token:sign({kind:'student',sub:account.id,jti:account.session_version,username:account.username,exp:epoch()+7200}),username:account.username,fullName:account.full_name,role:'student'};
+      return {ok:true,token:sign({kind:'student',sub:account.id,jti:account.session_version,username:account.username,exp:epoch()+7200}),username:account.username,fullName:account.full_name,role:'student',mustChangePassword:!!account.must_change_password};
     }
     const claims=verify(body.token,['admin','student']),isAdmin=claims.kind==='admin';
     let account,enabled;
     if(!isAdmin){
       account=await db('student_get',{id:claims.sub});
       if(!account?.is_active||account.session_version!==claims.jti||account.username!==claims.username)fail('ACCESS_DENIED','دسترسی این حساب فعال نیست؛ دوباره وارد شوید.',401);
-      if(!['bootstrap','video_play','progress_save'].includes(a))fail('FORBIDDEN','این عملیات فقط برای مدیریت مجاز است.',403);
-      enabled=await releaseEnabled();if(!enabled)fail('NOT_RELEASED','نمایش ویدیوها موقتاً غیرفعال است.',403);
+      if(!['bootstrap','video_play','progress_save','student_password_change'].includes(a))fail('FORBIDDEN','این عملیات فقط برای مدیریت مجاز است.',403);
+      if(a!=='student_password_change'){enabled=await releaseEnabled();if(!enabled)fail('NOT_RELEASED','نمایش ویدیوها موقتاً غیرفعال است.',403);}
+      if(account.must_change_password&&!['bootstrap','student_password_change'].includes(a))fail('PASSWORD_CHANGE_REQUIRED','ابتدا رمز شخصی خود را تعیین کنید.',403);
     }
     const actor=isAdmin?claims.username:'student:'+account.id;
     const visibleCatalog=async()=>{const catalog=await db('catalog');return isAdmin?catalog.courses:catalog.courses.filter(c=>c.status==='published');};
+    if(a==='student_password_change'){
+      if(isAdmin)fail('FORBIDDEN','این گزینه برای حساب کاربران ویدیو است.',403);
+      const allowed=await db('rate_limit',{key:createHmac('sha256',key).update('student-password:'+ip+':'+account.id).digest('hex')});
+      if(!allowed)fail('RATE_LIMIT','تعداد تلاش‌ها زیاد است؛ کمی بعد دوباره امتحان کنید.',429);
+      if(typeof d.currentPassword!=='string'||!d.currentPassword||d.currentPassword.length>256)fail('INVALID_PASSWORD','رمز فعلی را وارد کنید.');
+      const next=requirePassword(d.newPassword);
+      if(next===d.currentPassword)fail('PASSWORD_UNCHANGED','رمز جدید باید با رمز فعلی متفاوت باشد.');
+      const current=await db('student_by_username',{username:account.username});
+      if(!current?.is_active||current.id!==account.id||current.session_version!==claims.jti)fail('ACCESS_DENIED','نشست تغییر کرده است؛ دوباره وارد شوید.',401);
+      if(!await passwordMatches(d.currentPassword,current.password_hash))fail('CURRENT_PASSWORD_INVALID','رمز فعلی درست نیست.');
+      const updated=await db('student_change_password',{id:account.id,sessionVersion:claims.jti,expectedHash:current.password_hash,newHash:await passwordHash(next)});
+      return {ok:true,token:sign({kind:'student',sub:updated.id,jti:updated.session_version,username:updated.username,exp:epoch()+7200}),username:updated.username,fullName:updated.full_name,role:'student',mustChangePassword:false};
+    }
     if(a==='bootstrap'){
+      if(!isAdmin&&account.must_change_password)return {ok:true,role:'student',mustChangePassword:true,username:account.username,fullName:account.full_name,catalog:{revision:0,courses:[]},progress:[],releaseEnabled:enabled,publicState:enabled?'live':'coming-soon'};
       const catalog=await db('catalog');enabled=enabled??await releaseEnabled();
       const all=isAdmin?catalog.courses:catalog.courses.filter(c=>c.status==='published');
       const s=isAdmin||all.some(c=>c.coverObjectKey)?await db('storage_read'):null;
       const courses=withCovers(all,s),allowedIds=new Set(all.flatMap(c=>c.sections.flatMap(s=>s.lessons.filter(l=>isAdmin||l.objectKey).map(l=>l.id))));
-      return {ok:true,role:isAdmin?'admin':'student',catalog:{...catalog,courses:isAdmin?courses:learnerCourses(courses)},progress:(await db('progress_list',{actor})).filter(p=>allowedIds.has(p.lesson_id)),...(isAdmin?{storage:storageStatus(s)}:{}),username:claims.username,fullName:isAdmin?'مدیریت آکادمی':account.full_name,releaseEnabled:enabled,publicState:enabled?'live':'coming-soon'};
+      return {ok:true,role:isAdmin?'admin':'student',mustChangePassword:false,catalog:{...catalog,courses:isAdmin?courses:learnerCourses(courses)},progress:(await db('progress_list',{actor})).filter(p=>allowedIds.has(p.lesson_id)),...(isAdmin?{storage:storageStatus(s)}:{}),username:claims.username,fullName:isAdmin?'مدیریت آکادمی':account.full_name,releaseEnabled:enabled,publicState:enabled?'live':'coming-soon'};
     }
     if(a==='catalog_save'){
       const courses=normalizeCourses(d.courses);if(courses.some(c=>c.status==='published'&&!c.sections.some(s=>s.lessons.some(l=>l.objectKey))))fail('PUBLISH_EMPTY','برای مجموعهٔ منتشرشده دست‌کم یک فیلم اضافه کنید.');
@@ -194,7 +209,7 @@ export function createStore({url,key,fetchImpl=fetch}){
   const headers={apikey:key,'Content-Type':'application/json'};if(key.startsWith('eyJ'))headers.Authorization='Bearer '+key;
   async function request(path,body,method=body===undefined?'GET':'POST'){
     let r;try{r=await fetchImpl(url+'/rest/v1/'+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(20000)});}catch{fail('DATABASE_UNAVAILABLE','ارتباط با سامانه برقرار نشد؛ دوباره تلاش کنید.',503);}
-    if(!r.ok){const message=await r.text();if(message.includes('REVISION_CONFLICT'))fail('REVISION_CONFLICT','نسخهٔ جدیدتری ذخیره شده است؛ صفحه را تازه کنید.',409);if(message.includes('23505'))fail('USERNAME_TAKEN','این نام کاربری قبلاً ثبت شده است.',409);if(message.includes('STUDENT_NOT_FOUND'))fail('NOT_FOUND','کاربر پیدا نشد.',404);fail('DATABASE_UNAVAILABLE','ذخیره در سامانه تأیید نشد؛ دوباره تلاش کنید.',503);}
+    if(!r.ok){const message=await r.text();if(message.includes('REVISION_CONFLICT'))fail('REVISION_CONFLICT','نسخهٔ جدیدتری ذخیره شده است؛ صفحه را تازه کنید.',409);if(message.includes('23505'))fail('USERNAME_TAKEN','این نام کاربری قبلاً ثبت شده است.',409);if(message.includes('STUDENT_NOT_FOUND'))fail('NOT_FOUND','کاربر پیدا نشد.',404);if(message.includes('STUDENT_CREDENTIALS_CHANGED'))fail('ACCESS_DENIED','نشست تغییر کرده است؛ دوباره وارد شوید.',401);fail('DATABASE_UNAVAILABLE','ذخیره در سامانه تأیید نشد؛ دوباره تلاش کنید.',503);}
     return r.status===204?null:r.json();
   }
   return async(action,d={})=>{
@@ -202,11 +217,12 @@ export function createStore({url,key,fetchImpl=fetch}){
     if(action==='catalog_save')return request('rpc/av_catalog_save',{p_revision:d.revision,p_courses:d.courses});
     if(action==='settings_read')return (await request('av_settings?id=eq.true&select=release_enabled'))[0];
     if(action==='release_set')return request('rpc/av_release_set',{p_enabled:d.enabled});
-    if(action==='student_by_username')return (await request('av_students?username=eq.'+encodeURIComponent(d.username)+'&select=id,username,full_name,password_hash,is_active,session_version&limit=1'))[0]||null;
-    if(action==='student_get')return (await request('av_students?id=eq.'+d.id+'&select=id,username,full_name,is_active,session_version&limit=1'))[0]||null;
-    if(action==='student_list')return request('av_students?select=id,username,full_name,is_active,created_at&order=username.asc&limit=101&offset='+d.offset);
+    if(action==='student_by_username')return (await request('av_students?username=eq.'+encodeURIComponent(d.username)+'&select=id,username,full_name,password_hash,is_active,session_version,must_change_password&limit=1'))[0]||null;
+    if(action==='student_get')return (await request('av_students?id=eq.'+d.id+'&select=id,username,full_name,is_active,session_version,must_change_password&limit=1'))[0]||null;
+    if(action==='student_list')return request('av_students?select=id,username,full_name,is_active,created_at,must_change_password&order=username.asc&limit=101&offset='+d.offset);
     if(action==='student_create')return request('rpc/av_student_create',{p_username:d.username,p_full_name:d.fullName,p_password_hash:d.passwordHash});
     if(action==='student_update')return request('rpc/av_student_update',{p_id:d.id,p_is_active:d.isActive,p_password_hash:d.passwordHash});
+    if(action==='student_change_password')return request('rpc/av_student_change_password',{p_id:d.id,p_session_version:d.sessionVersion,p_expected_hash:d.expectedHash,p_new_hash:d.newHash});
     if(action==='storage_read')return request('rpc/av_storage_read',{});
     if(action==='storage_save')return request('rpc/av_storage_save',{p_config:d.config});
     if(action==='rate_limit')return request('rpc/av_rate_limit',{p_key:d.key,p_limit:12});

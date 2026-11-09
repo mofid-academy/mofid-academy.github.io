@@ -43,3 +43,9 @@ Encrypted drafts from the former browser preview remain intact. Successful manag
 Run `node --test videoo/tests/*.test.mjs` from the repository root. Tests cover authentication and purpose checks, management/learner boundaries, publication gates, session revocation, per-user progress, private storage failures, cover upload restrictions, upload signing, CORS integrity, XSS escaping, existing draft migration and the public Coming Soon boundary.
 
 Managed browser preview is unavailable because the `sites-previewd` mailbox is missing. No alternate browser server or runtime was installed. The published public route is checked separately; full owner/learner browser interaction and a real media upload require actual account credentials and files.
+
+## Learner password self-service
+
+New learner accounts and administrator password resets require a personal password at next sign-in. Existing accounts keep their current state. The initial bootstrap contains no courses or watch history until that step is complete; media and progress operations are also blocked on the server. A signed-in learner can use `student_password_change` with their current password and a new password of 8–256 characters. The update checks the stored hash and session version atomically, rotates all old sessions, clears the initial-password flag and returns a new scoped session to the same browser. User identity and watch progress remain unchanged. Password inputs are cleared on success, and a response arriving after logout cannot restore the session.
+
+The corporate account roster and initial password are provisioning data only; they must never be committed to the public repository. Apply the additional `must_change_password` column and the learner RPC definitions from `backend/publishing.sql` when upgrading an existing deployment. The schema continues to deny direct table/RPC access to anonymous and authenticated browser roles.

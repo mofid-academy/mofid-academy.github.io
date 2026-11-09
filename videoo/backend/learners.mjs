@@ -14,7 +14,7 @@ export async function passwordMatches(password,encoded){
   const actual=await derive(password,match?match[1]:'00000000000000000000000000000000');
   return !!match&&timingSafeEqual(Buffer.from(actual,'hex'),Buffer.from(match[2],'hex'));
 }
-export const publicStudent=account=>({id:account.id,username:account.username,full_name:account.full_name,is_active:account.is_active,created_at:account.created_at});
+export const publicStudent=account=>({id:account.id,username:account.username,full_name:account.full_name,is_active:account.is_active,must_change_password:!!account.must_change_password,created_at:account.created_at});
 export function learnerCourses(courses){
   return courses.filter(c=>c.status==='published').map(c=>({id:c.id,title:c.title,description:c.description,category:c.category,instructor:c.instructor,level:c.level,kind:c.kind,status:c.status,art:c.art,coverUrl:c.coverUrl||'',sections:c.sections.map(s=>({id:s.id,title:s.title,lessons:s.lessons.filter(l=>l.objectKey).map(l=>({id:l.id,title:l.title,description:l.description,duration:l.duration,available:true}))})).filter(s=>s.lessons.length)}));
 }

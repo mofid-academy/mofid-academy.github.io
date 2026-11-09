@@ -67,3 +67,8 @@ html[data-academy-theme="dark"] .course-card>.mofid-spotlight-glow{background:ra
 /* Show the complete uploaded artwork at every card/editor width. */
 .course-cover.photo-cover{height:auto;aspect-ratio:16/9;flex-shrink:0;background:var(--surface,#f4faf6)}
 .course-cover.photo-cover img{object-fit:contain;object-position:center}
+
+.account-password-panel{max-width:520px;margin:30px auto;padding:28px}
+.account-password-panel h1{font-size:23px;line-height:1.7;margin:0 0 12px}
+.account-password-panel .intro{font-size:12px;line-height:2;color:var(--muted);margin-bottom:24px}
+@media(max-width:540px){.account-password-panel{padding:21px;margin:22px auto}.account-password-panel h1{font-size:20px}.account-password-panel .button-group{flex-wrap:wrap}}

@@ -1,4 +1,4 @@
-import {VideoApp} from './app.mjs?v=20261108-description-1';
+import {VideoApp} from './app.mjs?v=20261109-password-1';
 import {request} from './client.mjs?v=20261103-publish-1';
 import {esc} from './model.mjs';
 
@@ -14,10 +14,10 @@ function login(message=''){
   root.querySelector('form').addEventListener('submit',async event=>{event.preventDefault();const form=event.target,button=form.querySelector('button'),error=form.querySelector('.form-error');button.disabled=true;error.textContent='';try{const result=await request('student_login',Object.fromEntries(new FormData(form)));form.elements.password.value='';remember({token:result.token,username:result.username});await openLibrary();}catch(e){if(e.code==='NOT_RELEASED'){closed();return;}error.textContent=e.message;}finally{button.disabled=false;}});
 }
 async function openLibrary(){
-  const session=stored();if(!session?.token){login();return;}
+  let session=stored();if(!session?.token){login();return;}
   loginCleanup?.();loginCleanup=null;root.hidden=false;coming.hidden=true;
   const api=async(action,data)=>{try{return await request(action,data,session.token);}catch(e){if(e.status===401){remember(null);login('اعتبار ورودت پایان یافته؛ دوباره وارد شو.');}else if(e.code==='NOT_RELEASED'){remember(null);closed();}throw e;}};
-  app=new VideoApp({root,api,username:session.username,studentMode:true,onLogout:()=>{remember(null);login();}});
+  app=new VideoApp({root,api,username:session.username,studentMode:true,onSessionChange:next=>{session={...session,...next};remember(session);},onLogout:()=>{remember(null);login();}});
   try{await app.load();}catch(e){if(e.status===401||e.code==='NOT_RELEASED')return;login(e.message);}
 }
 async function initPortal(){
