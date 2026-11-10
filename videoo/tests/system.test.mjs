@@ -103,8 +103,8 @@ test('HTTP interface rejects foreign origins and malformed or oversized requests
   assert.equal((await handle(new Request('https://api.test',{method:'GET'}))).status,405);
   const result=await handle(new Request('https://api.test',{method:'POST',headers:{Origin:config.siteOrigin},body:JSON.stringify({action:'bootstrap'})}));assert.equal(result.status,401);assert.match(result.headers.get('Cache-Control'),/no-store/);
 });
-test('public page is genuinely coming soon and has no private course content or video source',async()=>{
-  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');assert.match(html,/Coming Soon/);assert.ok(!html.includes('J1.mp4'));assert.ok(!html.includes('secretKey'));assert.ok(!html.includes('app.mjs'));assert.ok(!/<video[^>]*src=/.test(html));
+test('public entry starts with a neutral loader and has no private course content or video source',async()=>{
+  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');assert.ok(!html.includes('Coming Soon'));assert.match(html,/<main id="academyHome"[^>]*hidden/);assert.match(html,/aria-busy="true"/);assert.match(html,/role="status"/);assert.ok(!html.includes('J1.mp4'));assert.ok(!html.includes('secretKey'));assert.ok(!html.includes('app.mjs'));assert.ok(!/<video[^>]*src=/.test(html));
 });
 test('home and common navigation expose the video section while preserving existing destinations',async()=>{
   const html=await readFile(new URL('../../index.html',import.meta.url),'utf8'),nav=await readFile(new URL('../../academy-assets/navigation.js',import.meta.url),'utf8');
