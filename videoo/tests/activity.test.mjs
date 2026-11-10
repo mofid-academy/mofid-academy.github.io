@@ -98,3 +98,22 @@ test('presence pings pause in hidden tabs, avoid overlapping requests and stop o
   tick();tick();assert.equal(calls,1);resolve();await new Promise(r=>setImmediate(r));doc.visibilityState='hidden';tick();assert.equal(calls,1);
   doc.visibilityState='visible';visible();assert.equal(calls,2);stop();tick();assert.equal(calls,2);assert.equal(cleared,true);assert.equal(visible,null);resolve();
 });
+
+test('default presence timers preserve the browser Window receiver during setup and cleanup',t=>{
+  const previous=Object.getOwnPropertyDescriptor(globalThis,'document');
+  let scheduled=false,cleared=false,listener;
+  const doc={visibilityState:'visible',addEventListener:(name,fn)=>listener=fn,removeEventListener:(name,fn)=>{assert.equal(fn,listener);listener=null;}};
+  Object.defineProperty(globalThis,'document',{configurable:true,value:doc});
+  t.after(()=>{if(previous)Object.defineProperty(globalThis,'document',previous);else delete globalThis.document;});
+  t.mock.method(globalThis,'setInterval',function(callback,delay){
+    if(this!==globalThis)throw TypeError("'setInterval' called on an object that does not implement interface Window");
+    assert.equal(delay,60000);scheduled=true;return 41;
+  });
+  t.mock.method(globalThis,'clearInterval',function(timer){
+    if(this!==globalThis)throw TypeError("'clearInterval' called on an object that does not implement interface Window");
+    assert.equal(timer,41);cleared=true;
+  });
+  const stop=startActivityPresence(async()=>{});
+  assert.equal(scheduled,true);assert.equal(typeof listener,'function');
+  stop();assert.equal(cleared,true);assert.equal(listener,null);
+});

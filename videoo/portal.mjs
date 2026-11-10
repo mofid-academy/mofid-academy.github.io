@@ -1,4 +1,4 @@
-import {VideoApp} from './app.mjs?v=20261110-activity-1';
+import {VideoApp} from './app.mjs?v=20261110-presence-2';
 import {request} from './client.mjs?v=20261110-activity-1';
 import {esc} from './model.mjs';
 

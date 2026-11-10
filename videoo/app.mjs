@@ -1,4 +1,4 @@
-import {installActivity,startActivityPresence} from './activity-ui.mjs?v=20261110-activity-1';
+import {installActivity,startActivityPresence} from './activity-ui.mjs?v=20261110-presence-2';
 import {passwordPanel,bindPasswordForm} from './account.mjs?v=20261109-password-1';
 import {fa,esc,uid,lessons,watched,completed,courseProgress,mergeWatch,durationLabel,positionLabel,sizeLabel,moveLesson,nextToWatch,newCourse,newLesson} from './model.mjs';
 import {icon} from './icons.mjs?v=20261107-player-1';
