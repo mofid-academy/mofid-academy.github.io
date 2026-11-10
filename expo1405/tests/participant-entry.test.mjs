@@ -6,9 +6,9 @@ import {roomFromUrl,roomStorageKey,classUrl} from '../class-context.mjs';
 const source=readFileSync(new URL('../app.mjs',import.meta.url),'utf8').replace(/^import .*;\s*$/gm,'');
 const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
 function storage(){const data=new Map();return{getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)}}
-function element(){const events={};return{events,hidden:false,disabled:false,required:false,checked:false,value:'',textContent:'',innerHTML:'',classList:{toggle(){}},addEventListener:(name,fn)=>events[name]=fn,setAttribute(){},replaceChildren(){}}}
+function element(){const events={};let html='';return{events,hidden:false,disabled:false,required:false,checked:false,value:'',textContent:'',htmlWrites:0,get innerHTML(){return html},set innerHTML(value){html=value;this.htmlWrites++},classList:{toggle(){}},addEventListener:(name,fn)=>events[name]=fn,setAttribute(){},replaceChildren(){}}}
 async function participant(policy,{question=null}={}){
- const nodes=new Map(),get=id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)},requests=[];
+ const nodes=new Map(),get=id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)},requests=[],intervals=[];
  const location=new URL('https://example.invalid/expo1405/?class=main');
  const document={body:{dataset:{view:'participant'}},hidden:false,querySelector:s=>get(s.slice(1)),querySelectorAll:()=>[],addEventListener(){}};
  const window={addEventListener(){},supabase:null},history={replaceState(){}},sessionStorage=storage(),localStorage=storage();
@@ -22,8 +22,8 @@ async function participant(policy,{question=null}={}){
  };
  class CreditsRoll{sync(){}};
  const boot=new AsyncFunction('document','window','location','history','sessionStorage','localStorage','setInterval','setTimeout','clearTimeout','fetch','setQrCard','questionArtwork','questionArtMarkup','API_URL','PROJECT_URL','PUBLIC_KEY','CreditsRoll','AdminPanel','ClassesPanel','roomFromUrl','roomStorageKey','classUrl',source);
- await boot(document,window,location,history,sessionStorage,localStorage,()=>0,()=>0,()=>{},fetcher,()=>{},()=>({src:''}),()=>'', 'https://api.invalid', 'https://project.invalid','public',CreditsRoll,class{},class{},roomFromUrl,roomStorageKey,classUrl);
- return{get,requests,submit:()=>get('joinForm').events.submit({preventDefault(){}})};
+ await boot(document,window,location,history,sessionStorage,localStorage,fn=>intervals.push(fn),()=>0,()=>{},fetcher,()=>{},()=>({src:''}),()=>'', 'https://api.invalid', 'https://project.invalid','public',CreditsRoll,class{},class{},roomFromUrl,roomStorageKey,classUrl);
+ return{get,requests,intervals,snapshot,submit:()=>get('joinForm').events.submit({preventDefault(){}})};
 }
 
 test('entry form removes both checkboxes and gives the join button the gradient styling',()=>{
@@ -49,4 +49,14 @@ test('named and anonymous panel policies keep their existing requirements',async
 test('all answer options retain the gradient button classes',async()=>{
  const ui=await participant('optional',{question:{id:'q1',position:1,text:'سؤال نمونه',options:[{label:'اول'},{label:'دوم'}]}});await ui.submit();
  assert.equal((ui.get('questionBody').innerHTML.match(/class="option-button shiny-cta gradient-button /g)||[]).length,2);
+});
+
+test('unchanged polling preserves option elements and their animation; a new question updates them',async()=>{
+ const question={id:'q1',position:1,text:'سؤال نمونه',options:[{label:'اول'},{label:'دوم'}]};
+ const ui=await participant('optional',{question});await ui.submit();await new Promise(r=>setImmediate(r));
+ const body=ui.get('questionBody'),writes=body.htmlWrites;
+ for(let i=0;i<3;i++){ui.intervals[0]();await new Promise(r=>setImmediate(r));}
+ assert.equal(body.htmlWrites,writes,'polling must not recreate the option nodes');
+ ui.snapshot.payload.question={...question,text:'سؤال بعدی'};ui.intervals[0]();await new Promise(r=>setImmediate(r));
+ assert.equal(body.htmlWrites,writes+1);assert.match(body.innerHTML,/سؤال بعدی/);
 });
