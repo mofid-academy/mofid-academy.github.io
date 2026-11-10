@@ -53,3 +53,12 @@ The corporate account roster and initial password are provisioning data only; th
 ## Public entry state
 
 The home card links to the active video portal. The static portal starts with a neutral loading indicator and a hidden paused-state panel. Only a confirmed non-live health response shows that panel; a failed health request offers an explicit retry. Live sessions restore the library, while signed-out visitors see sign-in. These entry states do not change the backend publication or authentication gates.
+
+
+## Management activity report
+
+Apply `backend/activity.sql` before deploying the updated Edge Function, including `activity.mjs` alongside its other dependencies. The management-only “گزارش فعالیت” view records new successful/failed sign-ins, explicit sign-outs, portal restores, episode opens, first watch progress, quarter milestones, completion at 90% watched ranges, and password changes. Existing progress and account identities are preserved; no historical events are fabricated. Episode titles are resolved by the authenticated backend, not accepted from browser telemetry. Log failures do not block learning or credential changes.
+
+The report supports an exact corporate username (case insensitive), event type and 1/7/30/90-day periods, with 50-event pages using a stable timestamp/ID cursor. All timestamps display in Tehran time. Presence is an estimate based on recent authenticated activity within five minutes; closing a browser is not presented as an explicit logout. Visible tabs send a presence ping once per minute without filling the timeline. Expired, deactivated and password-reset sessions are excluded from active counts.
+
+The two activity tables have RLS enabled and no browser-role grants or policies. Their invoker functions are callable only by `service_role`; only the authenticated administrator can request a report through the API. The report excludes session hashes and account IDs. Only a strict field allowlist is stored: passwords, password hashes, tokens, signed media URLs, private object paths, IP addresses, headers and storage keys are never logged. Audit rows are append-only to the backend role. Data has no automatic deletion schedule; the UI can inspect the last 90 days.

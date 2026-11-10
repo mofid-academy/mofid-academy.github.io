@@ -1,7 +1,7 @@
 import {openDraft,hasDraft} from './draft-store.mjs?v=20261103-publish-1';
 import {planDraftImport} from './migration.mjs?v=20261103-publish-1';
 export const API='https://siwmzffadbbhcyyppwzn.supabase.co/functions/v1/academy-video-api';
-// The owner API is active; the public catalogue remains Coming Soon.
+// The server enforces authentication and publication for both portal roles.
 export const BACKEND_MODE='server';
 const EXISTING_MANAGEMENT_API='https://siwmzffadbbhcyyppwzn.supabase.co/functions/v1/parent-survey-api';
 let draft,draftMessage='';
@@ -32,7 +32,7 @@ export async function request(action,data={},token){
     if(!draft){const e=Error('دوباره وارد مدیریت شوید.');e.status=401;throw e;}
     return draft.request(action,data);
   }
-  let response;try{response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,data,token}),signal:AbortSignal.timeout(45000),keepalive:action==='progress_save'});}catch{throw Error('ارتباط با سامانه برقرار نشد؛ اتصال اینترنت را بررسی و دوباره تلاش کنید.');}
+  let response;try{response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,data,token}),signal:AbortSignal.timeout(45000),keepalive:['progress_save','logout'].includes(action)});}catch{throw Error('ارتباط با سامانه برقرار نشد؛ اتصال اینترنت را بررسی و دوباره تلاش کنید.');}
   let result;try{result=await response.json();}catch{throw Error('پاسخ سامانه خوانده نشد؛ دوباره تلاش کنید.');}
   if(!response.ok||!result.ok){const e=new Error(result.message||'عملیات انجام نشد.');e.code=result.code;e.status=response.status;throw e;}
   if(action==='admin_login'&&hasDraft(result.username)){

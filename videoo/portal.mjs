@@ -1,5 +1,5 @@
-import {VideoApp} from './app.mjs?v=20261109-password-1';
-import {request} from './client.mjs?v=20261103-publish-1';
+import {VideoApp} from './app.mjs?v=20261110-activity-1';
+import {request} from './client.mjs?v=20261110-activity-1';
 import {esc} from './model.mjs';
 
 const key='mofid-video-student-v1',root=document.getElementById('videoApp'),coming=document.getElementById('academyHome');
