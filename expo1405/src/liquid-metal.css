@@ -4,7 +4,7 @@
  position:relative;isolation:isolate;overflow:hidden;border:2px solid transparent;border-radius:999px;color:var(--metal-ink);
  background:linear-gradient(125deg,#d6fff0 0%,#709e8e 12%,#193c30 24%,#f0fff8 38%,#7eae9c 45%,#244e3e 61%,#aee6cf 78%,#365e4e 92%,#ecfff7 100%) border-box;
  background-size:200% 100%;background-position:25% 50%;box-shadow:0 3px 8px #00170f26,inset 0 0 0 1px #ffffff26;
- animation:none!important;transition:background-position .65s ease,box-shadow .25s ease,transform .18s ease;font-family:inherit;
+ animation:metal-idle-flow 9s ease-in-out infinite alternate!important;transition:background-position .65s ease,box-shadow .25s ease,transform .18s ease;font-family:inherit;
 }
 :root[data-theme=light] :is(.option-button,.liquid-metal-button){--metal-face:linear-gradient(180deg,#ffffff,#d8ede3);--metal-ink:#153e2e}
 :is(.join-cta.shiny-cta.gradient-button,.button.primary:not(.danger),.qr-download){--metal-face:linear-gradient(180deg,#0b8376,#075e54);--metal-ink:#fff}
@@ -25,3 +25,7 @@
 .option-button.shiny-cta.gradient-button:disabled:not(.selected){opacity:.65}
 .liquid-metal-button{display:inline-flex;justify-content:center;align-items:center;gap:10px;min-height:46px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer}
 @media(prefers-reduced-motion:reduce){:is(.option-button,.join-cta,.button.primary,.qr-download,.liquid-metal-button){transition:none!important}.liquid-metal-effect{display:none}}
+
+@keyframes metal-idle-flow{from{background-position:0% 50%}to{background-position:100% 50%}}
+:is(.option-button,.join-cta,.button.primary,.qr-download,.liquid-metal-button).metal-paused,:is(.option-button,.join-cta,.button.primary,.qr-download,.liquid-metal-button):disabled{animation-play-state:paused!important}
+@media(prefers-reduced-motion:reduce){:is(.option-button.shiny-cta.gradient-button,.join-cta.shiny-cta.gradient-button,.button.primary:not(.danger),.qr-download,.liquid-metal-button){animation:none!important}}
