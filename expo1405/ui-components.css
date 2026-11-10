@@ -13,6 +13,8 @@
 .shiny-cta.gradient-button{border-width:3px;border-radius:30px;min-height:60px;padding:10px 14px;gap:12px;background:linear-gradient(var(--shine-surface),var(--shine-surface)) padding-box,conic-gradient(from var(--mofid-shine-angle),var(--line) 0%,var(--shine-edge) 7%,var(--shine-highlight) 12%,var(--shine-edge) 18%,var(--line) 26%) border-box}
 .join-cta.shiny-cta.gradient-button{--shine-surface:#0a8175;--shine-ink:#fff;--shine-edge:#86e3c7;--shine-highlight:#e6fff6;--shine-dot:#c7f6e7;justify-content:space-between;padding-inline:19px}
 .option-button.shiny-cta.gradient-button>span:last-child{flex:1;min-width:0;line-height:1.85;overflow-wrap:anywhere}
+.option-button.shiny-cta.gradient-button{animation:none;background:var(--shine-surface);border-color:var(--line)}
+.option-button.shiny-cta:before,.option-button.shiny-cta:after{content:none;animation:none}
 .option-button.shiny-cta.selected{--shine-surface:var(--shine-selected);border-color:var(--shine-edge);opacity:1;box-shadow:0 0 0 1px var(--shine-edge)}
 .option-button.shiny-cta:disabled:not(.selected){opacity:.7}
 .question-card{border-color:color-mix(in srgb,var(--line),#12968a 22%);box-shadow:inset 0 1px 0 #75cdb111,0 12px 50px #052c2508}
