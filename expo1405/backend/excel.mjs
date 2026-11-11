@@ -19,6 +19,11 @@ export function buildWorkbook(report){
    const rows=[['پاسخ‌های '+names[i+1]+' | '+q.text],['پنل',report.title||'','محدودهٔ گزارش',scope],['تعداد پاسخ',votes.length,'زمان تهیه',tehranDate(exportedAt)],['آرشیو خصوصی ادمین؛ نام‌ها همان نام ثبت‌شده هنگام پاسخ هستند.'],['ردیف','اجرا','نام هنگام ثبت','پاسخ ثبت‌شده','تاریخ و ساعت تهران','شناسهٔ پاسخ‌گو','متن سؤال هنگام پاسخ'],...votes.map((v,j)=>[j+1,v.round,v.display_name||'شرکت‌کنندهٔ ناشناس',v.option_text,tehranDate(v.created_at),v.participant_id,v.question_text])];
    sheets.push(worksheet(rows,{widths:[12,12,30,62,30,42,85],merges:['A1:G1','A4:G4']}));
  }
+ if(report.quizResults){
+   names.push('نمره‌ها');
+   const rows=[['نمره‌های خصوصی | '+(report.title||'مسابقه')],['پنل',report.title||'','محدودهٔ گزارش',scope],['زمان تهیه',tehranDate(exportedAt)],['هر پاسخ صحیح یک امتیاز؛ غلط و بی‌پاسخ صفر؛ نظرسنجی بدون نمره.'],['نام','شناسهٔ شرکت‌کننده','اجرا','نمره','از','درصد','صحیح','غلط','بی‌پاسخ'],...report.quizResults.map(g=>[g.name||'شرکت‌کنندهٔ ناشناس',g.participantId,g.round,g.score,g.maxScore,g.percentage,g.correctCount,g.wrongCount,g.unansweredCount])];
+   sheets.push(worksheet(rows,{widths:[30,42,12,12,12,14,12,12,14],merges:['A1:I1','A4:I4']}));
+ }
  const files={};
  files['[Content_Types].xml']=utf8('<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+names.map((_,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')+'</Types>');
  files['_rels/.rels']=utf8('<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');

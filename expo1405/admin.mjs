@@ -15,7 +15,7 @@ export class AdminPanel {
  }
  async show(){this.visible=true;$('#adminLoginSection').hidden=this.isAuthenticated();$('#adminWorkspace').hidden=!this.isAuthenticated();if(this.isAuthenticated())await this.refresh();}
  hide(){this.visible=false;}
- clear(){this.generation++;this.busy=false;this.summary=null;this.page=1;this.total=0;this.loadedRound='';$('#adminCode').value='';$('#adminRows').replaceChildren();$('#adminQuestionCards').replaceChildren();$('#adminQuestion').replaceChildren();$('#adminRound').replaceChildren();$('#adminWorkspace').hidden=true;$('#adminLoginSection').hidden=false;}
+ clear(){this.generation++;this.busy=false;this.summary=null;this.page=1;this.total=0;this.loadedRound='';$('#adminCode').value='';$('#adminRows').replaceChildren();$('#adminScoreRows').replaceChildren();$('#adminQuizScores').hidden=true;$('#adminQuestionCards').replaceChildren();$('#adminQuestion').replaceChildren();$('#adminRound').replaceChildren();$('#adminWorkspace').hidden=true;$('#adminLoginSection').hidden=false;}
  async refresh(){
   if(this.busy||!this.isAuthenticated())return;this.busy=true;const generation=this.generation;$('#adminLoading').hidden=false;
   try{
@@ -27,7 +27,11 @@ export class AdminPanel {
    $('#adminTotal').textContent=fa(data.totalResponses);$('#adminPeople').textContent=fa(data.totalPeople);$('#adminQuestionsCount').textContent=fa(data.questions.length);
    $('#adminQuestionCards').innerHTML=data.questions.map((q,i)=>'<button class="admin-question-card" data-admin-question="'+q.id+'"><span>سؤال '+fa(i+1)+(q.archived?' · بایگانی':'')+'</span><strong>'+esc(q.text)+'</strong><small>'+fa(q.responseCount)+' پاسخ ثبت‌شده</small></button>').join('');
    document.querySelectorAll('[data-admin-question]').forEach(b=>b.addEventListener('click',()=>{$('#adminQuestion').value=b.dataset.adminQuestion;this.page=1;this.loadResponses().catch(e=>this.notify(e.message,true));}));
-   this.loadedRound=selectedRound;await this.loadResponses();if(generation!==this.generation)return;$('#adminTimestamp').textContent='آخرین دریافت: '+date(new Date());
+   this.loadedRound=selectedRound;const grades=await this.request('/admin/quiz-results?round='+encodeURIComponent(selectedRound));
+   if(generation!==this.generation||!this.isAuthenticated())return;
+   $('#adminQuizScores').hidden=!grades.quiz;
+   $('#adminScoreRows').innerHTML=grades.results.length?grades.results.map(g=>'<tr><td><strong>'+esc(g.name||'شرکت‌کنندهٔ ناشناس')+'</strong><small class="private-id" dir="ltr">'+esc(g.participantId)+'</small></td><td>'+fa(g.round)+'</td><td>'+fa(g.score)+' از '+fa(g.maxScore)+'</td><td>'+fa(g.percentage)+'٪</td><td>'+fa(g.correctCount)+' / '+fa(g.wrongCount)+' / '+fa(g.unansweredCount)+'</td></tr>').join(''):'<tr><td colspan="5">هنوز شرکت‌کننده‌ای وارد نشده است.</td></tr>';
+   await this.loadResponses();if(generation!==this.generation)return;$('#adminTimestamp').textContent='آخرین دریافت: '+date(new Date());
   }finally{if(generation===this.generation){this.busy=false;$('#adminLoading').hidden=true;}}
  }
  async loadResponses(){

@@ -2,6 +2,8 @@ import {buildWorkbook} from './excel.mjs';
 export const ROOM = 'main';
 export const ALLOWED_ORIGINS = ['https://mofid-academy.github.io'];
 const messages = {
+  quiz_answer_required:'پاسخ صحیح سؤال یا «بدون نمره» را مشخص کنید.',
+  invalid_quiz_answer:'پاسخ صحیح باید یکی از گزینه‌های همین سؤال باشد.',
   voting_closed:'رأی‌گیری این سؤال بسته شده یا سؤال تغییر کرده است.',
   invalid_participant:'دوباره وارد نظرسنجی شوید.',
   invalid_choice:'یکی از گزینه‌های همین سؤال را انتخاب کنید.',
@@ -95,7 +97,7 @@ export function makeHandler({url,key,fetcher=fetch}) {
         if(supplied.length<16||supplied.length>160)return json({error:'کد ورود معتبر نیست.'},401);
         const ip=req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown';
         const ipHash=await digest((adminSupplied?'admin:':'host:')+key+':'+ip);
-        const roots=await db('expo1405_rooms?id=eq.'+ROOM+'&select=host_key_hash,admin_key_hash,round,title,deleted_at');
+        const roots=await db('expo1405_rooms?id=eq.'+ROOM+'&select=host_key_hash,admin_key_hash,round,title,deleted_at,is_quiz');
         const expected=adminSupplied?roots[0]?.admin_key_hash:roots[0]?.host_key_hash;
         if(!roots.length||!constantEqual(await digest(supplied),expected)) {
           const allowed=await rpc('rate_limit',{p_key:ipHash,p_limit:15,p_seconds:900});
@@ -115,7 +117,7 @@ export function makeHandler({url,key,fetcher=fetch}) {
           if(body.action==='delete'&&(typeof body.confirmTitle!=='string'||!body.confirmTitle.trim()))return json({error:messages.class_confirmation_required},409);
           return json(await rpc('class_lifecycle',{p_room:body.classId,p_action:body.action,p_confirm_title:body.confirmTitle||null}));
         }
-        const rooms=room===ROOM?roots:await db('expo1405_rooms?id=eq.'+room+'&parent_id=eq.main&select=round,title,deleted_at');
+        const rooms=room===ROOM?roots:await db('expo1405_rooms?id=eq.'+room+'&parent_id=eq.main&select=round,title,deleted_at,is_quiz');
         if(!rooms.length)return json({error:messages.class_not_found},404);
         if(req.method==='GET'&&path==='/admin/session')return json({role,currentRound:rooms[0].round,title:rooms[0].title,directoryOnly:!!rooms[0].deleted_at});
         if(req.method==='POST'&&(path==='/host/classes'||path==='/host/class-title')){
@@ -136,6 +138,7 @@ export function makeHandler({url,key,fetcher=fetch}) {
         const selected=requestUrl.searchParams.get('round');
         const selectedRound=selected==='all'?null:Number(selected||rooms[0].round);
         if((path.startsWith('/admin')||path==='/host/export')&&selectedRound!==null&&(!Number.isInteger(selectedRound)||selectedRound<1||selectedRound>rooms[0].round))return json({error:'شمارهٔ اجرا معتبر نیست.'},400);
+        if(req.method==='GET'&&path==='/admin/quiz-results')return json(await rpc('quiz_results',{p_room:room,p_round:selectedRound}));
         if(req.method==='GET'&&path==='/admin/summary')return json(await rpc('admin_summary',{p_room:room,p_round:selectedRound}));
         if(req.method==='GET'&&path==='/admin/responses'){
           const question=requestUrl.searchParams.get('question')||null,page=Number(requestUrl.searchParams.get('page')||1);
@@ -145,6 +148,7 @@ export function makeHandler({url,key,fetcher=fetch}) {
         if(req.method==='GET'&&(path==='/admin/export'||path==='/host/export')){
           const report=await rpc('admin_report',{p_room:room,p_round:selectedRound});
           if(!report||report.responses.length>50000)return json({error:'تعداد پاسخ‌ها برای یک فایل زیاد است؛ یک اجرای مشخص را انتخاب کنید.'},413);
+          if(rooms[0].is_quiz)report.quizResults=(await rpc('quiz_results',{p_room:room,p_round:selectedRound})).results;
           const bytes=buildWorkbook(report);
           return new Response(bytes,{headers:{...cors,'Cache-Control':'no-store, private','Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','Content-Disposition':'attachment; filename="expo1405-'+room+'-'+(selectedRound??'all')+'.xlsx"'}});
         }
@@ -153,8 +157,9 @@ export function makeHandler({url,key,fetcher=fetch}) {
             db('expo1405_questions?room_id=eq.'+room+'&archived=eq.false&order=position.asc,created_at.asc&select=id,position,text,options'),
             db((role==='admin'?'expo1405_display':'expo1405_public')+'?id=eq.'+room+'&select=payload,revision'),
             db('expo1405_votes?room_id=eq.'+room+'&round=eq.'+rooms[0].round+'&select=question_id&limit=10000')]);
+          const keys=rooms[0].is_quiz?await db('expo1405_quiz_keys?room_id=eq.'+room+'&round=eq.'+rooms[0].round+'&select=question_id,correct_choice'):[];
           const counts={};for(const v of votes)counts[v.question_id]=(counts[v.question_id]||0)+1;
-          return json({role,questions:questions.map(q=>({...q,hasVotes:!!counts[q.id],...(role==='admin'?{votes:counts[q.id]||0}:{})})),...(role==='admin'?states[0]:withoutResults(states[0]))});
+          return json({role,questions:questions.map(q=>({...q,...(rooms[0].is_quiz?{correctChoice:keys.find(k=>k.question_id===q.id)?.correct_choice??null}:{}),hasVotes:!!counts[q.id],...(role==='admin'?{votes:counts[q.id]||0}:{})})),...(role==='admin'?states[0]:withoutResults(states[0]))});
         }
         if(req.method==='POST'&&path==='/host/action') {
           if(Number(req.headers.get('content-length')||0)>16000)return json({error:'درخواست بزرگ است.'},413);
@@ -174,10 +179,11 @@ export function makeHandler({url,key,fetcher=fetch}) {
         const id=await rpc('join_with_credits',{p_room:room,p_hash:await digest(token),p_name:name,p_shared:body.shareOnScreen===true});
         return json({token,id,name});
       }
-      if(path==='/me'||path==='/vote'||path==='/profile') {
+      if(path==='/me'||path==='/vote'||path==='/profile'||path==='/score') {
         const token=req.headers.get('x-participant-token')||'';
         if(token.length<32||token.length>160)return json({error:messages.invalid_participant},401);
         const hash=await digest(token);
+        if(req.method==='GET'&&path==='/score')return json(await rpc('quiz_score',{p_room:room,p_hash:hash}));
         if(req.method==='GET'&&path==='/me') {
           const [people,rooms]=await Promise.all([
             db('expo1405_participants?room_id=eq.'+room+'&token_hash=eq.'+hash+'&select=id,display_name,share_on_screen'),
