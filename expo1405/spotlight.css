@@ -1,0 +1,4 @@
+.card{position:relative}
+.pointer-spotlight{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .18s ease;z-index:2}
+#joinHint,#joinPrivacyNote,#participantNote{display:none!important}
+@media(prefers-reduced-motion:reduce),(hover:none){.pointer-spotlight{display:none}}
