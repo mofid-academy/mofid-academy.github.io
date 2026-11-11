@@ -14,30 +14,6 @@ function colorShare(track, value) {
   track.closest('.hall-result-card')?.style.setProperty('--share-hue', shareHue(value).toFixed(2));
 }
 
-function traceBorders(cards) {
-  // Border-Trace Button inspired edge treatment; normalized path keeps speed even.
-  // A shared clock preserves its position when live result cards are replaced.
-  const delay = -(performance.now() % 7000) / 1000;
-  cards.querySelectorAll('.hall-result-card').forEach((card, index) => {
-    if (card.querySelector('.hall-border-trace')) return;
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'hall-border-trace');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.setAttribute('focusable', 'false');
-    svg.style.setProperty('--trace-delay', (delay - index * 1.15) + 's');
-    for (const part of ['glow', 'line', 'head']) {
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('class', 'hall-trace-' + part);
-      rect.setAttribute('x', '1');
-      rect.setAttribute('y', '1');
-      rect.setAttribute('rx', '15');
-      rect.setAttribute('pathLength', '100');
-      svg.append(rect);
-    }
-    card.append(svg);
-  });
-}
-
 function settle() {
   cancelAnimationFrame(frame);
   frame = 0;
@@ -53,7 +29,6 @@ function sync() {
   settle();
   const cards = root.querySelector('.hall-result-cards');
   if (!cards) { stateKey = ''; displayed = []; return; }
-  traceBorders(cards);
   const tracks = Array.from(cards.querySelectorAll('.hall-result-track'));
   const numbers = Array.from(cards.querySelectorAll('.hall-result-percent strong'));
   const labels = Array.from(cards.querySelectorAll('.hall-result-label'), node => node.textContent);

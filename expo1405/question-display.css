@@ -34,37 +34,6 @@ body[data-view="screen"] .hall-result-card {
   --result-accent: hsl(var(--share-hue) 76% 36%);
   --result-glow: hsl(var(--share-hue) 76% 43% / .23);
 }
-body[data-view="screen"] .hall-border-trace {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-  border-radius: inherit;
-}
-body[data-view="screen"] .hall-border-trace rect {
-  width: calc(100% - 2px);
-  height: calc(100% - 2px);
-  fill: none;
-  stroke: var(--result-accent);
-  stroke-width: 1.4px;
-  stroke-linecap: round;
-  stroke-dasharray: 11 89;
-  animation: hall-border-trace 7s linear infinite;
-  animation-delay: var(--trace-delay, 0s);
-}
-body[data-view="screen"] .hall-border-trace .hall-trace-glow {
-  filter: blur(3px);
-  stroke-width: 3px;
-  opacity: .6;
-}
-body[data-view="screen"] .hall-border-trace .hall-trace-head {
-  stroke: color-mix(in srgb, var(--result-accent), white 65%);
-  stroke-dasharray: 1 99;
-  stroke-width: 1.8px;
-}
-@keyframes hall-border-trace { to { stroke-dashoffset: -100; } }
 body[data-view="screen"] .hall-result-row {
   display: flex;
   align-items: center;
@@ -191,6 +160,4 @@ body[data-view="participant"] .participant-question-position b { font: inherit; 
 @media (prefers-reduced-motion: reduce) {
   body[data-view="screen"] .hall-result-fill { transition: none; }
   body[data-view="screen"] .partition-changing:after { animation: none; }
-  body[data-view="screen"] .hall-border-trace rect { animation: none; }
-  body[data-view="screen"] .hall-border-trace .hall-trace-glow { display: none; }
 }
