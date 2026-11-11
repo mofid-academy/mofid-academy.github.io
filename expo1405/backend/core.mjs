@@ -2,6 +2,9 @@ import {buildWorkbook} from './excel.mjs';
 export const ROOM = 'main';
 export const ALLOWED_ORIGINS = ['https://mofid-academy.github.io'];
 const messages = {
+  invalid_next_panel:'پنل بعدی معتبر نیست.',
+  next_panel_unavailable:'پنل بعدی تغییر کرده یا هنوز آماده نیست؛ دوباره تلاش کنید.',
+  panel_not_finished:'منتظر پایان این پنل بمانید.',
   quiz_answer_required:'پاسخ صحیح سؤال یا «بدون نمره» را مشخص کنید.',
   invalid_quiz_answer:'پاسخ صحیح باید یکی از گزینه‌های همین سؤال باشد.',
   voting_closed:'رأی‌گیری این سؤال بسته شده یا سؤال تغییر کرده است.',
@@ -47,6 +50,7 @@ export function csvExport(rows) {
 }
 export function makeHandler({url,key,fetcher=fetch}) {
   const displayToken=async room=>{const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(key),{name:'HMAC',hash:'SHA-256'},false,['sign']);return [...new Uint8Array(await crypto.subtle.sign('HMAC',k,new TextEncoder().encode('expo1405-display:'+room)))].map(b=>b.toString(16).padStart(2,'0')).join('');};
+  const continuationToken=async(room,target,token)=>{const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(key),{name:'HMAC',hash:'SHA-256'},false,['sign']);return [...new Uint8Array(await crypto.subtle.sign('HMAC',k,new TextEncoder().encode('expo1405-continue:'+room+':'+target+':'+token)))].map(b=>b.toString(16).padStart(2,'0')).join('');};
   const dbHeaders={apikey:key,'Content-Type':'application/json'};
   if(key.startsWith('eyJ'))dbHeaders.Authorization='Bearer '+key;
   async function db(path,{method='GET',body}={}) {
@@ -134,6 +138,12 @@ export function makeHandler({url,key,fetcher=fetch}) {
           if(req.method==='GET'&&path==='/host')return json({role,directoryOnly:true,questions:[]});
           return json({error:messages.class_deleted},410);
         }
+        if(req.method==='POST'&&path==='/host/next-panel'){
+          const raw=await req.text();if(raw.length>1000)return json({error:'درخواست بزرگ است.'},413);
+          const body=JSON.parse(raw),target=body.nextPanelId??null;
+          if(target!==null&&(typeof target!=='string'||!/^(main|cls-[0-9a-f-]{36})$/.test(target)))return json({error:messages.invalid_next_panel},400);
+          return json(await rpc('set_next_panel',{p_room:room,p_target:target}));
+        }
         if(req.method==='POST'&&path==='/host/display-token')return json({token:await displayToken(room)});
         const selected=requestUrl.searchParams.get('round');
         const selectedRound=selected==='all'?null:Number(selected||rooms[0].round);
@@ -179,10 +189,20 @@ export function makeHandler({url,key,fetcher=fetch}) {
         const id=await rpc('join_with_credits',{p_room:room,p_hash:await digest(token),p_name:name,p_shared:body.shareOnScreen===true});
         return json({token,id,name});
       }
-      if(path==='/me'||path==='/vote'||path==='/profile'||path==='/score') {
+      if(path==='/me'||path==='/vote'||path==='/profile'||path==='/score'||path==='/next-panel') {
         const token=req.headers.get('x-participant-token')||'';
         if(token.length<32||token.length>160)return json({error:messages.invalid_participant},401);
         const hash=await digest(token);
+        if(req.method==='GET'&&path==='/next-panel')return json(await rpc('next_panel',{p_room:room,p_hash:hash}));
+        if(req.method==='POST'&&path==='/next-panel'){
+          const raw=await req.text();if(raw.length>2000)return json({error:'درخواست بزرگ است.'},413);
+          const body=JSON.parse(raw),target=body.targetId;
+          if(typeof target!=='string'||!/^(main|cls-[0-9a-f-]{36})$/.test(target))return json({error:messages.invalid_next_panel},400);
+          const previous=typeof body.existingToken==='string'&&body.existingToken.length>=32&&body.existingToken.length<=160?body.existingToken:null;
+          const nextToken=await continuationToken(room,target,token);
+          const result=await rpc('continue_panel',{p_room:room,p_hash:hash,p_target:target,p_new_hash:await digest(nextToken),p_existing_hash:previous?await digest(previous):null});
+          return json({...result,token:result.usedExisting?previous:nextToken});
+        }
         if(req.method==='GET'&&path==='/score')return json(await rpc('quiz_score',{p_room:room,p_hash:hash}));
         if(req.method==='GET'&&path==='/me') {
           const [people,rooms]=await Promise.all([

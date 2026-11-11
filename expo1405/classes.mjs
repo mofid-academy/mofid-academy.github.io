@@ -6,6 +6,7 @@ const phases={waiting:'آمادهٔ شروع',open:'در حال اجرا',closed
 export class ClassesPanel{
  constructor({request,current,switchClass,confirm,notify}){
   Object.assign(this,{request,current,switchClass,confirm,notify});this.items=[];this.trash=[];this.busy=false;this.pending=null;this.generation=0;this.loadSequence=0;
+  $('#nextPanelSelect').addEventListener('change',()=>this.saveNextPanel());
   $('#classSelect').addEventListener('change',()=>this.select($('#classSelect').value));
   $('#quickNextClass').addEventListener('click',()=>this.create({title:'',copyQuestions:true,closePrevious:true}));
   $('#createClassForm').addEventListener('input',()=>this.pending=null);
@@ -16,9 +17,15 @@ export class ClassesPanel{
  }
  setBusy(value){this.busy=value;document.querySelectorAll('[data-class-control],#classSelect,#quickNextClass,[data-class-action],[data-select-class]').forEach(e=>e.disabled=value||(e.dataset.selectClass===this.current()));this.updateAvailability();}
  clear(){this.generation++;this.loadSequence++;this.items=[];this.trash=[];this.pending=null;$('#classList').replaceChildren();$('#classTrashList').replaceChildren();$('#classSelect').replaceChildren();clearQrCard($('#classQr'));this.qr=null;this.qrLink='';$('#classJoinUrl').textContent='';document.body.classList.remove('class-directory-only');}
+ async saveNextPanel(){
+  if(this.busy)return;this.setBusy(true);
+  try{await this.request('/host/next-panel',{method:'POST',body:{nextPanelId:$('#nextPanelSelect').value||null}});await this.load();this.notify('پنل بعدی ذخیره شد.');}
+  catch(e){this.notify(e.message,true);this.render();}finally{this.setBusy(false);}
+ }
  async load(){const generation=this.generation,sequence=++this.loadSequence,{classes,trash=[]}=await this.request('/host/classes');if(generation!==this.generation||sequence!==this.loadSequence)return;this.items=classes;this.trash=trash;this.render();}
  updateAvailability(){
   const current=this.items.find(c=>c.id===this.current());document.body.classList.toggle('class-directory-only',!current);
+  $('#nextPanelSelect').disabled=this.busy||!current;
   $('#quickNextClass').disabled=this.busy||!current;$('#tabExecution').disabled=!current;$('#tabAdmin').disabled=!current;
   $('#classQuestionMode').querySelector('[value="copy"]').disabled=!current;
   if(!current){$('#classQuestionMode').value='blank';$('#closePreviousClass').checked=false;}
@@ -27,6 +34,7 @@ export class ClassesPanel{
  render(){
   const current=this.items.find(c=>c.id===this.current());
   $('#classSelect').innerHTML=(!current?'<option value="">'+(this.items.length?'یک پنل انتخاب کنید':'پنل فعالی ندارید')+'</option>':'')+this.items.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.title)+' · '+esc(phases[c.phase])+'</option>').join('');$('#classSelect').value=current?this.current():'';
+  $('#nextPanelSelect').innerHTML='<option value="">خودکار · ترتیب ساخت</option>'+this.items.filter(c=>c.id!==this.current()).map(c=>'<option value="'+esc(c.id)+'" '+(c.phase==='finished'?'disabled':'')+'>'+esc(c.title)+(c.phase==='finished'?' · پایان‌یافته':'')+'</option>').join('');$('#nextPanelSelect').value=current?.nextPanelId||'';
   document.querySelectorAll('[data-class-title]').forEach(e=>e.textContent=current?.title||'مدیریت پنل‌ها');
   const button=(c,action,label,danger=false)=>'<button class="button '+(danger?'danger':'secondary')+' small" data-class-action="'+action+'" data-class-id="'+esc(c.id)+'">'+label+'</button>';
   $('#classList').innerHTML=this.items.length?this.items.map(c=>'<article class="class-item '+(c.id===this.current()?'selected':'')+'"><div><strong>'+esc(c.title)+'</strong><span>'+esc(phases[c.phase])+' · '+fa(c.questionCount)+' سؤال</span></div><div class="class-item-actions"><button class="button '+(c.id===this.current()?'ghost':'secondary')+' small" data-select-class="'+esc(c.id)+'" '+(c.id===this.current()?'disabled':'')+'>'+(c.id===this.current()?'انتخاب‌شده':'انتخاب پنل')+'</button>'+(c.phase==='finished'?button(c,'reopen','بازگرداندن پنل'):'')+button(c,'delete','حذف پنل',true)+'</div></article>').join(''):'<p class="muted class-empty">پنل فعالی ندارید؛ پنل تازه بسازید یا از بخش حذف‌شده‌ها بازیابی کنید.</p>';

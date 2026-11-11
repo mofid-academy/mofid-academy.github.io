@@ -26,3 +26,7 @@ html{background:var(--bg)}body{position:relative;isolation:isolate;background:tr
 
 /* Private participant report: compact RTL layout for mobile. */
 .quiz-score{text-align:center}.quiz-score-number{font-size:clamp(3rem,12vw,5rem);font-weight:800;color:var(--accent,#12b8a5);line-height:1.5}.quiz-score-number small{font-size:1rem;color:inherit}.quiz-score-stats{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;margin:1rem 0}.quiz-review{text-align:right;display:grid;gap:.75rem;margin-top:1.5rem}.quiz-review-item{border:1px solid var(--border,#376157);border-radius:16px;padding:1rem;overflow-wrap:anywhere}.quiz-review-item summary{display:flex;justify-content:space-between;gap:.75rem;cursor:pointer;font-size:.85rem}.quiz-review-item p{font-size:.85rem;line-height:2}.quiz-correct{color:var(--accent,#12b8a5)}
+
+.next-panel-card{display:grid;gap:1rem;margin-top:1rem}.next-panel-card .eyebrow{line-height:1.8}
+
+.class-toolbar>div{min-width:0}.class-toolbar>div:not(.quick-class){flex:1}.class-toolbar select{max-width:100%}@media(max-width:760px){.class-toolbar>div+div{margin-top:16px}}

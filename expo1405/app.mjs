@@ -3,7 +3,8 @@ import {API_URL,PROJECT_URL,PUBLIC_KEY} from './config.mjs';
 import {CreditsRoll} from './credits.mjs?v=3';
 import {AdminPanel} from './admin.mjs?v=25';
 import {renderQuizScore} from './quiz.mjs?v=25';
-import {ClassesPanel} from './classes.mjs?v=13';
+import {ClassesPanel} from './classes.mjs?v=34';
+import {PanelContinuation} from './continuation.mjs?v=34';
 import {roomFromUrl,roomStorageKey,classUrl} from './class-context.mjs?v=7';
 const $=s=>document.querySelector(s),all=s=>document.querySelectorAll(s),view=document.body.dataset.view;
 const fa=n=>Number(n||0).toLocaleString('fa-IR');
@@ -13,8 +14,8 @@ const save=(key,value,session=false)=>{try{const s=session?sessionStorage:localS
 let classId=roomFromUrl(location.href);
 if(view==='host'&&!new URL(location.href).searchParams.has('class'))classId=read('expo1405-selected-class',true)||classId;
 const participantKey=roomStorageKey('expo1405-participant',classId),displayStorageKey=()=>roomStorageKey('expo1405-display',classId);
-let classAbort=new AbortController(),classesPanel=null,displayWindow=null;
-let state=null,revision=0,lastSuccess=0,realtime=false,hostData=null,hostKey=read('expo1405-host',true),token=read(participantKey),joined=false,myRound=0,myVotes={},voteBusy=false,joinBusy=false,hostBusy=false,toastTimer,hostLoading=false,lastMeKey='',refreshBusy=false;
+let classAbort=new AbortController(),classesPanel=null,continuation=null,displayWindow=null;
+let state=null,revision=0,lastSuccess=0,realtime=false,hostData=null,hostKey=read('expo1405-host',true),token=read(participantKey)||read(participantKey,true),joined=false,myRound=0,myVotes={},voteBusy=false,joinBusy=false,hostBusy=false,toastTimer,hostLoading=false,lastMeKey='',refreshBusy=false;
 let meInfo={name:null,shareOnScreen:false},profileDirty=false,creditsRoll=null,screenMode=read('expo1405-screen-mode')==='chart'?'chart':'credits';
 let adminKey='',adminPanel=null,panelTab=['admin','classes'].includes(new URL(location.href).searchParams.get('tab'))?new URL(location.href).searchParams.get('tab'):'execution';
 let displayKey=read(displayStorageKey(),true);
@@ -33,7 +34,7 @@ async function api(path,{method='GET',body,exportFile=false}={}) {
   if(path.startsWith('/host')){if(adminKey)headers['X-Admin-Key']=adminKey;else headers['X-Host-Key']=hostKey;}
   if(path.startsWith('/admin'))headers['X-Admin-Key']=adminKey;
   if(path.startsWith('/display'))headers['X-Display-Key']=displayKey;
-  if(token&&(path==='/me'||path==='/vote'||path==='/profile'||path==='/score'))headers['X-Participant-Token']=token;
+  if(token&&(path==='/me'||path==='/vote'||path==='/profile'||path==='/score'||path==='/next-panel'))headers['X-Participant-Token']=token;
   const url=new URL(API_URL+path);url.searchParams.set('class',classId);
   const r=await fetch(url,{method,headers,body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.any([AbortSignal.timeout(20000),classAbort.signal]),cache:'no-store'});
   if(exportFile&&r.ok)return r.blob();
@@ -72,10 +73,11 @@ function renderResults(){const node=$('#resultsBody');if(!node)return;if(!state?
   updateMarkup(node,'<p class="result-question">'+esc(state.question.text)+'</p><div class="results-summary"><strong>'+fa(state.total)+'</strong><span>پاسخ ثبت‌شده</span></div><div class="bars">'+state.question.options.map(o=>{const pct=state.total?Math.round(o.count*100/state.total):0;return '<div class="bar-row"><div class="bar-label"><span>'+esc(o.label)+'</span><span class="bar-numbers"><strong>'+fa(pct)+'٪</strong><span>'+fa(o.count)+' رأی</span></span></div><div class="bar-track" role="meter" aria-label="'+esc(o.label)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div class="bar-fill" style="width:'+pct+'%"></div></div></div>'}).join('')+'</div>',false);
 }
 function renderParticipant(){
+  continuation?.sync();
   if(classUnavailable){showUnavailable(classUnavailable);return;}
   if(!$('#entryCard'))return;$('#entryCard').hidden=joined;$('#questionCard').hidden=!joined;$('#participantNote').hidden=!joined;$('#joinButton').disabled=!state||joinBusy;
   if(state){$('#entryHeading').textContent=state.quiz?'ورود به مسابقه':'ورود به نظرسنجی';$('#joinButtonLabel').textContent=state.quiz?'ورود به مسابقه':'ورود به نظرسنجی';const policy=state.namePolicy,anonymous=policy==='anonymous',required=policy==='named';$('#nameWrap').hidden=anonymous;$('#displayName').required=required;$('#joinNameLabel').textContent=required?'نام و نام خانوادگی':'نام و نام خانوادگی (اختیاری)';}
-  if(!joined&&state?.phase==='finished'){lastParticipantMarkup=null;$('#entryCard').hidden=true;$('#questionCard').hidden=false;$('#questionBody').innerHTML='<div class="waiting-state"><span class="waiting-icon">✓</span><h2>این پنل پایان یافت</h2><p>برای پنل بعد، لینک یا QR تازه از برگزارکننده دریافت کنید.</p></div>';return;}
+  if(!joined&&state?.phase==='finished'){lastParticipantMarkup=null;$('#entryCard').hidden=true;$('#questionCard').hidden=false;$('#questionBody').innerHTML='<div class="waiting-state"><span class="waiting-icon">✓</span><h2>این پنل پایان یافت</h2><p>این پنل پایان یافته است.</p></div>';return;}
   if(!joined)return;const body=$('#questionBody');
   if(state?.quiz&&state.phase==='finished'){const markup=renderQuizScore(quizResultRound===state.round?quizResult:null);if(markup!==lastParticipantMarkup){updateMarkup(body,markup,true);lastParticipantMarkup=markup;}return;}
   if(!state?.question){lastParticipantMarkup=null;const done=state?.phase==='finished';updateMarkup(body,'<div class="waiting-state"><span class="waiting-icon" aria-hidden="true">'+(done?'✓':'◌')+'</span><h2>'+(done?'از همراهی شما سپاسگزاریم.':'منتظر شروع مجری هستیم')+'</h2><p>'+(done?'گفت‌وگوی این نوبت به پایان رسید.':'صفحه را باز نگه دارید؛ سؤال همین‌جا ظاهر می‌شود.')+'</p></div>',true);return;}
@@ -137,6 +139,15 @@ function confirmAction(title,message,{name='',label='تأیید',danger=false}={
 function openEditor(id=''){const q=hostData?.questions.find(q=>q.id===id);$('#questionId').value=q?.id||'';$('#questionText').value=q?.text||'';$('#questionOptions').value=q?.options.join('\n')||'';$('#quizAnswerWrap').hidden=!state?.quiz;$('#questionCorrectChoice').value=q?.correctChoice==null?'':String(q.correctChoice);$('#editorTitle').textContent=q?'ویرایش سؤال':'سؤال تازه';$('#editorError').hidden=true;$('#questionDialog').showModal()}
 function tick(){updateConnection();const seconds=state?.deadline?Math.max(0,Math.ceil((Date.parse(state.deadline)-Date.now())/1000)):null;all('[data-countdown]').forEach(n=>n.textContent=state?.phase==='open'&&seconds!==null?fa(seconds)+' ثانیه':'');if(state?.phase==='open'&&seconds===0){if(view==='participant'&&isOpen._expired!==state.deadline){isOpen._expired=state.deadline;renderParticipant()}if(view==='host'&&$('#phaseLabel'))$('#phaseLabel').textContent=phaseLabel();}}
 if(view==='participant'){
+  continuation=new PanelContinuation({root:$('#nextPanelCard'),button:$('#continuePanel'),label:$('#nextPanelTitle'),
+   eligible:()=>joined&&!classUnavailable&&state?.phase==='finished',request:api,
+   existingToken:id=>read(roomStorageKey('expo1405-participant',id))||read(roomStorageKey('expo1405-participant',id),true),
+   navigate:result=>{
+    if(!/^(main|cls-[0-9a-f-]{36})$/.test(result.room)||typeof result.token!=='string'||result.token.length<32||result.token.length>160)throw Error('ورود به پنل بعدی انجام نشد.');
+    const key=roomStorageKey('expo1405-participant',result.room);save(key,result.token);save(key,result.token,true);
+    if(read(key)!==result.token&&read(key,true)!==result.token)throw Error('برای ادامه، ذخیره‌سازی مرورگر را فعال کنید.');
+    location.assign(classUrl('./',result.room,location.href).href);
+   },notify});
   $('#joinButton').disabled=true;
   $('#joinForm').addEventListener('submit',async e=>{e.preventDefault();if(joinBusy||!state)return;joinBusy=true;$('#joinButton').disabled=true;try{const name=state.namePolicy==='anonymous'?null:$('#displayName').value.trim()||null;const data=await api('/join',{method:'POST',body:{name,shareOnScreen:true}});token=data.token;save(participantKey,token);await refreshMe();await refreshState()}catch(e){notify(e.message,true)}finally{joinBusy=false;renderParticipant()}});
 }
