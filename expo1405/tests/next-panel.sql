@@ -10,6 +10,7 @@ begin
  c=public.expo1405_create_class(a,'Continuation other fixture',false,false,gen_random_uuid())->>'id';
  update public.expo1405_rooms set name_policy='named' where id in(a,b,c);
  perform public.expo1405_host_action(a,jsonb_build_object('action','save','text','Source fixture question','options',jsonb_build_array('A','B')));
+ perform public.expo1405_host_action(a,jsonb_build_object('action','save','text','Source final fixture question','options',jsonb_build_array('A','B')));
  perform public.expo1405_host_action(b,jsonb_build_object('action','save','text','Target fixture question','options',jsonb_build_array('A','B')));
  update public.expo1405_rooms set created_at='2099-01-01'::timestamptz+case id when a then interval '0 seconds' when b then interval '1 second' else interval '2 seconds' end where id in(a,b,c);
  perform public.expo1405_set_next_panel(a,null);
@@ -19,9 +20,16 @@ begin
  if public.expo1405_next_panel(a,h)->>'finished'<>'false' then raise exception 'Next panel exposed before finish';end if;
  attempt=false;begin perform public.expo1405_continue_panel(a,h,b,nh,null);exception when others then if sqlerrm like '%panel_not_finished%' then attempt=true;else raise;end if;end;
  if not attempt then raise exception 'Unfinished panel permitted handoff';end if;
- select id into q from public.expo1405_questions where room_id=a;
+ select id into q from public.expo1405_questions where room_id=a and position=1;
  perform public.expo1405_host_action(a,jsonb_build_object('action','activate','questionId',q));
  perform public.expo1405_vote(a,h,q,1,0);
+ if (public.expo1405_next_panel(a,h)->>'canContinue')::boolean then raise exception 'First answer permits premature continuation';end if;
+ select id into q from public.expo1405_questions where room_id=a and position=2;
+ perform public.expo1405_host_action(a,jsonb_build_object('action','activate','questionId',q));
+ perform public.expo1405_vote(a,h,q,1,1);
+ if not (public.expo1405_next_panel(a,h)->>'canContinue')::boolean then raise exception 'Last answer does not allow continuation';end if;
+ result=public.expo1405_continue_panel(a,h,b,nh,null);
+ if result->>'room'<>b then raise exception 'Last-answer handoff failed';end if;
  perform public.expo1405_host_action(a,jsonb_build_object('action','finish'));
  result=public.expo1405_next_panel(a,h);
  if result->'nextPanel'->>'id'<>b or (result->'nextPanel') ?| array['question','questions','correctChoice'] then raise exception 'Invalid handoff metadata';end if;
@@ -31,7 +39,7 @@ begin
  if not attempt then raise exception 'Arbitrary destination accepted';end if;
  result=public.expo1405_continue_panel(a,h,b,nh,null);dest_person=(result->>'id')::uuid;
  if dest_person=source_person or result->>'name'<>'Synthetic Full Name' then raise exception 'Identity not scoped or name lost';end if;
- if (select count(*) from public.expo1405_votes where room_id=b)<>0 or (select count(*) from public.expo1405_votes where room_id=a)<>1 then raise exception 'Responses crossed panels';end if;
+ if (select count(*) from public.expo1405_votes where room_id=b)<>0 or (select count(*) from public.expo1405_votes where room_id=a)<>2 then raise exception 'Responses crossed panels';end if;
  result=public.expo1405_continue_panel(a,h,b,nh,null);
  if (result->>'id')::uuid<>dest_person or (select count(*) from public.expo1405_participants where room_id=b)<>1 then raise exception 'Retry created duplicate identity';end if;
  perform public.expo1405_join_with_credits(b,existing_hash,'Existing Synthetic Name',true);

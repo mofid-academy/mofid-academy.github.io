@@ -4,7 +4,7 @@ export const ALLOWED_ORIGINS = ['https://mofid-academy.github.io'];
 const messages = {
   invalid_next_panel:'پنل بعدی معتبر نیست.',
   next_panel_unavailable:'پنل بعدی تغییر کرده یا هنوز آماده نیست؛ دوباره تلاش کنید.',
-  panel_not_finished:'منتظر پایان این پنل بمانید.',
+  panel_not_finished:'ابتدا آخرین سؤال این پنل را پاسخ دهید.',
   quiz_answer_required:'پاسخ صحیح سؤال یا «بدون نمره» را مشخص کنید.',
   invalid_quiz_answer:'پاسخ صحیح باید یکی از گزینه‌های همین سؤال باشد.',
   voting_closed:'رأی‌گیری این سؤال بسته شده یا سؤال تغییر کرده است.',
@@ -211,7 +211,8 @@ export function makeHandler({url,key,fetcher=fetch}) {
           if(!people.length||!rooms.length)return json({error:messages.invalid_participant},401);
           if(rooms[0].deleted_at)return json({error:messages.class_deleted},410);
           const votes=await db('expo1405_votes?room_id=eq.'+room+'&round=eq.'+rooms[0].round+'&participant_id=eq.'+people[0].id+'&select=question_id,choice');
-          return json({id:people[0].id,name:people[0].display_name,shareOnScreen:people[0].share_on_screen,round:rooms[0].round,votes});
+          const next=await rpc('next_panel',{p_room:room,p_hash:hash});
+          return json({id:people[0].id,name:people[0].display_name,shareOnScreen:people[0].share_on_screen,round:rooms[0].round,canContinue:next.canContinue===true,votes});
         }
         if(req.method==='POST'&&path==='/profile') {
           const raw=await req.text();if(raw.length>2000)return json({error:'درخواست بزرگ است.'},413);

@@ -18,7 +18,7 @@ export class PanelContinuation{
  async refresh(force=false){
   if(!this.eligible()||this.loading||(!force&&this.checkedAt&&Date.now()-this.checkedAt<12000))return;
   const generation=this.generation;this.loading=true;this.checkedAt=Date.now();this.render();
-  try{const data=await this.request('/next-panel');if(generation===this.generation&&this.eligible())this.target=data.finished?data.nextPanel:null;}
+  try{const data=await this.request('/next-panel');if(generation===this.generation&&this.eligible())this.target=(data.canContinue??data.finished)?data.nextPanel:null;}
   catch{if(generation===this.generation)this.target=null;}
   finally{this.loading=false;this.render();}
  }

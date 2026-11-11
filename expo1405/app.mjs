@@ -4,7 +4,7 @@ import {CreditsRoll} from './credits.mjs?v=3';
 import {AdminPanel} from './admin.mjs?v=25';
 import {renderQuizScore} from './quiz.mjs?v=25';
 import {ClassesPanel} from './classes.mjs?v=34';
-import {PanelContinuation} from './continuation.mjs?v=34';
+import {PanelContinuation} from './continuation.mjs?v=36';
 import {roomFromUrl,roomStorageKey,classUrl} from './class-context.mjs?v=7';
 const $=s=>document.querySelector(s),all=s=>document.querySelectorAll(s),view=document.body.dataset.view;
 const fa=n=>Number(n||0).toLocaleString('fa-IR');
@@ -16,7 +16,7 @@ if(view==='host'&&!new URL(location.href).searchParams.has('class'))classId=read
 const participantKey=roomStorageKey('expo1405-participant',classId),displayStorageKey=()=>roomStorageKey('expo1405-display',classId);
 let classAbort=new AbortController(),classesPanel=null,continuation=null,displayWindow=null;
 let state=null,revision=0,lastSuccess=0,realtime=false,hostData=null,hostKey=read('expo1405-host',true),token=read(participantKey)||read(participantKey,true),joined=false,myRound=0,myVotes={},voteBusy=false,joinBusy=false,hostBusy=false,toastTimer,hostLoading=false,lastMeKey='',refreshBusy=false;
-let meInfo={name:null,shareOnScreen:false},profileDirty=false,creditsRoll=null,screenMode='chart';
+let meInfo={name:null,shareOnScreen:false},profileDirty=false,canContinue=false,creditsRoll=null,screenMode='chart';
 let adminKey='',adminPanel=null,panelTab=['admin','classes'].includes(new URL(location.href).searchParams.get('tab'))?new URL(location.href).searchParams.get('tab'):'execution';
 let displayKey=read(displayStorageKey(),true);
 let displayPending=false,displayConnectionError=false;
@@ -82,7 +82,7 @@ function renderParticipant(){
   if(state?.quiz&&state.phase==='finished'){const markup=renderQuizScore(quizResultRound===state.round?quizResult:null);if(markup!==lastParticipantMarkup){updateMarkup(body,markup,true);lastParticipantMarkup=markup;}return;}
   if(!state?.question){lastParticipantMarkup=null;const done=state?.phase==='finished';updateMarkup(body,'<div class="waiting-state"><span class="waiting-icon" aria-hidden="true">'+(done?'✓':'◌')+'</span><h2>'+(done?'از همراهی شما سپاسگزاریم.':'منتظر شروع مجری هستیم')+'</h2><p>'+(done?'گفت‌وگوی این نوبت به پایان رسید.':'صفحه را باز نگه دارید؛ سؤال همین‌جا ظاهر می‌شود.')+'</p></div>',true);return;}
   const q=state.question,voted=myRound===state.round&&Object.hasOwn(myVotes,q.id),choice=myVotes[q.id];
-  const content='<div class="question-heading"><div class="question-heading-copy"><div class="question-kicker"><span>پرسش '+fa(q.position)+' از '+fa(state.questionCount)+'</span><span>'+esc(state.quiz?(q.graded?'مسابقه · یک امتیاز':'نظرسنجی · بدون نمره'):phaseLabel())+'</span></div><h2 id="questionTitle">'+esc(q.text)+'</h2></div>'+'</div><div class="options">'+q.options.map((o,i)=>'<button class="option-button shiny-cta gradient-button '+(voted&&choice===i?'selected':'')+'" data-choice="'+i+'" '+(!isOpen()||voted||voteBusy?'disabled':'')+'><span class="option-letter">'+(voted&&choice===i?'✓':['الف','ب','ج','د','هـ','و','ز','ح'][i])+'</span><span>'+esc(o.label)+'</span></button>').join('')+'</div>'+(voted?'<div class="success-note" role="status">✓ پاسخ شما ثبت شد. برای سؤال بعدی منتظر مجری بمانید.</div>':'<p class="tiny">'+(voteBusy?'در حال ثبت پاسخ…':isOpen()?'با انتخاب گزینه، پاسخ شما ثبت می‌شود.':'ثبت پاسخ برای این سؤال بسته است.')+'</p>');
+  const content='<div class="question-heading"><div class="question-heading-copy"><div class="question-kicker"><span>پرسش '+fa(q.position)+' از '+fa(state.questionCount)+'</span><span>'+esc(state.quiz?(q.graded?'مسابقه · یک امتیاز':'نظرسنجی · بدون نمره'):phaseLabel())+'</span></div><h2 id="questionTitle">'+esc(q.text)+'</h2></div>'+'</div><div class="options">'+q.options.map((o,i)=>'<button class="option-button shiny-cta gradient-button '+(voted&&choice===i?'selected':'')+'" data-choice="'+i+'" '+(!isOpen()||voted||voteBusy?'disabled':'')+'><span class="option-letter">'+(voted&&choice===i?'✓':['الف','ب','ج','د','هـ','و','ز','ح'][i])+'</span><span>'+esc(o.label)+'</span></button>').join('')+'</div>'+(voted?'<div class="success-note" role="status">✓ پاسخ شما ثبت شد.'+(q.position===state.questionCount?'':' برای سؤال بعدی منتظر مجری بمانید.')+'</div>':'<p class="tiny">'+(voteBusy?'در حال ثبت پاسخ…':isOpen()?'با انتخاب گزینه، پاسخ شما ثبت می‌شود.':'ثبت پاسخ برای این سؤال بسته است.')+'</p>');
   if(content===lastParticipantMarkup)return;updateMarkup(body,content,true);lastParticipantMarkup=content;
   all('[data-choice]').forEach(b=>b.addEventListener('click',()=>castVote(Number(b.dataset.choice))));
 }
@@ -102,8 +102,8 @@ function renderScreen(){if(!state)return;const easyTrader=/ایزی[‌\s-]*تر
   creditsRoll?.sync(state.credits||[],classId+':'+state.round+':'+(state.question?.id||'waiting'));
 }
 function render(){all('[data-class-title]').forEach(e=>e.textContent=state?.title||'پنل');all('[data-participants]').forEach(e=>e.textContent=fa(state?.participants));renderResults();if(view==='participant')renderParticipant();if(view==='host')renderHost();if(view==='screen')renderScreen();updateConnection();tick()}
-async function refreshMe(){if(!token)return;try{const me=await api('/me');joined=true;myRound=me.round;myVotes=Object.fromEntries(me.votes.map(v=>[v.question_id,v.choice]));meInfo={name:me.name,shareOnScreen:me.shareOnScreen===true};if($('#identityName')&&!profileDirty){$('#identityName').value=me.name||'';$('#identityShare').checked=meInfo.shareOnScreen;$('#identityName').required=meInfo.shareOnScreen;}renderParticipant();refreshQuizScore()}catch(e){if(e.status===401){token='';joined=false;save(participantKey,'');renderParticipant()}else throw e}}
-async function castVote(choice){if(!isOpen()||voteBusy||!joined)return;const q=state.question,round=state.round;voteBusy=true;renderParticipant();try{const r=await api('/vote',{method:'POST',body:{questionId:q.id,round,choice}});if(state.round===round){if(myRound!==round)myVotes={};myRound=round;myVotes[q.id]=r.choice;}notify(r.already?'پاسخ قبلی شما ثبت شده است.':'پاسخ شما ثبت شد.');await refreshState()}catch(e){notify(e.message,true);await refreshState()}finally{voteBusy=false;renderParticipant()}}
+async function refreshMe(){if(!token)return;try{const me=await api('/me');joined=true;canContinue=me.canContinue===true;myRound=me.round;myVotes=Object.fromEntries(me.votes.map(v=>[v.question_id,v.choice]));meInfo={name:me.name,shareOnScreen:me.shareOnScreen===true};if($('#identityName')&&!profileDirty){$('#identityName').value=me.name||'';$('#identityShare').checked=meInfo.shareOnScreen;$('#identityName').required=meInfo.shareOnScreen;}renderParticipant();refreshQuizScore()}catch(e){if(e.status===401){token='';joined=false;save(participantKey,'');renderParticipant()}else throw e}}
+async function castVote(choice){if(!isOpen()||voteBusy||!joined)return;const q=state.question,round=state.round;voteBusy=true;renderParticipant();try{const r=await api('/vote',{method:'POST',body:{questionId:q.id,round,choice}});if(state.round===round){if(myRound!==round)myVotes={};myRound=round;myVotes[q.id]=r.choice;if(q.position===state.questionCount)canContinue=true;}notify(r.already?'پاسخ قبلی شما ثبت شده است.':'پاسخ شما ثبت شد.');await refreshState()}catch(e){notify(e.message,true);await refreshState()}finally{voteBusy=false;renderParticipant()}}
 function showPanel(tab){if(document.body.classList.contains('class-directory-only')&&tab!=='classes')tab='classes';panelTab=tab;for(const [name,id] of [['execution','Execution'],['classes','Classes'],['admin','Admin']]){$('#'+name+'View').hidden=tab!==name;$('#tab'+id).setAttribute('aria-pressed',String(tab===name));}if(tab==='admin')adminPanel?.show().catch(e=>notify(e.message,true));else adminPanel?.hide();if(tab==='classes')classesPanel?.load().catch(e=>notify(e.message,true));}
 async function switchClass(id,force=false){
  if(hostBusy)throw Error('ابتدا منتظر پایان عملیات سؤال بمانید.');if(id===classId&&!force)return;
@@ -140,7 +140,7 @@ function openEditor(id=''){const q=hostData?.questions.find(q=>q.id===id);$('#qu
 function tick(){updateConnection();const seconds=state?.deadline?Math.max(0,Math.ceil((Date.parse(state.deadline)-Date.now())/1000)):null;all('[data-countdown]').forEach(n=>n.textContent=state?.phase==='open'&&seconds!==null?fa(seconds)+' ثانیه':'');if(state?.phase==='open'&&seconds===0){if(view==='participant'&&isOpen._expired!==state.deadline){isOpen._expired=state.deadline;renderParticipant()}if(view==='host'&&$('#phaseLabel'))$('#phaseLabel').textContent=phaseLabel();}}
 if(view==='participant'){
   continuation=new PanelContinuation({root:$('#nextPanelCard'),button:$('#continuePanel'),label:$('#nextPanelTitle'),
-   eligible:()=>joined&&!classUnavailable&&state?.phase==='finished',request:api,
+   eligible:()=>joined&&!classUnavailable&&!!state&&(state.phase==='finished'||(canContinue&&myRound===state.round)||(myRound===state.round&&state.question?.position===state.questionCount&&Object.hasOwn(myVotes,state.question?.id))),request:api,
    existingToken:id=>read(roomStorageKey('expo1405-participant',id))||read(roomStorageKey('expo1405-participant',id),true),
    navigate:result=>{
     if(!/^(main|cls-[0-9a-f-]{36})$/.test(result.room)||typeof result.token!=='string'||result.token.length<32||result.token.length>160)throw Error('ورود به پنل بعدی انجام نشد.');

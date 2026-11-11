@@ -19,15 +19,16 @@ async function participant(policy,{question=null,quiz=false,nextPanel=null}={}){
  const fetcher=async(url,options={})=>{const path=new URL(url).pathname;requests.push({path,body:options.body?JSON.parse(options.body):null});
   if(path.endsWith('/state'))return Response.json(snapshot);
   if(path.endsWith('/join')){joinedName=JSON.parse(options.body).name;return Response.json({id:'test',token:'synthetic-test-token',name:joinedName});}
-  if(path.endsWith('/next-panel'))return Response.json(options.body?{room:nextPanel.id,id:'target-person',name:joinedName,token:'TARGET_TOKEN_WITH_MORE_THAN_32_CHARACTERS'}:{finished:true,nextPanel});
+  if(path.endsWith('/next-panel'))return Response.json(options.body?{room:nextPanel.id,id:'target-person',name:joinedName,token:'TARGET_TOKEN_WITH_MORE_THAN_32_CHARACTERS'}:{finished:snapshot.payload.phase==='finished',canContinue:true,nextPanel});
+  if(path.endsWith('/vote'))return Response.json({choice:JSON.parse(options.body).choice,already:false});
   if(path.endsWith('/score'))return Response.json({available:true,score:6,maxScore:6,percentage:100,correctCount:6,wrongCount:0,unansweredCount:0,questions:[]});
   if(path.endsWith('/me'))return Response.json({id:'test',name:joinedName,shareOnScreen:false,round:1,votes:[]});
   throw Error('Unexpected endpoint in participant test');
  };
  class CreditsRoll{sync(){}};
- const boot=new AsyncFunction('document','window','location','history','sessionStorage','localStorage','setInterval','setTimeout','clearTimeout','fetch','setQrCard','questionArtwork','questionArtMarkup','API_URL','PROJECT_URL','PUBLIC_KEY','CreditsRoll','AdminPanel','ClassesPanel','roomFromUrl','roomStorageKey','classUrl','renderQuizScore','PanelContinuation',source);
- await boot(document,window,location,history,sessionStorage,localStorage,fn=>intervals.push(fn),()=>0,()=>{},fetcher,()=>{},()=>({src:''}),()=>'', 'https://api.invalid', 'https://project.invalid','public',CreditsRoll,class{},class{},roomFromUrl,roomStorageKey,classUrl,renderQuizScore,PanelContinuation);
- return{get,requests,intervals,snapshot,navigations,localStorage,sessionStorage,submit:()=>get('joinForm').events.submit({preventDefault(){}})};
+ const boot=new AsyncFunction('document','window','location','history','sessionStorage','localStorage','setInterval','setTimeout','clearTimeout','fetch','setQrCard','questionArtwork','questionArtMarkup','API_URL','PROJECT_URL','PUBLIC_KEY','CreditsRoll','AdminPanel','ClassesPanel','roomFromUrl','roomStorageKey','classUrl','renderQuizScore','PanelContinuation',source+';return {castVote};');
+ const app=await boot(document,window,location,history,sessionStorage,localStorage,fn=>intervals.push(fn),()=>0,()=>{},fetcher,()=>{},()=>({src:''}),()=>'', 'https://api.invalid', 'https://project.invalid','public',CreditsRoll,class{},class{},roomFromUrl,roomStorageKey,classUrl,renderQuizScore,PanelContinuation);
+ return{get,requests,intervals,snapshot,navigations,localStorage,sessionStorage,vote:choice=>app.castVote(choice),submit:()=>get('joinForm').events.submit({preventDefault(){}})};
 }
 
 test('entry form removes both checkboxes and gives the join button the gradient styling',()=>{
@@ -87,4 +88,14 @@ test('the real participant flow preserves the source login and saves a separate 
  assert(!ui.navigations[0].includes('TOKEN'));assert.equal(ui.localStorage.getItem('expo1405-participant'),sourceToken);
  assert.equal(ui.localStorage.getItem('expo1405-participant:'+target),'TARGET_TOKEN_WITH_MORE_THAN_32_CHARACTERS');
  assert.equal(ui.sessionStorage.getItem('expo1405-participant:'+target),'TARGET_TOKEN_WITH_MORE_THAN_32_CHARACTERS');
+});
+
+test('answering question five reveals the next-panel button while the host vote is still open',async()=>{
+ const target='cls-22222222-2222-4222-8222-222222222222';
+ const ui=await participant('named',{question:{id:'q5',position:5,text:'سؤال پنجم',options:[{label:'A'},{label:'B'}]},nextPanel:{id:target,title:'Next'}});
+ ui.snapshot.payload.questionCount=5;ui.get('displayName').value='نام آزمایشی';await ui.submit();await new Promise(r=>setImmediate(r));
+ assert.equal(ui.get('nextPanelCard').hidden,true);
+ await ui.vote(0);await new Promise(r=>setImmediate(r));
+ assert.equal(ui.snapshot.payload.phase,'open');assert.equal(ui.get('nextPanelCard').hidden,false);assert.equal(ui.get('continuePanel').disabled,false);
+ assert(!ui.get('questionBody').innerHTML.includes('برای سؤال بعدی منتظر مجری بمانید'));
 });
