@@ -1,0 +1,3 @@
+/* Hide hall controls only during fullscreen. Esc restores them. */
+html:fullscreen body[data-view="screen"] > .topbar { display: none !important; }
+html:-webkit-full-screen body[data-view="screen"] > .topbar { display: none !important; }
