@@ -50,7 +50,7 @@ async function refreshQuizScore(){
  if(view!=='participant'||!joined||!state?.quiz||state.phase!=='finished'||quizScoreBusy||(quizResult?.available&&quizResultRound===state.round)||Date.now()<quizRetryAt)return;
  const round=state.round;quizScoreBusy=true;try{const result=await api('/score');if(state?.quiz&&state.round===round&&state.phase==='finished'){quizResult=result;quizResultRound=round;}}catch(e){quizRetryAt=Date.now()+10000;notify(e.message,true);}finally{quizScoreBusy=false;renderParticipant();}
 }
-function snapshot(row){if(!row?.payload||(!demoMode&&row.payload.room!==classId)||Number(row.revision||0)<revision)return;revision=Number(row.revision||revision);state=row.payload;lastSuccess=Date.now();render();refreshQuizScore();const k=state.round+':'+state.phase+':'+(state.question?.id||'waiting');if(view==='participant'&&joined&&k!==lastMeKey){lastMeKey=k;refreshMe().catch(e=>notify(e.message,true))}}
+function snapshot(row){if(!row?.payload||(!demoMode&&row.payload.room!==classId)||Number(row.revision||0)<revision)return;revision=Number(row.revision||revision);state=row.payload;if(state.phase!=='finished'||quizResultRound!==state.round){quizResult=null;quizResultRound=0;}lastSuccess=Date.now();render();refreshQuizScore();const k=state.round+':'+state.phase+':'+(state.question?.id||'waiting');if(view==='participant'&&joined&&k!==lastMeKey){lastMeKey=k;refreshMe().catch(e=>notify(e.message,true))}}
 function showDisplayLogin(){if(view!=='screen')return;$('#unavailableNotice').hidden=true;$('#displayLogin').hidden=false;$('#screenContainer').hidden=true;state=null;revision=0;creditsRoll?.sync([],'locked');}
 function showUnavailable(status){
  classUnavailable=status;state=null;revision=0;creditsRoll?.sync([],'unavailable');
