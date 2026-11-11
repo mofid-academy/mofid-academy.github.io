@@ -5,7 +5,7 @@ import {Sun,Moon} from 'lucide-react';
 import Velaris from '@/components/ui/velaris';
 import {GradientBackground} from '@/components/ui/jade-sky';
 import './aurora.css';
-const key='expo1405-theme-v35';
+const key=document.body.dataset.view==='participant'?'expo1405-participant-theme-v37':'expo1405-theme-v35';
 function App(){
  const [theme,setTheme]=useState(document.documentElement.dataset.theme==='light'?'light':'dark');
  useEffect(()=>{const root=document.documentElement;root.dataset.theme=theme;root.dataset.academyTheme=theme;root.classList.toggle('dark',theme==='dark');root.style.colorScheme=theme;document.querySelector('meta[name="theme-color"]')?.setAttribute('content',theme==='dark'?'#071d17':'#f2faf5');try{localStorage.setItem(key,theme)}catch{}},[theme]);

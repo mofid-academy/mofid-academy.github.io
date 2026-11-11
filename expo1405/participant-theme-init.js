@@ -1,0 +1,1 @@
+(function(){let theme;try{theme=localStorage.getItem('expo1405-participant-theme-v37')}catch{}if(theme!=='light'&&theme!=='dark')theme='dark';document.documentElement.dataset.theme=theme;document.documentElement.dataset.academyTheme=theme;document.documentElement.classList.toggle('dark',theme==='dark');document.documentElement.style.colorScheme=theme;})();
