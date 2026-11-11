@@ -67,6 +67,7 @@ test('the Jet waiting artwork disappears when a question is active or the panel 
  const ui=await screen(async()=>Response.json({revision:1,payload}),{fragment:'#display=valid-code'});
  payload={...payload,phase:'open',question:{id:'q1',position:1,text:'سؤال آزمایشی',options:[]}};
  ui.intervals[0]();await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(ui.get('resultsBody').hidden,false);assert.equal(ui.get('creditsStage').hidden,true);
  assert.match(ui.get('screenQuestion').innerHTML,/سؤال آزمایشی/);assert.doesNotMatch(ui.get('screenQuestion').innerHTML,/glass-jet-hq/);
  payload={...payload,phase:'finished',question:null};ui.intervals[0]();await new Promise(resolve=>setImmediate(resolve));
  assert.match(ui.get('screenQuestion').innerHTML,/این پنل پایان یافت/);assert.doesNotMatch(ui.get('screenQuestion').innerHTML,/glass-jet-hq/);

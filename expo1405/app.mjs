@@ -16,7 +16,7 @@ if(view==='host'&&!new URL(location.href).searchParams.has('class'))classId=read
 const participantKey=roomStorageKey('expo1405-participant',classId),displayStorageKey=()=>roomStorageKey('expo1405-display',classId);
 let classAbort=new AbortController(),classesPanel=null,continuation=null,displayWindow=null;
 let state=null,revision=0,lastSuccess=0,realtime=false,hostData=null,hostKey=read('expo1405-host',true),token=read(participantKey)||read(participantKey,true),joined=false,myRound=0,myVotes={},voteBusy=false,joinBusy=false,hostBusy=false,toastTimer,hostLoading=false,lastMeKey='',refreshBusy=false;
-let meInfo={name:null,shareOnScreen:false},profileDirty=false,creditsRoll=null,screenMode=read('expo1405-screen-mode')==='chart'?'chart':'credits';
+let meInfo={name:null,shareOnScreen:false},profileDirty=false,creditsRoll=null,screenMode='chart';
 let adminKey='',adminPanel=null,panelTab=['admin','classes'].includes(new URL(location.href).searchParams.get('tab'))?new URL(location.href).searchParams.get('tab'):'execution';
 let displayKey=read(displayStorageKey(),true);
 let displayPending=false,displayConnectionError=false;
@@ -177,7 +177,7 @@ if(view==='screen'){
   $('#openHostFromScreen').href=classUrl('./host.html',classId,location.href).href;
   $('#displayLoginForm').addEventListener('submit',async e=>{e.preventDefault();if(displayPending||refreshBusy)return;displayPending=true;displayConnectionError=false;$('#displayLoginButton').disabled=true;displayKey=$('#displayCode').value.trim();$('#displayError').hidden=true;updateConnection();try{const row=await api('/display/state');save(displayStorageKey(),displayKey,true);snapshot(row);$('#displayCode').value='';$('#displayLogin').hidden=true;$('#screenContainer').hidden=false;}catch(e){displayKey='';save(displayStorageKey(),'',true);displayConnectionError=!e.status||e.status>=500;showDisplayError(e);}finally{displayPending=false;$('#displayLoginButton').disabled=false;updateConnection();}});
   creditsRoll=new CreditsRoll($('#creditsStage'));
-  $('#modeCredits').addEventListener('click',()=>{screenMode='credits';save('expo1405-screen-mode',screenMode);renderScreen()});$('#modeChart').addEventListener('click',()=>{screenMode='chart';save('expo1405-screen-mode',screenMode);renderScreen()});
+  $('#modeCredits').addEventListener('click',()=>{screenMode='credits';renderScreen()});$('#modeChart').addEventListener('click',()=>{screenMode='chart';renderScreen()});
   $('#creditsSpeed').addEventListener('change',()=>creditsRoll.setSpeed($('#creditsSpeed').value));$('#creditsPause').addEventListener('click',()=>{creditsRoll.setPaused(!creditsRoll.paused);$('#creditsPause').textContent=creditsRoll.paused?'ادامهٔ حرکت ▶':'مکث حرکت Ⅱ';$('#creditsPause').setAttribute('aria-pressed',String(creditsRoll.paused));});
   $('#demoLiveLink').href=classUrl('./screen.html',classId,location.href).href;
   $('#joinLink').textContent=demoWaiting?'کد QR نمونه':joinUrl.replace('https://','');$('#joinLink').href=demoWaiting?'#':joinUrl;
