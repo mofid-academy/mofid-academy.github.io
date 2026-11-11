@@ -79,3 +79,5 @@ body:before{content:none}
  .question-art,.screen-main .question-art{width:88px;height:88px}
  .question-heading h2,.question-card .question-heading h2{font-size:18px}
 }
+
+.screen-waiting-art.easytrader-art img{width:70%;height:70%;border-radius:28%;box-shadow:0 0 55px #49dbb435,0 20px 45px #001d1a55}
