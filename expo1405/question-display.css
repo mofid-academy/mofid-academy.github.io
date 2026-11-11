@@ -18,6 +18,11 @@ body[data-view="screen"] .hall-result-cards {
   --result-glow: #0c9c7e2e;
 }
 body[data-view="screen"] .hall-result-card {
+  --share-hue: 4;
+  --result-accent: hsl(var(--share-hue) 78% 65%);
+  --result-glow: hsl(var(--share-hue) 78% 62% / .27);
+  position: relative;
+  isolation: isolate;
   min-width: 0;
   padding: clamp(14px, 1.4vw, 21px) clamp(16px, 1.4vw, 22px) 14px;
   background: var(--result-surface);
@@ -25,6 +30,41 @@ body[data-view="screen"] .hall-result-card {
   border-radius: 16px;
   box-shadow: 0 5px 16px var(--result-shadow);
 }
+:root[data-theme="light"] body[data-view="screen"] .hall-result-card {
+  --result-accent: hsl(var(--share-hue) 76% 36%);
+  --result-glow: hsl(var(--share-hue) 76% 43% / .23);
+}
+body[data-view="screen"] .hall-border-trace {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  border-radius: inherit;
+}
+body[data-view="screen"] .hall-border-trace rect {
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  fill: none;
+  stroke: var(--result-accent);
+  stroke-width: 1.4px;
+  stroke-linecap: round;
+  stroke-dasharray: 11 89;
+  animation: hall-border-trace 7s linear infinite;
+  animation-delay: var(--trace-delay, 0s);
+}
+body[data-view="screen"] .hall-border-trace .hall-trace-glow {
+  filter: blur(3px);
+  stroke-width: 3px;
+  opacity: .6;
+}
+body[data-view="screen"] .hall-border-trace .hall-trace-head {
+  stroke: color-mix(in srgb, var(--result-accent), white 65%);
+  stroke-dasharray: 1 99;
+  stroke-width: 1.8px;
+}
+@keyframes hall-border-trace { to { stroke-dashoffset: -100; } }
 body[data-view="screen"] .hall-result-row {
   display: flex;
   align-items: center;
@@ -56,7 +96,7 @@ body[data-view="screen"] .hall-result-percent {
   direction: ltr;
   text-align: left;
   white-space: nowrap;
-  color: var(--text);
+  color: var(--result-accent);
   line-height: 1.35;
   font-variant-numeric: tabular-nums;
 }
@@ -84,7 +124,7 @@ body[data-view="screen"] .hall-result-rest {
 body[data-view="screen"] .hall-result-fill {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(100deg, color-mix(in srgb, var(--result-accent), white 25%), var(--result-accent) 48%, color-mix(in srgb, var(--result-accent), #006a59 30%));
+  background: linear-gradient(100deg, color-mix(in srgb, var(--result-accent), white 25%), var(--result-accent) 48%, color-mix(in srgb, var(--result-accent), black 17%));
   box-shadow: 0 3px 13px var(--result-glow), inset 0 1px 0 #ffffff65;
 }
 body[data-view="screen"] .hall-result-fill:before {
@@ -151,4 +191,6 @@ body[data-view="participant"] .participant-question-position b { font: inherit; 
 @media (prefers-reduced-motion: reduce) {
   body[data-view="screen"] .hall-result-fill { transition: none; }
   body[data-view="screen"] .partition-changing:after { animation: none; }
+  body[data-view="screen"] .hall-border-trace rect { animation: none; }
+  body[data-view="screen"] .hall-border-trace .hall-trace-glow { display: none; }
 }

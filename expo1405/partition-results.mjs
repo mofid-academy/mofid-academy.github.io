@@ -5,6 +5,39 @@ const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 const format = value => Math.round(value).toLocaleString('fa-IR');
 let stateKey = '', displayed = [], jobs = [], frame = 0, finishCurrent = null;
 
+function shareHue(value) {
+  const percent = Math.max(0, Math.min(100, Number(value) || 0));
+  return percent <= 50 ? 4 + percent / 50 * 43 : 47 + (percent - 50) / 50 * 102;
+}
+
+function colorShare(track, value) {
+  track.closest('.hall-result-card')?.style.setProperty('--share-hue', shareHue(value).toFixed(2));
+}
+
+function traceBorders(cards) {
+  // Border-Trace Button inspired edge treatment; normalized path keeps speed even.
+  // A shared clock preserves its position when live result cards are replaced.
+  const delay = -(performance.now() % 7000) / 1000;
+  cards.querySelectorAll('.hall-result-card').forEach((card, index) => {
+    if (card.querySelector('.hall-border-trace')) return;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'hall-border-trace');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    svg.style.setProperty('--trace-delay', (delay - index * 1.15) + 's');
+    for (const part of ['glow', 'line', 'head']) {
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('class', 'hall-trace-' + part);
+      rect.setAttribute('x', '1');
+      rect.setAttribute('y', '1');
+      rect.setAttribute('rx', '15');
+      rect.setAttribute('pathLength', '100');
+      svg.append(rect);
+    }
+    card.append(svg);
+  });
+}
+
 function settle() {
   cancelAnimationFrame(frame);
   frame = 0;
@@ -20,6 +53,7 @@ function sync() {
   settle();
   const cards = root.querySelector('.hall-result-cards');
   if (!cards) { stateKey = ''; displayed = []; return; }
+  traceBorders(cards);
   const tracks = Array.from(cards.querySelectorAll('.hall-result-track'));
   const numbers = Array.from(cards.querySelectorAll('.hall-result-percent strong'));
   const labels = Array.from(cards.querySelectorAll('.hall-result-label'), node => node.textContent);
@@ -29,7 +63,7 @@ function sync() {
   const targets = tracks.map(track => Math.max(0, Math.min(100, Number(track.dataset.partitionValue) || 0)));
   const starts = targets.map((target, i) => sameQuestion ? (previous[i] ?? target) : 0);
   displayed = targets.slice();
-  const finish = () => { targets.forEach((value, i) => { if (numbers[i]) numbers[i].textContent = format(value); }); displayed = targets.slice(); };
+  const finish = () => { targets.forEach((value, i) => { if (numbers[i]) numbers[i].textContent = format(value); colorShare(tracks[i], value); }); displayed = targets.slice(); };
   if (reduced.matches || document.hidden || !tracks.every(track => typeof track.animate === 'function')) { finish(); return; }
 
   const changed = targets.map((value, i) => value !== starts[i]);
@@ -45,13 +79,14 @@ function sync() {
     if (value > 0) fill.classList.add('partition-changing');
   });
   displayed = starts.slice();
+  starts.forEach((value, i) => colorShare(tracks[i], value));
   finishCurrent = finish;
   let began = null;
   function tick(now) {
     if (began === null) began = now;
     const progress = Math.min((now - began) / timing.duration, 1), eased = 1 - Math.pow(1 - progress, 3);
     displayed = targets.map((value, i) => starts[i] + (value - starts[i]) * eased);
-    displayed.forEach((value, i) => { if (numbers[i]) numbers[i].textContent = format(value); });
+    displayed.forEach((value, i) => { if (numbers[i]) numbers[i].textContent = format(value); colorShare(tracks[i], value); });
     if (progress < 1 && !document.hidden) frame = requestAnimationFrame(tick);
     else { finish(); frame = 0; finishCurrent = null; }
   }
