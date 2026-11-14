@@ -12,11 +12,12 @@ export class ClassesPanel{
   $('#createClassForm').addEventListener('input',()=>this.pending=null);
   $('#createClassForm').addEventListener('submit',e=>{e.preventDefault();this.create({title:$('#newClassTitle').value.trim(),copyQuestions:$('#classQuestionMode').value==='copy',closePrevious:$('#closePreviousClass').checked});});
   $('#refreshClasses').addEventListener('click',()=>this.load().catch(e=>notify(e.message,true)));
-  $('#renameClassForm').addEventListener('submit',async e=>{e.preventDefault();if(this.busy)return;this.setBusy(true);try{await this.request('/host/class-title',{method:'POST',body:{title:$('#renameClassTitle').value.trim()}});await this.load();await this.switchClass(this.current(),true);this.notify('نام پنل ذخیره شد.');}catch(e){this.notify(e.message,true)}finally{this.setBusy(false)}});
+  $('#selectPanelForm').addEventListener('submit',e=>{e.preventDefault();this.select($('#panelPublishSelect').value);});
+  $('#panelPublishSelect').addEventListener('change',()=>this.updateAvailability());
   $('#copyClassJoin').addEventListener('click',()=>this.copy());$('#downloadClassQr').addEventListener('click',()=>this.downloadQr());
  }
  setBusy(value){this.busy=value;document.querySelectorAll('[data-class-control],#classSelect,#quickNextClass,[data-class-action],[data-select-class]').forEach(e=>e.disabled=value||(e.dataset.selectClass===this.current()));this.updateAvailability();}
- clear(){this.generation++;this.loadSequence++;this.items=[];this.trash=[];this.pending=null;$('#classList').replaceChildren();$('#classTrashList').replaceChildren();$('#classSelect').replaceChildren();clearQrCard($('#classQr'));this.qr=null;this.qrLink='';$('#classJoinUrl').textContent='';document.body.classList.remove('class-directory-only');}
+ clear(){this.generation++;this.loadSequence++;this.items=[];this.trash=[];this.pending=null;this.pickerCurrent=null;$('#classList').replaceChildren();$('#classTrashList').replaceChildren();$('#classSelect').replaceChildren();$('#panelPublishSelect').replaceChildren();$('#selectPanelButton').disabled=true;clearQrCard($('#classQr'));this.qr=null;this.qrLink='';$('#classJoinUrl').textContent='';document.body.classList.remove('class-directory-only');}
  async saveNextPanel(){
   if(this.busy)return;this.setBusy(true);
   try{await this.request('/host/next-panel',{method:'POST',body:{nextPanelId:$('#nextPanelSelect').value||null}});await this.load();this.notify('پنل بعدی ذخیره شد.');}
@@ -30,6 +31,8 @@ export class ClassesPanel{
   $('#classQuestionMode').querySelector('[value="copy"]').disabled=!current;
   if(!current){$('#classQuestionMode').value='blank';$('#closePreviousClass').checked=false;}
   $('#closePreviousClass').disabled=this.busy||!current;$('#classSelect').disabled=this.busy||!this.items.length;
+  $('#panelPublishSelect').disabled=this.busy||!this.items.length;
+  $('#selectPanelButton').disabled=this.busy||!$('#panelPublishSelect').value||$('#panelPublishSelect').value===this.current();
   document.querySelectorAll('[data-class-move]').forEach(b=>{const index=this.items.findIndex(c=>c.id===b.dataset.classId);b.disabled=this.busy||index<0||(b.dataset.classMove==='up'?index===0:index===this.items.length-1);});
  }
  render(){
@@ -44,7 +47,8 @@ export class ClassesPanel{
   document.querySelectorAll('[data-select-class]').forEach(b=>b.addEventListener('click',()=>this.select(b.dataset.selectClass)));
   document.querySelectorAll('[data-class-move]').forEach(b=>b.addEventListener('click',()=>this.move(b.dataset.classId,b.dataset.classMove)));
   document.querySelectorAll('[data-class-action]').forEach(b=>b.addEventListener('click',()=>{const c=[...this.items,...this.trash].find(c=>c.id===b.dataset.classId);if(c)this.lifecycle(c,b.dataset.classAction);}));
-  if(document.activeElement!==$('#renameClassTitle'))$('#renameClassTitle').value=current?.title||'';
+  const picker=$('#panelPublishSelect'),currentId=current?.id||'',selection=this.pickerCurrent===currentId&&this.items.some(c=>c.id===picker.value)?picker.value:currentId;
+  picker.innerHTML=(!current?'<option value="">'+(this.items.length?'یک پنل انتخاب کنید':'پنل فعالی ندارید')+'</option>':'')+this.items.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.title)+' · '+esc(phases[c.phase])+'</option>').join('');picker.value=selection;this.pickerCurrent=currentId;
   this.updateAvailability();if(current)this.renderQr();else{clearQrCard($('#classQr'));this.qr=null;this.qrLink='';$('#classJoinUrl').textContent='';}
  }
  async move(id,direction){

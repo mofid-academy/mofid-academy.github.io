@@ -1,4 +1,7 @@
 /* Large, keyboard-accessible move controls for mouse and touch. */
+body[data-view="host"] .panel-picker form { display:flex; gap:12px; margin-top:16px; }
+body[data-view="host"] .panel-picker select { flex:1; min-width:0; width:100%; margin:0; }
+body[data-view="host"] .panel-picker .button { min-height:48px; white-space:nowrap; }
 body[data-view="host"] .class-item-main { display:flex; align-items:center; gap:12px; flex:1; min-width:0; }
 body[data-view="host"] .class-item-main > div { min-width:0; }
 body[data-view="host"] .class-order-number { display:grid; place-items:center; min-width:32px; height:32px; border:1px solid var(--line); border-radius:9px; color:var(--mint); font-size:15px; font-variant-numeric:tabular-nums; }
@@ -6,6 +9,9 @@ body[data-view="host"] .class-order-tools { display:flex; gap:6px; align-items:c
 body[data-view="host"] .class-order-tools .button { width:44px; min-width:44px; height:44px; min-height:44px; padding:6px; font-size:24px; line-height:1; touch-action:manipulation; }
 body[data-view="host"] .class-item-actions { align-items:center; }
 @media(max-width:760px){
+ body[data-view="host"] .panel-picker form { flex-direction:column; }
+ body[data-view="host"] .panel-picker select { font-size:16px; }
+ body[data-view="host"] .panel-picker .button { width:100%; }
  body[data-view="host"] .class-item-main { width:100%; }
  body[data-view="host"] .class-item-actions { gap:8px; }
  body[data-view="host"] .class-item-actions > .button { min-height:44px; }
