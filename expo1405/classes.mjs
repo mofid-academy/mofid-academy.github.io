@@ -30,20 +30,32 @@ export class ClassesPanel{
   $('#classQuestionMode').querySelector('[value="copy"]').disabled=!current;
   if(!current){$('#classQuestionMode').value='blank';$('#closePreviousClass').checked=false;}
   $('#closePreviousClass').disabled=this.busy||!current;$('#classSelect').disabled=this.busy||!this.items.length;
+  document.querySelectorAll('[data-class-move]').forEach(b=>{const index=this.items.findIndex(c=>c.id===b.dataset.classId);b.disabled=this.busy||index<0||(b.dataset.classMove==='up'?index===0:index===this.items.length-1);});
  }
  render(){
   const current=this.items.find(c=>c.id===this.current());
   $('#classSelect').innerHTML=(!current?'<option value="">'+(this.items.length?'یک پنل انتخاب کنید':'پنل فعالی ندارید')+'</option>':'')+this.items.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.title)+' · '+esc(phases[c.phase])+'</option>').join('');$('#classSelect').value=current?this.current():'';
-  $('#nextPanelSelect').innerHTML='<option value="">خودکار · ترتیب ساخت</option>'+this.items.filter(c=>c.id!==this.current()).map(c=>'<option value="'+esc(c.id)+'" '+(c.phase==='finished'?'disabled':'')+'>'+esc(c.title)+(c.phase==='finished'?' · پایان‌یافته':'')+'</option>').join('');$('#nextPanelSelect').value=current?.nextPanelId||'';
+  $('#nextPanelSelect').innerHTML='<option value="">خودکار · ترتیب پنل‌ها</option>'+this.items.filter(c=>c.id!==this.current()).map(c=>'<option value="'+esc(c.id)+'" '+(c.phase==='finished'?'disabled':'')+'>'+esc(c.title)+(c.phase==='finished'?' · پایان‌یافته':'')+'</option>').join('');$('#nextPanelSelect').value=current?.nextPanelId||'';
   document.querySelectorAll('[data-class-title]').forEach(e=>e.textContent=current?.title||'مدیریت پنل‌ها');
   const button=(c,action,label,danger=false)=>'<button class="button '+(danger?'danger':'secondary')+' small" data-class-action="'+action+'" data-class-id="'+esc(c.id)+'">'+label+'</button>';
-  $('#classList').innerHTML=this.items.length?this.items.map(c=>'<article class="class-item '+(c.id===this.current()?'selected':'')+'"><div><strong>'+esc(c.title)+'</strong><span>'+esc(phases[c.phase])+' · '+fa(c.questionCount)+' سؤال</span></div><div class="class-item-actions"><button class="button '+(c.id===this.current()?'ghost':'secondary')+' small" data-select-class="'+esc(c.id)+'" '+(c.id===this.current()?'disabled':'')+'>'+(c.id===this.current()?'انتخاب‌شده':'انتخاب پنل')+'</button>'+(c.phase==='finished'?button(c,'reopen','بازگرداندن پنل'):'')+button(c,'delete','حذف پنل',true)+'</div></article>').join(''):'<p class="muted class-empty">پنل فعالی ندارید؛ پنل تازه بسازید یا از بخش حذف‌شده‌ها بازیابی کنید.</p>';
+  $('#classList').innerHTML=this.items.length?this.items.map((c,i)=>'<article class="class-item '+(c.id===this.current()?'selected':'')+'"><div class="class-item-main"><span class="class-order-number" aria-label="نوبت '+fa(i+1)+'">'+fa(i+1)+'</span><div><strong>'+esc(c.title)+'</strong><span>'+esc(phases[c.phase])+' · '+fa(c.questionCount)+' سؤال</span></div></div><div class="class-item-actions"><div class="class-order-tools" role="group" aria-label="ترتیب '+esc(c.title)+'"><button type="button" class="button secondary small" data-class-move="up" data-class-id="'+esc(c.id)+'" aria-label="'+esc(c.title)+'؛ یک نوبت جلوتر" '+(i===0?'disabled':'')+'>↑</button><button type="button" class="button secondary small" data-class-move="down" data-class-id="'+esc(c.id)+'" aria-label="'+esc(c.title)+'؛ یک نوبت عقب‌تر" '+(i===this.items.length-1?'disabled':'')+'>↓</button></div><button class="button '+(c.id===this.current()?'ghost':'secondary')+' small" data-select-class="'+esc(c.id)+'" '+(c.id===this.current()?'disabled':'')+'>'+(c.id===this.current()?'انتخاب‌شده':'انتخاب پنل')+'</button>'+(c.phase==='finished'?button(c,'reopen','بازگرداندن پنل'):'')+button(c,'delete','حذف پنل',true)+'</div></article>').join(''):'<p class="muted class-empty">پنل فعالی ندارید؛ پنل تازه بسازید یا از بخش حذف‌شده‌ها بازیابی کنید.</p>';
   $('#classTrashCount').textContent=fa(this.trash.length);
   $('#classTrashList').innerHTML=this.trash.length?this.trash.map(c=>'<article class="class-item"><div><strong>'+esc(c.title)+'</strong><span>'+fa(c.questionCount)+' سؤال · قابل بازیابی</span></div>'+button(c,'restore','بازیابی پنل')+'</article>').join(''):'<p class="muted class-empty">پنلی در حذف‌شده‌ها نیست.</p>';
   document.querySelectorAll('[data-select-class]').forEach(b=>b.addEventListener('click',()=>this.select(b.dataset.selectClass)));
+  document.querySelectorAll('[data-class-move]').forEach(b=>b.addEventListener('click',()=>this.move(b.dataset.classId,b.dataset.classMove)));
   document.querySelectorAll('[data-class-action]').forEach(b=>b.addEventListener('click',()=>{const c=[...this.items,...this.trash].find(c=>c.id===b.dataset.classId);if(c)this.lifecycle(c,b.dataset.classAction);}));
   if(document.activeElement!==$('#renameClassTitle'))$('#renameClassTitle').value=current?.title||'';
   this.updateAvailability();if(current)this.renderQr();else{clearQrCard($('#classQr'));this.qr=null;this.qrLink='';$('#classJoinUrl').textContent='';}
+ }
+ async move(id,direction){
+  if(this.busy||!['up','down'].includes(direction))return;
+  const expectedOrder=this.items.map(c=>c.id),index=expectedOrder.indexOf(id),target=index+(direction==='up'?-1:1);
+  if(index<0||target<0||target>=expectedOrder.length)return;
+  const order=expectedOrder.slice();[order[index],order[target]]=[order[target],order[index]];
+  const generation=this.generation;this.setBusy(true);
+  try{await this.request('/host/classes/order',{method:'POST',body:{order,expectedOrder}});if(generation!==this.generation)return;await this.load();this.notify('ترتیب پنل‌ها ذخیره شد.');}
+  catch(e){if(generation===this.generation){this.notify(e.message,true);try{await this.load();}catch{}}}
+  finally{this.setBusy(false);if(generation===this.generation){const buttons=Array.from(document.querySelectorAll('[data-class-move]')).filter(b=>b.dataset.classId===id);(buttons.find(b=>b.dataset.classMove===direction&&!b.disabled)||buttons.find(b=>!b.disabled))?.focus({preventScroll:true});}}
  }
  async lifecycle(c,action){
   if(this.busy)return;

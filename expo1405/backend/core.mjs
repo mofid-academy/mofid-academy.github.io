@@ -24,6 +24,8 @@ const messages = {
   class_deleted:'این پنل حذف شده است؛ از بخش حذف‌شده‌ها آن را بازیابی کنید.',
   class_confirmation_required:'برای حذف، نام دقیق همین پنل را وارد کنید.',
   invalid_class_action:'عملیات پنل معتبر نیست.',
+  invalid_class_order:'فهرست پنل‌ها تغییر کرده؛ دوباره جابه‌جا کنید.',
+  class_order_changed:'ترتیب پنل‌ها در دستگاه دیگری تغییر کرده؛ فهرست تازه شد.',
 };
 export async function digest(s) {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -113,6 +115,12 @@ export function makeHandler({url,key,fetcher=fetch}) {
         const role=adminSupplied?'admin':'host';
         if(req.method==='GET'&&path==='/host/classes'){
           const list=await rpc('classes',{});return json({role,classes:list.filter(c=>!c.deletedAt),trash:list.filter(c=>c.deletedAt)});
+        }
+        if(req.method==='POST'&&path==='/host/classes/order'){
+          const raw=await req.text();if(raw.length>100000)return json({error:'درخواست بزرگ است.'},413);
+          const body=JSON.parse(raw),valid=ids=>Array.isArray(ids)&&ids.length>0&&ids.length<=1000&&new Set(ids).size===ids.length&&ids.every(id=>typeof id==='string'&&/^(main|cls-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.test(id));
+          if(!valid(body.order)||!valid(body.expectedOrder)||body.order.length!==body.expectedOrder.length)return json({error:messages.invalid_class_order},400);
+          return json(await rpc('reorder_classes',{p_order:body.order,p_expected:body.expectedOrder}));
         }
         if(req.method==='POST'&&path==='/host/class-lifecycle'){
           const raw=await req.text();if(raw.length>2000)return json({error:'درخواست بزرگ است.'},413);

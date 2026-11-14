@@ -3,7 +3,7 @@ import {API_URL,PROJECT_URL,PUBLIC_KEY} from './config.mjs';
 import {CreditsRoll} from './credits.mjs?v=3';
 import {AdminPanel} from './admin.mjs?v=25';
 import {renderQuizScore} from './quiz.mjs?v=25';
-import {ClassesPanel} from './classes.mjs?v=34';
+import {ClassesPanel} from './classes.mjs?v=46';
 import {PanelContinuation} from './continuation.mjs?v=36';
 import {roomFromUrl,roomStorageKey,classUrl} from './class-context.mjs?v=7';
 const $=s=>document.querySelector(s),all=s=>document.querySelectorAll(s),view=document.body.dataset.view;

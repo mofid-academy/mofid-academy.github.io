@@ -108,20 +108,18 @@ body[data-view="screen"] .hall-result-fill:after {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0;
+  opacity: .42;
   background: linear-gradient(110deg, transparent 20%, #ffffff70 50%, transparent 80%);
-}
-body[data-view="screen"] .partition-changing:after {
-  animation: hall-partition-sheen 900ms ease-out both;
+  animation: hall-partition-sheen 7s ease-in-out infinite alternate;
+  animation-delay: var(--sheen-delay, 0s);
 }
 body[data-view="screen"] .hall-result-rest {
   background: linear-gradient(180deg, color-mix(in srgb, var(--result-track), var(--result-surface) 18%), var(--result-track));
 }
 body[data-view="screen"] .hall-result-track[data-partition-value="0"] .hall-result-fill { opacity: 0; }
 @keyframes hall-partition-sheen {
-  0% { opacity: 0; transform: translateX(110%); }
-  28% { opacity: .65; }
-  100% { opacity: 0; transform: translateX(-110%); }
+  from { transform: translateX(90%); }
+  to { transform: translateX(-90%); }
 }
 body[data-view="participant"] .participant-question-progress { display: none; }
 body[data-view="participant"] .participant-question-position b { font: inherit; }
@@ -159,5 +157,5 @@ body[data-view="participant"] .participant-question-position b { font: inherit; 
 }
 @media (prefers-reduced-motion: reduce) {
   body[data-view="screen"] .hall-result-fill { transition: none; }
-  body[data-view="screen"] .partition-changing:after { animation: none; }
+  body[data-view="screen"] .hall-result-fill:after { animation: none; opacity: 0; }
 }

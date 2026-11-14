@@ -30,6 +30,9 @@ function sync() {
   const cards = root.querySelector('.hall-result-cards');
   if (!cards) { stateKey = ''; displayed = []; return; }
   const tracks = Array.from(cards.querySelectorAll('.hall-result-track'));
+  // Keep the seven-second outward/return sweep continuous across live DOM updates.
+  const sheenDelay = -(performance.now() % 14000) / 1000;
+  tracks.forEach((track, i) => track.querySelector('.hall-result-fill').style.setProperty('--sheen-delay', (sheenDelay - i * .65) + 's'));
   const numbers = Array.from(cards.querySelectorAll('.hall-result-percent strong'));
   const labels = Array.from(cards.querySelectorAll('.hall-result-label'), node => node.textContent);
   const key = JSON.stringify([cards.dataset.resultKey, labels]);
@@ -51,7 +54,6 @@ function sync() {
     jobs.push(fill.animate([{ flexGrow: String(start), opacity: start === 0 ? 0 : 1 }, { flexGrow: String(value), opacity: value === 0 ? 0 : 1 }], timing));
     jobs.push(rest.animate([{ flexGrow: String(100 - start) }, { flexGrow: String(100 - value) }], timing));
     jobs.push(track.animate([{ columnGap: start > 0 && start < 100 ? '4px' : '0px' }, { columnGap: value > 0 && value < 100 ? '4px' : '0px' }], timing));
-    if (value > 0) fill.classList.add('partition-changing');
   });
   displayed = starts.slice();
   starts.forEach((value, i) => colorShare(tracks[i], value));
