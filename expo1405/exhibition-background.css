@@ -1,20 +1,13 @@
-/* Approved exhibition palette. Background layers only; product surfaces retain their colors. */
-html:not([data-theme]),
-html[data-theme="dark"],
-html[data-theme="dark"] .exhibition-background {
+/* Full-strength exhibition colors, shared by every page. No dimming layer. */
+html,
+html[data-theme],
+html[data-theme] .exhibition-background {
   background:
-    radial-gradient(ellipse 28% 40% at 0% 0%, #fbad6ba8, transparent 85%),
-    radial-gradient(ellipse 70% 85% at 10% 12%, #d92e8382, transparent 80%),
-    radial-gradient(ellipse 60% 80% at 100% 95%, #0094a28c, transparent 90%),
-    linear-gradient(112deg, #64234e 0%, #572662 31%, #063f68 66%, #003f54 100%);
-}
-html[data-theme="light"],
-html[data-theme="light"] .exhibition-background {
-  background:
-    radial-gradient(ellipse 34% 40% at 0% 0%, #ffd39cc9, transparent 85%),
-    radial-gradient(ellipse 70% 85% at 10% 12%, #f28aba91, transparent 85%),
-    radial-gradient(ellipse 64% 83% at 100% 95%, #53cfce80, transparent 90%),
-    linear-gradient(112deg, #f7c9d8 0%, #e2cbe9 33%, #bbd6ed 67%, #caeae8 100%);
+    radial-gradient(ellipse 43% 53% at 0% 0%, #fbad6b 0%, #fb8c7866 43%, transparent 82%),
+    radial-gradient(ellipse 53% 75% at 8% 27%, #ee378c 0%, transparent 85%),
+    radial-gradient(ellipse 46% 52% at 0% 100%, #8c388e 0%, transparent 90%),
+    radial-gradient(ellipse 43% 54% at 100% 100%, #0094a2 0%, transparent 90%),
+    linear-gradient(108deg, #c82e8b 0%, #b72c89 28%, #71439b 43%, #015b90 65%, #00516f 100%);
 }
 .exhibition-wave {
   position: absolute;

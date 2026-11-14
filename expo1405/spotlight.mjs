@@ -9,6 +9,6 @@ document.addEventListener('pointermove',event=>{
  if(!card)return clear();
  if(card!==active){clear();active=card;layer=card.querySelector(':scope > .pointer-spotlight');if(!layer){layer=document.createElement('div');layer.className='pointer-spotlight';layer.setAttribute('aria-hidden','true');card.append(layer);}}
  x=event.clientX;y=event.clientY;
- if(!frame)frame=requestAnimationFrame(()=>{frame=0;if(!active||!layer)return;const r=active.getBoundingClientRect();layer.style.background=`radial-gradient(280px circle at ${x-r.left}px ${y-r.top}px, rgba(32,210,183,.16), transparent 75%)`;layer.style.opacity='1';});
+ if(!frame)frame=requestAnimationFrame(()=>{frame=0;if(!active||!layer)return;const r=active.getBoundingClientRect();layer.style.background=`radial-gradient(280px circle at ${x-r.left}px ${y-r.top}px, rgba(0,80,113,.10), transparent 75%)`;layer.style.opacity='1';});
 },{passive:true});
 document.documentElement.addEventListener('pointerleave',clear);window.addEventListener('blur',clear);document.addEventListener('visibilitychange',()=>{if(document.hidden)clear();});

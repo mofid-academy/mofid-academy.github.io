@@ -15,7 +15,7 @@ export function installLiquidMetal(){
    const {ShaderMount,liquidMetalFragmentShader}=await(library??=import('@paper-design/shaders'));
    if(effect.cancelled||!button.isConnected||button.disabled||document.hidden)return;
    effect.mount=new ShaderMount(layer,liquidMetalFragmentShader,{
-    u_colorBack:[0.03,0.12,0.09,1],u_colorTint:[0.18,0.67,0.51,1],
+    u_colorBack:[0,0.19,0.28,1],u_colorTint:[0,0.4,0.57,1],
     u_repetition:4,u_softness:0.5,u_shiftRed:0.12,u_shiftBlue:0.12,u_distortion:0.08,u_contour:0.1,u_angle:45,u_scale:8,u_shape:0,u_isImage:false,
     u_fit:2,u_rotation:0,u_originX:0.5,u_originY:0.5,u_offsetX:0.1,u_offsetY:-0.1,u_worldWidth:0,u_worldHeight:0,
    },{alpha:false,antialias:false},0.45,(performance.now()-motionOrigin)*0.45,1,100000);

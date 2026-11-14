@@ -6,7 +6,7 @@ export default defineConfig({
   define:{'process.env.NODE_ENV':'"production"'},
   resolve:{alias:{'@':fileURLToPath(new URL('.',import.meta.url))}},
   build:{minify:true,outDir:'exhibition-dist',emptyOutDir:true,
-    lib:{entry:'src/aurora-entry.tsx',formats:['es'],fileName:'aurora-v48',cssFileName:'aurora-v48'},
+    lib:{entry:'src/aurora-entry.tsx',formats:['es'],fileName:'aurora-v49',cssFileName:'aurora-v49'},
     rollupOptions:{output:{codeSplitting:false}}
   }
 });

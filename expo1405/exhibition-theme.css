@@ -1,0 +1,139 @@
+/* One exhibition appearance: white surfaces and the supplied blue swatch. */
+:root,
+:root[data-theme] {
+  color-scheme: light;
+  --brand: #005071;
+  --brand-hover: #00658b;
+  --brand-soft: #eaf3f8;
+  --bg: #f5f9fc;
+  --surface: #ffffff;
+  --panel: #ffffff;
+  --field: #f7fafc;
+  --line: #d0dfe7;
+  --text: #163e53;
+  --muted: #5e7380;
+  --green: var(--brand);
+  --mint: var(--brand);
+  --accent: var(--brand);
+  --border: var(--line);
+  --red: #b63843;
+  --mofid-500: var(--brand);
+  --mofid-600: #00435f;
+  --mofid-400: var(--brand-hover);
+  --mofid-300: #8dbbd0;
+  --mofid-200: #d5e8f0;
+  --shine-surface: #ffffff;
+  --shine-ink: var(--text);
+  --shine-edge: var(--brand);
+  --shine-highlight: #b8d7e5;
+  --shine-dot: var(--brand);
+  --shine-selected: var(--brand);
+  --qr-panel: #ffffff;
+  --qr-ink: var(--text);
+  --question-glow: #0050710b;
+  --question-sheen: #ffffff;
+  --question-glass: #ffffff;
+  --entry-top: #ffffff;
+  --entry-bottom: #ffffff;
+  --entry-paper: #ffffff;
+  --entry-primary: var(--brand);
+  --entry-ink: var(--text);
+  --entry-muted: var(--muted);
+  --entry-edge: var(--line);
+  --entry-soft: var(--brand-soft);
+}
+body { color: #ffffff; }
+:root[data-theme] .tiny { color: var(--muted); }
+:root[data-theme] .topbar .connection { color: #ffffff; }
+[data-theme-control] { display: none; }
+.card,
+.question-card,
+.qr-code-card,
+.stats,
+.admin-question-card,
+dialog {
+  color: var(--text);
+  background: #ffffff;
+  border-color: var(--line);
+  box-shadow: 0 12px 40px #00364f14;
+}
+.question-card { border-color: var(--line); }
+.question-heading { border-color: var(--line); }
+input:not([type=checkbox]), textarea, select { color: var(--text); }
+input:focus-visible, textarea:focus-visible, select:focus-visible,
+button:focus-visible, a:focus-visible {
+  outline-color: var(--brand-hover);
+}
+.primary:not(.danger) { color: #ffffff; background: var(--brand); border-color: var(--brand); }
+.primary:hover:not(.danger):not(:disabled) { background: var(--brand-hover); }
+.secondary:hover:not(:disabled),
+.icon-button:hover:not(:disabled) { background: var(--brand-soft); }
+.panel-tabs button[aria-pressed=true],
+.screen-mode-tabs button[aria-pressed=true] {
+  color: #ffffff;
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.option-letter { color: var(--brand); background: #f1f7fa; border-color: var(--line); }
+.option-button.selected .option-letter {
+  color: #ffffff;
+  background: #ffffff14;
+  border-color: #ffffff3d;
+}
+.success-note { color: var(--brand); background: var(--brand-soft); }
+.status-label { color: var(--brand); background: var(--brand-soft); border-color: var(--line); }
+.class-item.selected { background: var(--brand-soft); border-color: var(--brand); }
+.question-item.active { border-top-color: var(--brand); }
+.entry-card .check-line input,
+.identity-card input[type=checkbox] { accent-color: var(--brand); }
+.dot { background: var(--brand); box-shadow: 0 0 12px #00507133; }
+.toast:not(.error) { background: #eaf3f8; color: var(--text); }
+.host-badge { border-color: var(--line); }
+.bar-track { background: #e2ecf2; }
+.chart-lines i { background: linear-gradient(#91bacd, #d1e3ec); border-color: #9dbfce; }
+/* Labels outside the white cards sit directly on the vivid backdrop. */
+.topbar { border-color: #ffffff40; }
+.topbar .connection,
+.topbar .text-link,
+.topbar > .eyebrow,
+.topbar .header-tools > .eyebrow,
+.participant-class,
+body .footer,
+.screen-aside > .eyebrow,
+.screen-aside > h2,
+.screen-aside .join-address,
+#screenQuestion,
+#screenQuestion .active-title,
+#screenQuestion .eyebrow,
+#screenQuestion .muted,
+.screen-main > .screen-bottom,
+.credits-controls > .eyebrow,
+.screen-main .results-summary strong,
+.screen-main .results-summary span,
+.screen-main .live-tag { color: #ffffff; }
+.screen-aside,
+.screen-bottom { border-color: #ffffff40; }
+.screen-bottom strong { color: #ffffff; }
+.connection.online:before { background: #d5effa; }
+.topbar .button.ghost,
+.credits-controls .button.ghost { color: var(--brand); background: #ffffff; border-color: var(--line); }
+.screen-main .credits-stage {
+  --text: #ffffff;
+  --muted: #e2edf4;
+  --green: #ffffff;
+  border-color: #ffffff40;
+  background: transparent;
+}
+.screen-aside #demoLiveLink { color: #ffffff; }
+.screen-waiting-art:before,
+:root[data-theme] .screen-waiting-art:before {
+  background: radial-gradient(ellipse, #80d3ff5c 0%, #0086b838 38%, transparent 70%);
+}
+/* Keep each percentage's red/yellow/green fill; the result card itself is white. */
+:root[data-theme] body[data-view="screen"] .hall-result-cards {
+  --result-surface: #ffffff;
+  --result-outline: #d0dfe7;
+  --result-track: #e4ecf1;
+  --result-shadow: #00364f12;
+}
+:root[data-theme] body[data-view="screen"] .hall-result-label { color: var(--text); }
