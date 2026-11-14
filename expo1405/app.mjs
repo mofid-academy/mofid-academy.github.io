@@ -20,10 +20,10 @@ let meInfo={name:null,shareOnScreen:false},profileDirty=false,canContinue=false,
 let adminKey='',adminPanel=null,panelTab=['admin','classes'].includes(new URL(location.href).searchParams.get('tab'))?new URL(location.href).searchParams.get('tab'):'execution';
 let displayKey=read(displayStorageKey(),true);
 let displayPending=false,displayConnectionError=false;
-let panelEpoch=0,hostLoadPromise=null,classUnavailable=0,lastScreenQuestionMarkup=null,lastParticipantMarkup=null;
+let panelEpoch=0,hostLoadPromise=null,classUnavailable=0,lastScreenQuestionMarkup=null,lastParticipantMarkup=null,lastScreenPresentationKey=null;
 const demoView=new URL(location.href).searchParams.get('demo');
-const demoMode=view==='screen'&&['credits','waiting'].includes(demoView),demoWaiting=demoMode&&demoView==='waiting';
-if(demoMode)screenMode=demoWaiting?'chart':'credits';
+const demoMode=view==='screen'&&['credits','waiting','reveal'].includes(demoView),demoWaiting=demoMode&&demoView==='waiting';
+if(demoMode)screenMode=demoView==='credits'?'credits':'chart';
 let quizResult=null,quizResultRound=0,quizScoreBusy=false,quizRetryAt=0;
 let joinUrl=demoWaiting?'https://example.invalid/preview':classUrl('./',classId,location.href).href;
 
@@ -43,7 +43,7 @@ async function api(path,{method='GET',body,exportFile=false}={}) {
   lastSuccess=Date.now();return b;
 }
 function isOpen(){return !!state&&state.phase==='open'&&(!state.deadline||Date.parse(state.deadline)>Date.now())}
-function phaseLabel(){if(!state)return 'در حال اتصال';return state.phase==='open'?(isOpen()?'رأی‌گیری باز است':'زمان پاسخ تمام شد'):({waiting:'در انتظار شروع مجری',closed:'رأی‌گیری بسته است',finished:'پایان گفت‌وگو'}[state.phase]||'انتظار')}
+function phaseLabel(){if(!state)return 'در حال اتصال';return state.phase==='open'?(isOpen()?'رأی‌گیری باز است':'زمان پاسخ تمام شد'):({waiting:view==='host'?'پیش‌نمایش سؤال':'در انتظار شروع مجری',closed:'رأی‌گیری بسته است',finished:'پایان گفت‌وگو'}[state.phase]||'انتظار')}
 function updateConnection(){const fresh=Date.now()-lastSuccess<20000,waiting=view==='screen'&&!demoMode&&!$('#displayLogin').hidden;all('[data-connection]').forEach(e=>{e.classList.toggle('online',!waiting&&fresh);e.classList.toggle('offline',waiting?displayConnectionError&&!displayPending:!!lastSuccess&&!fresh);e.textContent=demoMode?'پیش‌نمایش نمایشی':waiting?(displayPending?'در حال بررسی ورود…':displayConnectionError?'ارتباط با سرور برقرار نشد':'در انتظار ورود'):fresh?(realtime?'متصل · زنده':'متصل · همگام‌سازی خودکار'):(lastSuccess?'ارتباط قطع است · تلاش دوباره':'در حال اتصال…')})}
 function displayErrorMessage(error){return error?.status===401?'کد نمایشگر برای این پنل معتبر نیست. در پنل مجری، همین پنل را انتخاب کنید و «بازکردن نمایشگر» را بزنید.':!error?.status||error.status>=500?'ارتباط با سرور برقرار نشد. اینترنت را بررسی کنید و دوباره تلاش کنید.':error.message;}
 function showDisplayError(error){const node=$('#displayError');node.textContent=displayErrorMessage(error);node.hidden=false;}
@@ -69,9 +69,17 @@ function updateMarkup(node,html,fade=false){
  return true;
 }
 function emptyChart(){return '<div class="empty-chart"><span class="chart-lines"><i></i><i></i><i></i><i></i></span><h3>هر رأی، یک تغییر</h3><p>با شروع سؤال، نتیجه‌ها اینجا شکل می‌گیرند.</p></div>'}
-function renderResults(){const node=$('#resultsBody');if(!node)return;if(!state?.question){updateMarkup(node,emptyChart());return;}
+function screenQuestion(){return state?.question||state?.previewQuestion||null;}
+function screenResultsRevealed(){return !!state?.question&&state.resultsRevealed===true;}
+function renderResults(){const node=$('#resultsBody');if(!node)return;const question=view==='screen'?screenQuestion():state?.question;if(!question){updateMarkup(node,view==='screen'?'':emptyChart());return;}
   if(view==='screen'){
-    updateMarkup(node,'<p class="result-question">'+esc(state.question.text)+'</p><div class="results-summary"><strong>'+fa(state.total)+'</strong><span>پاسخ ثبت‌شده</span></div><div class="hall-result-cards" data-result-key="'+esc(classId+':'+state.round+':'+state.question.id)+'">'+state.question.options.map((o,i)=>{const pct=state.total?Math.round(o.count*100/state.total):0;return '<div class="hall-result-card"><div class="hall-result-row"><span class="hall-result-letter">'+(['الف','ب','ج','د','هـ','و','ز','ح'][i]||fa(i+1))+'</span><span class="hall-result-label">'+esc(o.label)+'</span><span class="hall-result-percent"><strong>'+fa(pct)+'</strong><small>٪</small></span></div><div class="hall-result-track" data-partition-value="'+pct+'" style="column-gap:'+(pct>0&&pct<100?4:0)+'px" role="meter" aria-label="'+esc(o.label)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div class="hall-result-fill" style="flex-grow:'+pct+'"></div><div class="hall-result-rest" style="flex-grow:'+(100-pct)+'" aria-hidden="true"></div></div></div>'}).join('')+'</div>',false);
+    const revealed=screenResultsRevealed();
+    const cards=question.options.map((o,i)=>{
+      const pct=revealed&&state.total?Math.round(o.count*100/state.total):0;
+      const meter=revealed?' role="meter" aria-label="'+esc(o.label)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"':' aria-hidden="true"';
+      return '<div class="hall-result-card"><div class="hall-result-row"><span class="hall-result-letter">'+(['الف','ب','ج','د','هـ','و','ز','ح'][i]||fa(i+1))+'</span><span class="hall-result-label">'+esc(o.label)+'</span><span class="hall-result-percent"'+(revealed?'':' aria-hidden="true"')+'><strong>'+(revealed?fa(pct):'')+'</strong><small>٪</small></span></div><div class="hall-result-track" data-partition-value="'+pct+'" style="column-gap:'+(pct>0&&pct<100?4:0)+'px"'+meter+'><div class="hall-result-fill" style="flex-grow:'+pct+'"></div><div class="hall-result-rest" style="flex-grow:'+(100-pct)+'" aria-hidden="true"></div></div></div>';
+    }).join('');
+    updateMarkup(node,'<div class="results-summary'+(revealed?'':' is-concealed')+'"'+(revealed?'':' aria-hidden="true"')+'><strong>'+(revealed?fa(state.total):'')+'</strong><span>پاسخ ثبت‌شده</span></div><div class="hall-result-cards" data-results-revealed="'+revealed+'" data-result-key="'+esc(classId+':'+state.round+':'+question.id)+'">'+cards+'</div>',false);
     return;
   }
   updateMarkup(node,'<p class="result-question">'+esc(state.question.text)+'</p><div class="results-summary"><strong>'+fa(state.total)+'</strong><span>پاسخ ثبت‌شده</span></div><div class="bars">'+state.question.options.map(o=>{const pct=state.total?Math.round(o.count*100/state.total):0;return '<div class="bar-row"><div class="bar-label"><span>'+esc(o.label)+'</span><span class="bar-numbers"><strong>'+fa(pct)+'٪</strong><span>'+fa(o.count)+' رأی</span></span></div><div class="bar-track" role="meter" aria-label="'+esc(o.label)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div class="bar-fill" style="width:'+pct+'%"></div></div></div>'}).join('')+'</div>',false);
@@ -93,20 +101,31 @@ function renderParticipant(){
   all('[data-choice]').forEach(b=>b.addEventListener('click',()=>castVote(Number(b.dataset.choice))));
 }
 function renderHost(){if(!hostData||!state)return;$('#voteCount').textContent=fa(state.total);$('#questionCount').textContent=fa(state.questionCount);$('#roundCount').textContent=fa(state.round);$('#phaseLabel').textContent=phaseLabel();
-  updateMarkup($('#hostCurrent'),state.question?'<div class="question-heading question-heading-host"><div class="question-heading-copy"><span class="eyebrow">روی گوشی مخاطبان · پرسش '+fa(state.question.position)+'</span><h2>'+esc(state.question.text)+'</h2></div>'+'</div>':'<div class="waiting-state"><span class="waiting-icon">'+(state.phase==='finished'?'✓':'◌')+'</span><h2>'+(state.phase==='finished'?'گفت‌وگو به پایان رسید':'صفحهٔ انتظار فعال است')+'</h2><p>برای شروع، یکی از سؤال‌های صف را باز کنید.</p></div>',true);
+  const current=state.question||(state.phase==='waiting'?hostData.questions[0]:null);
+  updateMarkup($('#hostCurrent'),current?'<div class="question-heading question-heading-host"><div class="question-heading-copy"><span class="eyebrow">'+(state.question?'روی گوشی مخاطبان':'نمایشگر سالن')+' · پرسش '+fa(state.question?.position||1)+'</span><h2>'+esc(current.text)+'</h2></div></div>':'<div class="waiting-state"><h2>'+(state.phase==='finished'?'گفت‌وگو به پایان رسید':'هنوز سؤالی ثبت نشده است')+'</h2></div>',true);
+
   const qi=hostData.questions.findIndex(q=>q.id===state.question?.id);const next=hostData.questions[qi+1];
   $('#nextQuestion').textContent=next?(qi<0?'شروع سؤال اول ←':'شروع سؤال بعد ←'):'همهٔ سؤال‌ها نمایش داده شدند';$('#nextQuestion').disabled=!next||hostBusy;$('#closeVoting').disabled=state.phase!=='open'||hostBusy;
+  $('#showResults').textContent=state.resultsRevealed?'پنهان‌کردن نتایج':'نمایش نتایج';$('#showResults').disabled=!state.question||hostBusy;$('#showResults').setAttribute('aria-pressed',String(state.resultsRevealed===true));
   if(!updateMarkup($('#questionList'),hostData.questions.length?hostData.questions.map((q,i)=>{const active=state.question?.id===q.id,count=active?state.total:q.votes;return '<article class="question-item '+(active?'active':'')+'"><div class="question-item-top"><span>پرسش '+fa(i+1)+' · '+fa(q.options.length)+' گزینه</span><span class="'+(active?'question-votes':'')+'">'+(active?'روی نمایشگر':hostData.role==='admin'&&count?fa(count)+' پاسخ':q.hasVotes?'پاسخ ثبت شده':'هنوز باز نشده')+'</span></div><div class="question-item-heading"><h3>'+esc(q.text)+'</h3></div><div class="question-item-actions"><button class="button shiny-cta '+(active&&isOpen()?'ghost':'secondary')+' small" data-open="'+q.id+'" '+(hostBusy?'disabled':'')+'>'+(active&&isOpen()?'شروع دوبارهٔ زمان':'بازکردن سؤال')+'</button><button class="button ghost small" data-edit="'+q.id+'" '+(q.hasVotes||count||hostBusy?'disabled':'')+'>ویرایش</button><button class="icon-button" aria-label="انتقال سؤال به بالا" data-move="'+q.id+'" data-direction="up" '+(i===0||state.phase==='open'||hostBusy?'disabled':'')+'>↑</button><button class="icon-button" aria-label="انتقال سؤال به پایین" data-move="'+q.id+'" data-direction="down" '+(i===hostData.questions.length-1||state.phase==='open'||hostBusy?'disabled':'')+'>↓</button><button class="icon-button" aria-label="حذف سؤال" data-delete="'+q.id+'" '+(active||hostBusy?'disabled':'')+'>×</button></div></article>'}).join(''):'<p class="muted">هنوز سؤالی تعریف نشده است.</p>'))return;
   all('[data-open]').forEach(b=>b.addEventListener('click',()=>hostAction({action:'activate',questionId:b.dataset.open,seconds:Number($('#timer').value)})));
   all('[data-edit]').forEach(b=>b.addEventListener('click',()=>openEditor(b.dataset.edit)));
   all('[data-move]').forEach(b=>b.addEventListener('click',()=>hostAction({action:'move',questionId:b.dataset.move,direction:b.dataset.direction})));
   all('[data-delete]').forEach(b=>b.addEventListener('click',async()=>{if(await confirmAction('حذف این سؤال؟','سؤال از صف اجرا کنار می‌رود؛ پاسخ‌های بایگانی‌شده حفظ می‌شوند.'))await hostAction({action:'delete',questionId:b.dataset.delete})}));
 }
-function renderScreen(){if(!state)return;const easyTrader=/ایزی[‌\s-]*تریدر/.test(state.title||'');const done=state.phase==='finished';const content=state.question?'<div class="question-heading"><div class="question-heading-copy"><span class="eyebrow">'+esc(state.title)+' · پرسش '+fa(state.question.position)+' از '+fa(state.questionCount)+'</span><h1 class="active-title">'+esc(state.question.text)+'</h1></div>'+'</div>':done?'<span class="eyebrow">'+esc(state.title)+'</span><h1>این پنل پایان یافت</h1><p class="muted">برای پنل بعد، لینک و QR تازه از مجری دریافت کنید.</p>':'<div class="screen-waiting-hero"><div class="screen-waiting-copy"><span class="eyebrow">'+esc(state.title)+'</span><h1>منتظر شروع مجری</h1><p class="muted">برای ورود به همین پنل، کد را اسکن کنید.</p></div><div class="screen-waiting-art'+(easyTrader?' easytrader-art':'')+'" aria-hidden="true"><img src="'+(easyTrader?'./assets/easytrader-glass.png':'./assets/glass-jet-hq.webp')+'" alt="" width="1254" height="1254" decoding="async"></div></div>';if(content!==lastScreenQuestionMarkup){updateMarkup($('#screenQuestion'),content,true);lastScreenQuestionMarkup=content;}
-  document.body.dataset.screenMode=screenMode;$('#creditsStage').hidden=!state.question||screenMode!=='credits';$('#creditsControls').hidden=!state.question||screenMode!=='credits';$('#resultsBody').hidden=!state.question||screenMode!=='chart';
-  $('#modeCredits').setAttribute('aria-pressed',String(screenMode==='credits'));$('#modeChart').setAttribute('aria-pressed',String(screenMode==='chart'));
-  creditsRoll?.sync(state.credits||[],classId+':'+state.round+':'+(state.question?.id||'waiting'));
+function renderScreen(){
+  if(!state)return;
+  const q=screenQuestion(),revealed=screenResultsRevealed(),done=state.phase==='finished';
+  const key=classId+':'+state.round+':'+(q?.id||'empty')+':'+revealed;
+  if(key!==lastScreenPresentationKey){if(!(demoView==='credits'&&lastScreenPresentationKey===null))screenMode='chart';lastScreenPresentationKey=key;}
+  const content=q?'<div class="question-heading"><div class="question-heading-copy"><span class="eyebrow">'+esc(state.title)+' · پرسش '+fa(q.position)+' از '+fa(state.questionCount)+'</span><h1 class="active-title">'+esc(q.text)+'</h1></div></div>':'<span class="eyebrow">'+esc(state.title)+'</span><h1>'+(done?'این پنل پایان یافت':'هنوز سؤالی ثبت نشده است')+'</h1>';
+  if(content!==lastScreenQuestionMarkup){updateMarkup($('#screenQuestion'),content,true);lastScreenQuestionMarkup=content;}
+  const mode=revealed?screenMode:'chart';
+  document.body.dataset.screenMode=mode;$('#creditsStage').hidden=!q||mode!=='credits';$('#creditsControls').hidden=!q||mode!=='credits';$('#resultsBody').hidden=!q||mode!=='chart';
+  $('#modeCredits').disabled=!revealed;$('#modeCredits').setAttribute('aria-pressed',String(mode==='credits'));$('#modeChart').setAttribute('aria-pressed',String(mode==='chart'));
+  creditsRoll?.sync(revealed?state.credits||[]:[],classId+':'+state.round+':'+(q?.id||'empty'));
 }
+
 function render(){all('[data-class-title]').forEach(e=>e.textContent=state?.title||'پنل');all('[data-participants]').forEach(e=>e.textContent=fa(state?.participants));renderResults();if(view==='participant')renderParticipant();if(view==='host')renderHost();if(view==='screen')renderScreen();updateConnection();tick()}
 async function refreshMe(){if(!token)return;try{const me=await api('/me');joined=true;canContinue=me.canContinue===true;myRound=me.round;myVotes=Object.fromEntries(me.votes.map(v=>[v.question_id,v.choice]));meInfo={name:me.name,shareOnScreen:me.shareOnScreen===true};if($('#identityName')&&!profileDirty){$('#identityName').value=me.name||'';$('#identityShare').checked=meInfo.shareOnScreen;$('#identityName').required=meInfo.shareOnScreen;}renderParticipant();refreshQuizScore()}catch(e){if(e.status===401){token='';joined=false;save(participantKey,'');renderParticipant()}else throw e}}
 async function castVote(choice){if(!isOpen()||voteBusy||!joined)return;const q=state.question,round=state.round;voteBusy=true;renderParticipant();try{const r=await api('/vote',{method:'POST',body:{questionId:q.id,round,choice}});if(state.round===round){if(myRound!==round)myVotes={};myRound=round;myVotes[q.id]=r.choice;if(q.position===state.questionCount)canContinue=true;}notify(r.already?'پاسخ قبلی شما ثبت شده است.':'پاسخ شما ثبت شد.');await refreshState()}catch(e){notify(e.message,true);await refreshState()}finally{voteBusy=false;renderParticipant()}}
@@ -170,6 +189,7 @@ if(view==='host'){
   $('#copyDisplay').addEventListener('click',async()=>{try{const {token}=await api('/host/display-token',{method:'POST',body:{}}),url=classUrl('./screen.html',classId,location.href);url.hash='display='+token;await navigator.clipboard.writeText(url.href);notify('لینک خصوصی نمایشگر کپی شد.');}catch(e){notify(e.message,true);}});
   $('#copyJoin').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(joinUrl);notify('لینک مخاطب کپی شد.')}catch{notify('لینک مخاطب: '+joinUrl)}});
   $('#nextQuestion').addEventListener('click',()=>{const i=hostData.questions.findIndex(q=>q.id===state.question?.id),next=hostData.questions[i+1];if(next)hostAction({action:'activate',questionId:next.id,seconds:Number($('#timer').value)})});
+  $('#showResults').addEventListener('click',()=>{if(state?.question)hostAction({action:'results',questionId:state.question.id,round:state.round,visible:!state.resultsRevealed});});
   $('#closeVoting').addEventListener('click',()=>hostAction({action:'close'}));$('#showWaiting').addEventListener('click',()=>hostAction({action:'waiting'}));$('#finishEvent').addEventListener('click',async()=>{if(await confirmAction('پایان این گفت‌وگو؟',state?.quiz?'مسابقه بسته و کارنامه و پاسخ‌های صحیح برای هر فرد نمایش داده می‌شود.':'رأی‌گیری بسته می‌شود و پیام پایان روی صفحهٔ مخاطبان می‌آید.'))await hostAction({action:'finish'})});
   $('#newRound').addEventListener('click',async()=>{if(await confirmAction('آغاز اجرای تازه؟','پاسخ‌های قبلی بایگانی می‌شوند. شمارش رأی‌ها برای اجرای تازه از صفر شروع می‌شود و می‌توانید سؤال‌ها را ویرایش کنید.'))await hostAction({action:'new_round'});});
   $('#addQuestion').addEventListener('click',()=>openEditor());$('#closeEditor').addEventListener('click',()=>$('#questionDialog').close());
@@ -193,11 +213,19 @@ if(view==='screen'){
 if(view==='participant'&&token)refreshMe().catch(()=>{});
 if(demoMode){
   $('#displayLogin').hidden=true;$('#screenContainer').hidden=false;
-  $('#demoBanner').hidden=false;$('#demoBanner').textContent=demoWaiting?'پیش‌نمایش طراحی · QR و اطلاعات این صفحه نمونه‌اند':'پیش‌نمایش تیتراژ · نام‌ها و پاسخ‌ها فرضی‌اند';$('#demoLiveLink').hidden=false;
+  $('#demoBanner').hidden=false;$('#demoBanner').textContent=demoView==='credits'?'پیش‌نمایش تیتراژ · نام‌ها و پاسخ‌ها فرضی‌اند':'پیش‌نمایش · سؤال و رأی‌ها نمونه‌اند';$('#demoLiveLink').hidden=false;
   const answers=['یادگیری و تجربهٔ تازه','گفت‌وگو با کارشناسان','شرکت در کارگاه‌های کوتاه','آشنایی با خدمات نوین'];
   const names=['مریم رضایی','علی احمدی','شرکت‌کنندهٔ ناشناس','سارا محمدی','امیر کریمی','نرگس موسوی','شرکت‌کنندهٔ ناشناس','رضا کریمی'];
   const entries=names.map((name,i)=>({id:'demo-credit-'+i,name,answer:answers[i%answers.length]}));let n=3;
-  const show=()=>{lastSuccess=Date.now();state=demoWaiting?{phase:'waiting',round:0,title:'پنل نمونه',questionCount:0,participants:0,total:0,credits:[],question:null}:{phase:'open',round:0,questionCount:1,participants:Math.max(8,n),total:n,credits:entries.slice(0,n),question:{id:'demo-only',position:1,text:'دوست دارید در نمایشگاه چه تجربه‌ای داشته باشید؟',options:answers.map((label,i)=>({label,index:i,count:entries.slice(0,n).filter((_,j)=>j%4===i).length}))}};render();};show();if(!demoWaiting)setInterval(()=>{if(n<entries.length)n++;show()},3000);
+  let revealed=demoView==='credits';
+  const show=()=>{
+    lastSuccess=Date.now();
+    const question={id:'demo-only',position:1,text:'دوست دارید در نمایشگاه چه تجربه‌ای داشته باشید؟',options:answers.map((label,i)=>({label,index:i,count:entries.slice(0,n).filter((_,j)=>j%4===i).length}))};
+    state={phase:demoWaiting?'waiting':'open',round:0,title:'پنل نمونه',questionCount:1,participants:Math.max(8,n),total:n,credits:entries.slice(0,n),question:demoWaiting?null:question,previewQuestion:demoWaiting?question:null,resultsRevealed:revealed};render();
+  };
+  const revealButton=$('#demoRevealResults');revealButton.hidden=demoView!=='reveal';revealButton.addEventListener('click',()=>{revealed=!revealed;revealButton.textContent=revealed?'پنهان‌کردن نتایج':'نمایش نتایج';show();});
+  show();if(demoView==='credits')setInterval(()=>{if(n<entries.length)n++;show()},3000);
+
 }else if(view==='participant'){
  await refreshState();
  let db,channel,lastBroadcast=0,pollCount=0;

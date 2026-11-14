@@ -3,7 +3,7 @@
 const root = document.getElementById('resultsBody');
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 const format = value => Math.round(value).toLocaleString('fa-IR');
-let stateKey = '', displayed = [], jobs = [], frame = 0, finishCurrent = null;
+let stateKey = '', displayed = [], jobs = [], frame = 0, finishCurrent = null, resultsWereVisible = false;
 
 function shareHue(value) {
   const percent = Math.max(0, Math.min(100, Number(value) || 0));
@@ -28,7 +28,7 @@ function sync() {
   const previous = displayed.slice();
   settle();
   const cards = root.querySelector('.hall-result-cards');
-  if (!cards) { stateKey = ''; displayed = []; return; }
+  if (!cards) { stateKey = ''; displayed = []; resultsWereVisible = false; return; }
   const tracks = Array.from(cards.querySelectorAll('.hall-result-track'));
   // Keep the seven-second outward/return sweep continuous across live DOM updates.
   const sheenDelay = -(performance.now() % 14000) / 1000;
@@ -37,34 +37,52 @@ function sync() {
   const labels = Array.from(cards.querySelectorAll('.hall-result-label'), node => node.textContent);
   const key = JSON.stringify([cards.dataset.resultKey, labels]);
   const sameQuestion = key === stateKey;
+  const revealed = cards.dataset.resultsRevealed === 'true';
+  const revealing = revealed && (!sameQuestion || !resultsWereVisible);
   stateKey = key;
+  resultsWereVisible = revealed;
+  if (!revealed) {
+    displayed = tracks.map(() => 0);
+    numbers.forEach(number => { number.textContent = ''; });
+    return;
+  }
   const targets = tracks.map(track => Math.max(0, Math.min(100, Number(track.dataset.partitionValue) || 0)));
-  const starts = targets.map((target, i) => sameQuestion ? (previous[i] ?? target) : 0);
+  const starts = targets.map((target, i) => sameQuestion && !revealing ? (previous[i] ?? target) : 0);
   displayed = targets.slice();
   const finish = () => { targets.forEach((value, i) => { if (numbers[i]) numbers[i].textContent = format(value); colorShare(tracks[i], value); }); displayed = targets.slice(); };
   if (reduced.matches || document.hidden || !tracks.every(track => typeof track.animate === 'function')) { finish(); return; }
 
   const changed = targets.map((value, i) => value !== starts[i]);
-  if (!changed.some(Boolean)) { finish(); return; }
-  const timing = { duration: 700, easing: 'cubic-bezier(.22,.7,.2,1)', fill: 'none' };
+  if (!changed.some(Boolean) && !revealing) { finish(); return; }
+  const timing = { duration: revealing ? 1600 : 700, easing: 'cubic-bezier(.22,.7,.2,1)', fill: 'backwards' };
   targets.forEach((value, i) => {
-    if (!changed[i]) return;
     const track = tracks[i], fill = track.querySelector('.hall-result-fill'), rest = track.querySelector('.hall-result-rest');
+    const rowTiming = { ...timing, delay: revealing ? i * 80 : 0 };
+    if (revealing) {
+      const fade = { duration: 900, delay: i * 80, easing: 'ease-out', fill: 'backwards' };
+      jobs.push(track.animate([{ opacity: 0 }, { opacity: 1 }], fade));
+      jobs.push(numbers[i].parentElement.animate([{ opacity: 0 }, { opacity: 1 }], fade));
+    }
+    if (!changed[i]) return;
     const start = starts[i];
-    jobs.push(fill.animate([{ flexGrow: String(start), opacity: start === 0 ? 0 : 1 }, { flexGrow: String(value), opacity: value === 0 ? 0 : 1 }], timing));
-    jobs.push(rest.animate([{ flexGrow: String(100 - start) }, { flexGrow: String(100 - value) }], timing));
-    jobs.push(track.animate([{ columnGap: start > 0 && start < 100 ? '4px' : '0px' }, { columnGap: value > 0 && value < 100 ? '4px' : '0px' }], timing));
+    jobs.push(fill.animate([{ flexGrow: String(start), opacity: start === 0 ? 0 : 1 }, { flexGrow: String(value), opacity: value === 0 ? 0 : 1 }], rowTiming));
+    jobs.push(rest.animate([{ flexGrow: String(100 - start) }, { flexGrow: String(100 - value) }], rowTiming));
+    jobs.push(track.animate([{ columnGap: start > 0 && start < 100 ? '4px' : '0px' }, { columnGap: value > 0 && value < 100 ? '4px' : '0px' }], rowTiming));
   });
+  if (revealing) jobs.push(root.querySelector('.results-summary').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 900, easing: 'ease-out' }));
   displayed = starts.slice();
   starts.forEach((value, i) => colorShare(tracks[i], value));
   finishCurrent = finish;
   let began = null;
   function tick(now) {
     if (began === null) began = now;
-    const progress = Math.min((now - began) / timing.duration, 1), eased = 1 - Math.pow(1 - progress, 3);
-    displayed = targets.map((value, i) => starts[i] + (value - starts[i]) * eased);
+    const elapsed = now - began;
+    displayed = targets.map((value, i) => {
+      const progress = Math.max(0, Math.min((elapsed - (revealing ? i * 80 : 0)) / timing.duration, 1));
+      return starts[i] + (value - starts[i]) * (1 - Math.pow(1 - progress, 3));
+    });
     displayed.forEach((value, i) => { if (numbers[i]) numbers[i].textContent = format(value); colorShare(tracks[i], value); });
-    if (progress < 1 && !document.hidden) frame = requestAnimationFrame(tick);
+    if (elapsed < timing.duration + (revealing ? Math.max(0, targets.length - 1) * 80 : 0) && !document.hidden) frame = requestAnimationFrame(tick);
     else { finish(); frame = 0; finishCurrent = null; }
   }
   frame = requestAnimationFrame(tick);

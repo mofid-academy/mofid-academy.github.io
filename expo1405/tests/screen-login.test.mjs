@@ -56,24 +56,49 @@ test('a valid private link opens its panel and removes the token from the addres
  assert.equal(ui.get('displayLogin').hidden,true);assert.equal(ui.get('screenContainer').hidden,false);assert.match(ui.connection.textContent,/متصل/);
  assert.equal(ui.cleanUrls[0],'/expo1405/screen.html?class='+room);assert.equal(ui.sessionStorage.getItem('expo1405-display:'+room),'valid-code');
 });
-test('waiting screen uses the high-quality Jet artwork without rebuilding it on polling',async()=>{
- let requests=0;const ui=await screen(async()=>{requests++;return state()},{fragment:'#display=valid-code'});
- const question=ui.get('screenQuestion');assert.match(question.innerHTML,/glass-jet-hq\.webp/);assert.match(question.innerHTML,/منتظر شروع مجری/);
- assert.equal(question.htmlWrites,1);ui.intervals[0]();await new Promise(resolve=>setImmediate(resolve));
- assert.equal(requests,2);assert.equal(question.htmlWrites,1);
+const fixtureQuestion=(id='q1',text='سؤال آزمایشی')=>({id,position:1,text,options:[{index:0,label:'گزینهٔ اول',count:3},{index:1,label:'گزینهٔ دوم',count:1}]});
+const flush=()=>new Promise(resolve=>setImmediate(resolve));
+
+test('waiting hall shows its private first-question preview and keeps it stable during polling',async()=>{
+ let requests=0;
+ const payload={room,round:1,phase:'waiting',question:null,previewQuestion:fixtureQuestion(),questionCount:1,title:'پنل آزمایشی',resultsRevealed:false,total:0};
+ const ui=await screen(async()=>{requests++;return Response.json({revision:1,payload})},{fragment:'#display=valid-code'});
+ const heading=ui.get('screenQuestion'),options=ui.get('resultsBody');
+ assert.match(heading.innerHTML,/سؤال آزمایشی/);assert.doesNotMatch(heading.innerHTML,/منتظر شروع|glass-jet|easytrader-glass/);
+ assert.match(options.innerHTML,/گزینهٔ اول/);assert.match(options.innerHTML,/گزینهٔ دوم/);
+ assert.match(options.innerHTML,/data-results-revealed="false"/);assert.doesNotMatch(options.innerHTML,/role="meter"/);
+ assert.equal(options.hidden,false);assert.equal(ui.get('modeCredits').disabled,true);
+ ui.intervals[0]();await flush();assert.equal(requests,2);assert.equal(heading.htmlWrites,1);assert.equal(options.htmlWrites,1);
 });
-test('the Jet waiting artwork disappears when a question is active or the panel finishes',async()=>{
- let payload={room,round:1,phase:'waiting',question:null,title:'پنل آزمایشی',total:0,credits:[]};
+test('votes stay concealed until explicit reveal, then a new question conceals results again',async()=>{
+ let payload={room,round:1,phase:'open',question:fixtureQuestion(),questionCount:2,title:'پنل آزمایشی',resultsRevealed:false,total:4};
  const ui=await screen(async()=>Response.json({revision:1,payload}),{fragment:'#display=valid-code'});
- payload={...payload,phase:'open',question:{id:'q1',position:1,text:'سؤال آزمایشی',options:[]}};
- ui.intervals[0]();await new Promise(resolve=>setImmediate(resolve));
+ const options=ui.get('resultsBody'),initialWrites=options.htmlWrites;
+ assert.match(options.innerHTML,/data-results-revealed="false"/);assert.doesNotMatch(options.innerHTML,/aria-valuenow|<strong>۷۵/);
+ payload={...payload,total:8,question:{...payload.question,options:payload.question.options.map((o,i)=>({...o,count:i?1:7}))}};
+ ui.intervals[0]();await flush();assert.equal(options.htmlWrites,initialWrites,'hidden live votes should not replace the cards');
+ payload={...payload,resultsRevealed:true};ui.intervals[0]();await flush();
+ assert.match(options.innerHTML,/data-results-revealed="true"/);assert.match(options.innerHTML,/aria-valuenow="88"/);assert.equal(ui.get('modeCredits').disabled,false);
  assert.equal(ui.get('resultsBody').hidden,false);assert.equal(ui.get('creditsStage').hidden,true);
- assert.match(ui.get('screenQuestion').innerHTML,/سؤال آزمایشی/);assert.doesNotMatch(ui.get('screenQuestion').innerHTML,/glass-jet-hq/);
- payload={...payload,phase:'finished',question:null};ui.intervals[0]();await new Promise(resolve=>setImmediate(resolve));
- assert.match(ui.get('screenQuestion').innerHTML,/این پنل پایان یافت/);assert.doesNotMatch(ui.get('screenQuestion').innerHTML,/glass-jet-hq/);
+ payload={...payload,question:fixtureQuestion('q2','پرسش بعدی'),resultsRevealed:false};ui.intervals[0]();await flush();
+ assert.match(ui.get('screenQuestion').innerHTML,/پرسش بعدی/);assert.match(options.innerHTML,/data-results-revealed="false"/);assert.doesNotMatch(options.innerHTML,/role="meter"/);
 });
-test('the waiting design preview uses only fictional state and a non-live QR link',async()=>{
+test('finished and empty panels do not restore the removed waiting artwork',async()=>{
+ let payload={room,round:1,phase:'waiting',question:null,title:'پنل آزمایشی',total:0};
+ const ui=await screen(async()=>Response.json({revision:1,payload}),{fragment:'#display=valid-code'});
+ assert.match(ui.get('screenQuestion').innerHTML,/هنوز سؤالی ثبت نشده/);assert.doesNotMatch(ui.get('screenQuestion').innerHTML,/منتظر شروع|glass-jet/);
+ payload={...payload,phase:'finished'};ui.intervals[0]();await flush();
+ assert.match(ui.get('screenQuestion').innerHTML,/این پنل پایان یافت/);
+});
+test('the first-question demo is fictional and never requests live state',async()=>{
  let requests=0;const ui=await screen(async()=>{requests++;return state()},{demo:'waiting'});
- assert.equal(requests,0);assert.match(ui.get('demoBanner').textContent,/نمونه/);assert.match(ui.get('screenQuestion').innerHTML,/glass-jet-hq\.webp/);
+ assert.equal(requests,0);assert.match(ui.get('demoBanner').textContent,/نمونه/);assert.match(ui.get('screenQuestion').innerHTML,/چه تجربه‌ای/);
+ assert.match(ui.get('resultsBody').innerHTML,/data-results-revealed="false"/);
  assert.equal(ui.get('joinLink').href,'#');assert.equal(ui.get('joinLink').textContent,'کد QR نمونه');
+});
+test('the reveal demo toggles fictional results without sending votes or organizer actions',async()=>{
+ let requests=0;const ui=await screen(async()=>{requests++;return state()},{demo:'reveal'});
+ assert.equal(ui.get('demoRevealResults').hidden,false);assert.match(ui.get('resultsBody').innerHTML,/data-results-revealed="false"/);
+ ui.get('demoRevealResults').events.click();assert.match(ui.get('resultsBody').innerHTML,/data-results-revealed="true"/);
+ ui.get('demoRevealResults').events.click();assert.match(ui.get('resultsBody').innerHTML,/data-results-revealed="false"/);assert.equal(requests,0);
 });
