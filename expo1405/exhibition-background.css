@@ -1,0 +1,26 @@
+/* Approved exhibition palette. Background layers only; product surfaces retain their colors. */
+html:not([data-theme]),
+html[data-theme="dark"],
+html[data-theme="dark"] .exhibition-background {
+  background:
+    radial-gradient(ellipse 28% 40% at 0% 0%, #fbad6ba8, transparent 85%),
+    radial-gradient(ellipse 70% 85% at 10% 12%, #d92e8382, transparent 80%),
+    radial-gradient(ellipse 60% 80% at 100% 95%, #0094a28c, transparent 90%),
+    linear-gradient(112deg, #64234e 0%, #572662 31%, #063f68 66%, #003f54 100%);
+}
+html[data-theme="light"],
+html[data-theme="light"] .exhibition-background {
+  background:
+    radial-gradient(ellipse 34% 40% at 0% 0%, #ffd39cc9, transparent 85%),
+    radial-gradient(ellipse 70% 85% at 10% 12%, #f28aba91, transparent 85%),
+    radial-gradient(ellipse 64% 83% at 100% 95%, #53cfce80, transparent 90%),
+    linear-gradient(112deg, #f7c9d8 0%, #e2cbe9 33%, #bbd6ed 67%, #caeae8 100%);
+}
+.exhibition-wave {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .12;
+  background: repeating-radial-gradient(ellipse 90% 80% at 110% 100%, transparent 0px, transparent 12px, #e5f8ff 12.5px, transparent 13px);
+  mask-image: linear-gradient(140deg, transparent 20%, #0008 65%, transparent 94%);
+}
