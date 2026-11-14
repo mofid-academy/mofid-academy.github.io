@@ -1,4 +1,7 @@
 /* Approved details: hall result cards and the two mobile progress indicators. */
+body[data-view="screen"] .results-summary.is-concealed strong:empty:before {
+  content: '۰';
+}
 body[data-view="screen"] .results-summary.is-concealed,
 body[data-view="screen"] .hall-result-cards[data-results-revealed="false"] .hall-result-percent,
 body[data-view="screen"] .hall-result-cards[data-results-revealed="false"] .hall-result-track {
