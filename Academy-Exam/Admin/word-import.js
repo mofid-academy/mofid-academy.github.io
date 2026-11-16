@@ -5,14 +5,14 @@
   else root.AcademyWordImport=api;
 })(globalThis,function(){
 'use strict';
-const VERSION=1,MAX_FILE=10*1024*1024,MAX_XML=8*1024*1024,MAX_QUESTIONS=200;
+const VERSION=2,MAX_FILE=10*1024*1024,MAX_XML=8*1024*1024,MAX_QUESTIONS=200;
 const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const digits=s=>String(s).replace(/[۰-۹٠-٩]/g,c=>String('۰۱۲۳۴۵۶۷۸۹'.includes(c)?'۰۱۲۳۴۵۶۷۸۹'.indexOf(c):'٠١٢٣٤٥٦٧٨٩'.indexOf(c)));
 const norm=s=>digits(String(s).normalize('NFKC')).replace(/\s+/g,' ').trim();
 const uid=()=>('docx_'+(globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'_'+Math.random().toString(36).slice(2))).replace(/-/g,'');
 const crcTable=Uint32Array.from({length:256},(_,i)=>{let n=i;for(let j=0;j<8;j++)n=(n&1)?0xedb88320^(n>>>1):n>>>1;return n>>>0;});
 function crc32(bytes){let n=0xffffffff;for(const b of bytes)n=crcTable[(n^b)&255]^(n>>>8);return (n^0xffffffff)>>>0;}
-async function documentXML(buffer){
+async function xmlPart(buffer,part,optional=false){
   const bytes=buffer instanceof Uint8Array?buffer:new Uint8Array(buffer);
   if(bytes.length>MAX_FILE)throw Error('حجم فایل Word بیشتر از ۱۰ مگابایت است.');
   if(bytes.length<22)throw Error('فایل Word کامل یا معتبر نیست.');
@@ -30,13 +30,13 @@ async function documentXML(buffer){
     const nameLength=view.getUint16(p+28,true),extraLength=view.getUint16(p+30,true),commentLength=view.getUint16(p+32,true),next=p+46+nameLength+extraLength+commentLength;
     if(next>offset+size)throw Error('فهرست داخلی فایل Word کامل نیست.');
     const name=new TextDecoder().decode(bytes.subarray(p+46,p+46+nameLength));
-    if(name==='word/document.xml'){
+    if(name===part){
       if(found)throw Error('متن اصلی فایل Word تکراری است.');
       found={flags:view.getUint16(p+8,true),method:view.getUint16(p+10,true),crc:view.getUint32(p+16,true),compressed:view.getUint32(p+20,true),plain:view.getUint32(p+24,true),local:view.getUint32(p+42,true)};
     }
     p=next;
   }
-  if(!found)throw Error('متن اصلی در فایل Word پیدا نشد.');
+  if(!found){if(optional)return '';throw Error('متن اصلی در فایل Word پیدا نشد.');}
   const f=found;
   if(f.flags&1)throw Error('فایل Word رمزگذاری شده است؛ نسخهٔ بدون رمز را انتخاب کنید.');
   if(!f.plain||f.plain>MAX_XML||f.compressed>MAX_FILE||f.local+30>offset||view.getUint32(f.local,true)!==0x04034b50)throw Error('متن اصلی Word بیش از حد بزرگ یا آسیب‌دیده است.');
@@ -58,11 +58,58 @@ async function documentXML(buffer){
   if(/<!DOCTYPE|<!ENTITY/i.test(xml))throw Error('ساختار XML این فایل Word پشتیبانی نمی‌شود.');
   return xml;
 }
-function paragraphs(xml){
+const documentXML=buffer=>xmlPart(buffer,'word/document.xml');
+function xmlDocument(xml){
+  if(/<!DOCTYPE|<!ENTITY/i.test(xml))throw Error('ساختار XML این فایل Word پشتیبانی نمی‌شود.');
   const doc=new DOMParser().parseFromString(xml,'application/xml');
   if(doc.getElementsByTagName('parsererror').length)throw Error('متن داخلی Word کامل نیست.');
-  return [...doc.getElementsByTagNameNS(W,'p')].map(p=>[...p.getElementsByTagNameNS(W,'*')].map(n=>n.localName==='t'?n.textContent:['tab','br','cr'].includes(n.localName)?'\n':'').join(''));
+  return doc;
 }
+const children=(node,name)=>[...(node?.childNodes||[])].filter(n=>n.namespaceURI===W&&n.localName===name);
+const child=(node,name)=>children(node,name)[0];
+const value=(node,name)=>child(node,name)?.getAttributeNS(W,'val');
+function paragraphs(xml,numberingXML='',stylesXML=''){
+  const doc=xmlDocument(xml),abstracts=new Map(),lists=new Map(),styles=new Map(),counts=new Map();
+  if(numberingXML){
+    const numbering=xmlDocument(numberingXML).documentElement;
+    for(const a of children(numbering,'abstractNum'))abstracts.set(a.getAttributeNS(W,'abstractNumId'),a);
+    for(const n of children(numbering,'num'))lists.set(n.getAttributeNS(W,'numId'),n);
+  }
+  if(stylesXML)for(const s of children(xmlDocument(stylesXML).documentElement,'style'))styles.set(s.getAttributeNS(W,'styleId'),s);
+  function numPr(p){
+    const pr=child(p,'pPr'),direct=child(pr,'numPr');let id=value(direct,'numId'),level=value(direct,'ilvl'),style=value(pr,'pStyle');const seen=new Set();
+    while(style&&!seen.has(style)&&seen.size<32&&(id===undefined||level===undefined)){
+      seen.add(style);const s=styles.get(style),inherited=child(child(s,'pPr'),'numPr');
+      id??=value(inherited,'numId');level??=value(inherited,'ilvl');style=value(s,'basedOn');
+    }
+    return {id,level:Number(level||0)};
+  }
+  return [...doc.getElementsByTagNameNS(W,'p')].map(p=>{
+    const text=[...p.getElementsByTagNameNS(W,'*')].map(n=>n.localName==='t'?n.textContent:['tab','br','cr'].includes(n.localName)?'\n':'').join('');
+    const {id,level}=numPr(p);if(!text.trim()||id===undefined||id==='0')return text;
+    const list=lists.get(id),abstract=abstracts.get(value(list,'abstractNumId'));
+    const override=children(list,'lvlOverride').find(n=>Number(n.getAttributeNS(W,'ilvl'))===level);
+    const definition=child(override,'lvl')||children(abstract,'lvl').find(n=>Number(n.getAttributeNS(W,'ilvl'))===level);
+    const format=value(definition,'numFmt'),label=value(definition,'lvlText');
+    if(format==='bullet'||format==='none')return text;
+    if(!Number.isInteger(level)||level<0||level>8||!['decimal','decimalZero'].includes(format)||!new RegExp('^%'+(level+1)+'[.．)）]$').test(label||''))throw Error('شماره‌گذاری خودکار Word قابل خواندن نیست؛ از شمارهٔ سادهٔ سؤال و گزینه استفاده کنید.');
+    const start=Number(value(override,'startOverride')??value(definition,'start')??1);
+    if(!Number.isSafeInteger(start)||start<0||start>999)throw Error('شروع شماره‌گذاری Word معتبر نیست.');
+    const sequence=counts.get(id)||[];sequence[level]=sequence[level]===undefined?start:sequence[level]+1;
+    if(sequence[level]>999)throw Error('شمارهٔ خودکار سؤال یا گزینه در Word بیش از حد مجاز است.');
+    for(let lower=level+1;lower<sequence.length;lower++){
+      const lowerDef=children(abstract,'lvl').find(n=>Number(n.getAttributeNS(W,'ilvl'))===lower);
+      if(value(lowerDef,'lvlRestart')!=='0')sequence[lower]=undefined;
+    }
+    counts.set(id,sequence);
+    const number=format==='decimalZero'?String(sequence[level]).padStart(2,'0'):String(sequence[level]);
+    return label.replace('%'+(level+1),number)+' '+text;
+  });
+}
+const LABEL='(?:الف|[ابجدهوزحأإآ]|[0-9۰-۹٠-٩])';
+const optionPattern=new RegExp('^('+LABEL+')\\s*[)）]\\s*(.+)$');
+const answerPattern=new RegExp('^('+LABEL+')\\s*(?:[)）.．]\\s*(.*))?$','s');
+function optionIndex(label){const s=digits(label).replace(/[أإآ]/g,'ا');return /^[0-9]$/.test(s)?Number(s)-1:s==='ا'?0:['الف','ب','ج','د','ه','و','ز','ح'].indexOf(s);}
 function parseParagraphs(input,{title='',filename='',formId='mofid-exam'}={}){
   if(!Array.isArray(input))throw Error('متن سؤال‌ها دریافت نشد.');
   const blocks=[],numbers=new Set();let current=null;
@@ -78,10 +125,10 @@ function parseParagraphs(input,{title='',filename='',formId='mofid-exam'}={}){
       if(!current)continue;
       const answer=line.match(/^پاسخ\s*(?:صحیح|درست|نمونه)\s*[:：]\s*(.*)$/);
       if(answer){if(current.answer!==null)throw Error('برای سؤال '+current.number+' بیش از یک پاسخ ثبت شده است.');current.answer=answer[1].trim();continue;}
-      const option=line.match(/^([0-9۰-۹٠-٩])\s*[)）]\s*(.+)$/);
+      const option=line.match(optionPattern);
       if(option){
         if(current.answer!==null)throw Error('ترتیب گزینه‌ها و پاسخ سؤال '+current.number+' را بررسی کنید.');
-        if(Number(digits(option[1]))!==current.options.length+1||current.options.length>=8)throw Error('شماره‌گذاری گزینه‌های سؤال '+current.number+' پیوسته نیست.');
+        if(optionIndex(option[1])!==current.options.length||current.options.length>=8)throw Error('شماره‌گذاری گزینه‌های سؤال '+current.number+' پیوسته نیست.');
         current.options.push(option[2]);continue;
       }
       if(current.answer!==null)current.answer+='\n'+line;
@@ -97,8 +144,8 @@ function parseParagraphs(input,{title='',filename='',formId='mofid-exam'}={}){
     if(new Set(b.options.map(norm)).size!==b.options.length)throw Error('گزینه‌های سؤال '+b.number+' تکراری هستند.');
     let index=-1;
     if(b.options.length&&b.answer){
-      const marked=b.answer.match(/^([0-9۰-۹٠-٩])\s*(?:[)）.．]\s*(.*))?$/s);
-      if(marked){index=Number(digits(marked[1]))-1;if(index<0||index>=b.options.length||marked[2]&&norm(marked[2])!==norm(b.options[index]))throw Error('پاسخ صریح سؤال '+b.number+' با گزینه‌ها همخوان نیست.');}
+      const marked=b.answer.match(answerPattern);
+      if(marked){index=optionIndex(marked[1]);if(index<0||index>=b.options.length||marked[2]&&norm(marked[2])!==norm(b.options[index]))throw Error('پاسخ صریح سؤال '+b.number+' با گزینه‌ها همخوان نیست.');}
       else{index=b.options.findIndex(o=>norm(o)===norm(b.answer));if(index<0)throw Error('پاسخ سؤال '+b.number+' با هیچ گزینه‌ای مطابقت ندارد.');}
     }
     if(!b.answer)missing++;
@@ -109,8 +156,11 @@ function parseParagraphs(input,{title='',filename='',formId='mofid-exam'}={}){
 }
 async function read(file,options={}){
   if(!file||file.size>MAX_FILE)throw Error('فایل Word بیشتر از حد مجاز یا نامعتبر است.');
-  const xml=await documentXML(await file.arrayBuffer());
-  return parseParagraphs(paragraphs(xml),{...options,filename:file.name||options.filename||''});
+  const buffer=await file.arrayBuffer();
+  const xml=await documentXML(buffer);
+  const [numbering,styles]=await Promise.all([xmlPart(buffer,'word/numbering.xml',true),xmlPart(buffer,'word/styles.xml',true)]);
+  return parseParagraphs(paragraphs(xml,numbering,styles),{...options,filename:file.name||options.filename||''});
 }
-return Object.freeze({VERSION,read,documentXML,parseParagraphs});
+return Object.freeze({VERSION,read,documentXML,parseParagraphs,paragraphs});
 });
+

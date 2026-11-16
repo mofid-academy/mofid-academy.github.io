@@ -30,6 +30,24 @@ test('Persian and Arabic labels preserve the exact explicit answer',()=>{
 test('Every read creates an independent exam and stable question identifiers',()=>{
  const a=reader.parseParagraphs(lines),b=reader.parseParagraphs(lines);assert.notEqual(a.bank.examId,b.bank.examId);assert.match(a.bank.questions[0].id,new RegExp('^'+a.bank.examId+'-Q1$'));assert.equal(a.bank.questions.length,1);
 });
+test('Persian letter options stay multiple choice and preserve the explicit labeled key',()=>{
+ const out=reader.parseParagraphs(['۱. نمونهٔ سؤال','الف) اول','ب) دوم','ج) سوم','د)چهارم','پاسخ صحیح: ب) دوم']);
+ const q=out.bank.questions[0];assert.equal(q.type,'mcq');assert.deepEqual(q.options,['اول','دوم','سوم','چهارم']);assert.equal(q.correct_option_index,1);assert.equal(q.correct_answer,'دوم');assert.equal(q.sample_answer,'');assert.equal(out.missing_answer_count,0);
+});
+test('A letter-only explicit key is accepted but a missing key is never inferred',()=>{
+ const lines=['1. سؤال','الف) اول','ب) دوم','ج) سوم','د) چهارم'];
+ assert.equal(reader.parseParagraphs([...lines,'پاسخ صحیح: ج']).bank.questions[0].correct_option_index,2);
+ const q=reader.parseParagraphs(lines).bank.questions[0];assert.equal(q.type,'mcq');assert.equal(q.correct_option_index,-1);assert.equal(q.correct_answer,'');
+});
+test('Conflicting letter keys and skipped letter options fail before replacing the bank',()=>{
+ assert.throws(()=>reader.parseParagraphs(['1. سؤال','الف) اول','ج) سوم']),/پیوسته/);
+ assert.throws(()=>reader.parseParagraphs(['1. سؤال','الف) اول','ب) دوم','پاسخ صحیح: الف) دوم']),/همخوان/);
+ assert.throws(()=>reader.parseParagraphs(['1. سؤال','الف) اول','ب) دوم','پاسخ صحیح: د']),/همخوان/);
+});
+test('Mixed multiple-choice and descriptive questions retain their original content and types',()=>{
+ const out=reader.parseParagraphs(['1. انتخاب کنید','الف) یک','ب) دو','پاسخ صحیح: ب','2. توضیح دهید','ادامهٔ متن سؤال','پاسخ نمونه: نمونهٔ پاسخ']);
+ assert.deepEqual(out.bank.questions.map(q=>q.type),['mcq','desc']);assert.equal(out.bank.questions[1].question,'توضیح دهید\nادامهٔ متن سؤال');assert.equal(out.bank.questions[1].sample_answer,'نمونهٔ پاسخ');
+});
 test('Missing answers remain unset and contradictory answer keys are rejected',()=>{
  const missing=reader.parseParagraphs(lines.slice(0,-1));assert.equal(missing.missing_answer_count,1);assert.equal(missing.bank.questions[0].correct_option_index,-1);assert.equal(missing.bank.questions[0].correct_answer,'');
  assert.throws(()=>reader.parseParagraphs([...lines.slice(0,-1),'پاسخ صحیح: 1) گزینهٔ دوم']),/همخوان/);
@@ -62,8 +80,9 @@ function importUI(read){
  vm.runInContext(fs.readFileSync(path.join(root,'Academy-Exam/Admin/file-import-ui.js'),'utf8'),ctx);install();return {ctx,fields,requests,adoptions,events};
 }
 test('Selecting Word adopts a local draft, marks it dirty and never posts a file',async()=>{
- const ui=importUI(async()=>reader.parseParagraphs(lines));await ui.fields.get('academyImportFile').onchange();assert.equal(ui.requests.length,0);assert.equal(ui.adoptions.length,1,ui.fields.get('status').textContent);assert.ok(ui.events.includes('academy-local-questions-loaded'));assert.match(ui.fields.get('status').textContent,/پیش‌نویس مستقل/);assert.equal(ui.fields.get('academyImportBtn').disabled,false);
+ const ui=importUI(async()=>reader.parseParagraphs(lines));await ui.fields.get('academyImportFile').onchange();assert.equal(ui.requests.length,0);assert.equal(ui.adoptions.length,1,ui.fields.get('status').textContent);assert.ok(ui.events.includes('academy-local-questions-loaded'));assert.match(ui.fields.get('status').textContent,/پیش‌نویس مستقل/);assert.match(ui.fields.get('status').textContent,/1 تستی، 0 تشریحی/);assert.equal(ui.fields.get('academyImportBtn').disabled,false);
 });
 test('Unreadable Word does not replace the current question bank or retry on the server',async()=>{
  const ui=importUI(async()=>{throw Error('invalid document')});await ui.fields.get('academyImportFile').onchange();assert.equal(ui.requests.length,0);assert.equal(ui.adoptions.length,0);assert.match(ui.fields.get('status').textContent,/خواندن فایل Word انجام نشد/);assert.equal(ui.fields.get('academyImportBtn').disabled,false);
 });
+

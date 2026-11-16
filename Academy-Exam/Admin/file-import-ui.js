@@ -1,4 +1,4 @@
-/* Academy Admin importer v4 - explicit DOCX questions are read locally; PDF uses server import. */
+/* Academy Admin importer v5 - explicit DOCX questions are read locally; PDF uses server import. */
 (function(){
 "use strict";
 const IMPORT_URL="https://azmoon21.app.n8n.cloud/webhook/exam-import-file";
@@ -170,7 +170,8 @@ function install(){
         const adopted=window.__ACADEMY_ADMIN__.adopt(parsed.bank);
         const previous=pendingImport();if(previous)clearPending(previous.examId);
         document.dispatchEvent(new CustomEvent("academy-local-questions-loaded",{detail:{examId:parsed.bank.examId,count:adopted.questions.length}}));
-        result.textContent=adopted.questions.length+" سؤال از Word در یک پیش‌نویس مستقل آماده شد. "+(parsed.missing_answer_count?parsed.missing_answer_count+" سؤال پاسخ صریح ندارد. ":"پاسخ‌های صریح فایل هم وارد شدند. ")+"سؤال‌ها را بررسی و سپس آزمون را از پنل ذخیره یا منتشر کنید.";
+        const mcqCount=adopted.questions.filter(q=>q.type==="mcq").length;
+        result.textContent=adopted.questions.length+" سؤال از Word در یک پیش‌نویس مستقل آماده شد ("+mcqCount+" تستی، "+(adopted.questions.length-mcqCount)+" تشریحی). "+(parsed.missing_answer_count?parsed.missing_answer_count+" سؤال پاسخ صریح ندارد. ":"پاسخ‌های صریح فایل هم وارد شدند. ")+"سؤال‌ها را بررسی و سپس آزمون را از پنل ذخیره یا منتشر کنید.";
         setStatus(result.textContent,"success");
         return;
       }
@@ -219,6 +220,7 @@ observer.observe(document.documentElement,{subtree:true,childList:true});
 document.addEventListener("click",()=>setTimeout(install,0),true);
 setTimeout(install,300);
 })();
+
 
 
 
