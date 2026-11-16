@@ -78,7 +78,7 @@ function patchArchiveRuntime(html) {
   if(!code.includes('academy-pending-submission-v4:'))throw Error('مسیر دریافت پاسخ با نسخهٔ آرشیو هماهنگ نیست.');
   code=code.replace('const pendingKey="academy-pending-submission-v4:"+expectedId;', 'const pendingKey="academy-pending-submission-v5:'+publication.run_id+'::"+expectedId;');
   code=code.replace('event_type:"submission",schema_version:2,question_bank_source:"academy-studio",', 'event_type:"submission",schema_version:2,question_bank_source:"academy-studio",run_id:'+JSON.stringify(publication.run_id)+',');
-  code=code.replace('fetch(CONFIG.submitUrl,','fetch("https://azmonmofid.app.n8n.cloud/webhook/academy-submit-v5",');
+  code=code.replace('fetch(CONFIG.submitUrl,','fetch("https://azmoon21.app.n8n.cloud/webhook/academy-submit-v5",');
   code=code.replace('"Content-Type":"application/json"','"Content-Type":"text/plain;charset=UTF-8"');
   code=code.replace('ack?.accepted!==true||ack.stored!==true||','ack?.run_id!=='+JSON.stringify(publication.run_id)+'||ack?.accepted!==true||ack.stored!==true||');
   return start+code+end;
@@ -99,7 +99,7 @@ async function readLiveTiming(options={}){
   let base=await baseR.text();
   base=base.replace("</head>",'<scr'+'ipt defer src="/academy-assets/support.js?v=20261108-support-1"></scr'+'ipt>'+"</head>");
   base=base.replace("</head>",'<link rel="stylesheet" href="/academy-assets/lighting.css?v=20261107-lighting-3">\n<script defer src="/academy-assets/lighting.js?v=20261107-lighting-1"><\/script>\n'+"</head>");
-  base=base.replace(/https:\/\/(?:azmoon|miladmirsheriseyed|miladmirsheriii|miladmmirsheri|miladmirsheriam)\.app\.n8n\.cloud\b/g,"https://azmonmofid.app.n8n.cloud");
+  base=base.replace(/https:\/\/(?:azmonmofid|azmoon|miladmirsheriseyed|miladmirsheriii|miladmmirsheri|miladmirsheriam)\.app\.n8n\.cloud\b/g,"https://azmoon21.app.n8n.cloud");
   base=base.replace(/(<script id="academy-question-bank"[^>]*>[\s\S]*?"submitApproved"\s*:\s*)false/, '$1true');
   base=patchArchiveRuntime(patchSubmissionRuntime(base));
   // Direct question links keep final required-answer validation and existing timing gates.
@@ -311,7 +311,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(attemp
 })();
 `;
 
-  const networkPolicy='<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; base-uri \'self\'; object-src \'none\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; font-src \'self\' data:; img-src \'self\' data:; connect-src \'self\' https://raw.githubusercontent.com https://azmonmofid.app.n8n.cloud; form-action \'self\'">';
+  const networkPolicy='<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; base-uri \'self\'; object-src \'none\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; font-src \'self\' data:; img-src \'self\' data:; connect-src \'self\' https://raw.githubusercontent.com https://azmoon21.app.n8n.cloud; form-action \'self\'">';
   const skin='<style id="academy-exam-skin">'+visual.css.replace(/<\/style/gi,'<\\/style')+'</style>';
   const customStyle=base.match(/<style\b[^>]*\bid=["']academy-studio-overrides["'][^>]*>[\s\S]*?<\/style>/i)?.[0]||'';
   if(customStyle)base=base.replace(customStyle,'');
