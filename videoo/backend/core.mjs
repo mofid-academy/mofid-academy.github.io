@@ -58,12 +58,20 @@ export function createApi({db,config,storage=createStorage(),now=Date.now}){
     return c;
   }
   const storageReady=async()=>{const s=await db('storage_read');if(!s)fail('STORAGE_NOT_CONNECTED','ابتدا اتصال آروان را از تنظیمات کامل کنید.',409);return storageConfig(s);};
+  const storageOrigins=config.siteOrigins||config.siteOrigin;
+  const uploadStorage=async origin=>{
+    const s=await storageReady();
+    if(origin!==config.siteOrigin&&config.siteOrigins?.includes(origin)){
+      try{await storage.configureCors(s,storageOrigins);}catch(e){storageError(e);}
+    }
+    return s;
+  };
   const storageStatus=s=>({connected:!!s,endpoint:s?.endpoint||'https://s3.ir-central1.arvanstorage.ir',region:s?.region||'ir-central1',bucket:s?.bucket||'mofid-academy-videos',accessKeyHint:s?.accessKey?'••••'+s.accessKey.slice(-4):'',corsReady:!!s?.corsReady});
   const releaseEnabled=async()=>!!(await db('settings_read'))?.release_enabled;
   const withCovers=(courses,s)=>courses.map(c=>({...c,coverUrl:c.coverObjectKey&&s?storage.play(storageConfig(s),c.coverObjectKey):''}));
   const adminCatalog=async catalog=>({...catalog,courses:withCovers(catalog.courses,catalog.courses.some(c=>c.coverObjectKey)?await db('storage_read'):null)});
   const requirePassword=value=>{if(typeof value!=='string'||value.length<8||value.length>256)fail('INVALID_PASSWORD','رمز کاربر باید بین ۸ تا ۲۵۶ نویسه باشد.');return value;};
-  async function handle(body,{ip='unknown'}={}){
+  async function handle(body,{ip='unknown',origin}={}){
     if(!body||typeof body!=='object'||Array.isArray(body))fail('INVALID_REQUEST','درخواست معتبر نیست.');
     const a=body.action,d=body.data||{};
     if(a==='health')return {ok:true,version:'academy-video/4',publicState:await releaseEnabled()?'live':'coming-soon'};
@@ -159,7 +167,7 @@ export function createApi({db,config,storage=createStorage(),now=Date.now}){
       let s;try{s=storageConfig({...d,accessKey:d.accessKey||old?.accessKey,secretKey:d.secretKey||old?.secretKey});await storage.list(s);}
       catch(e){storageError(e);}
       let corsReady=false;
-      if(d.setupCors!==false){try{await storage.configureCors(s,config.siteOrigin);corsReady=true;}catch(e){storageError(e);}}
+      if(d.setupCors!==false){try{await storage.configureCors(s,storageOrigins);corsReady=true;}catch(e){storageError(e);}}
       await db('storage_save',{config:{...s,corsReady,connectedAt:new Date(now()).toISOString()}});
       return {ok:true,storage:storageStatus({...s,corsReady})};
     }
@@ -186,7 +194,7 @@ export function createApi({db,config,storage=createStorage(),now=Date.now}){
     if(a==='cover_upload_begin'){
       const size=number(d.size,1,5*1024*1024),type=d.type,extension={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[type];
       if(!extension)fail('INVALID_COVER','عکس JPG، PNG یا WebP تا ۵ مگابایت انتخاب کنید.');
-      const s=await storageReady(),object='academy/covers/'+randomUUID()+'.'+extension;
+      const s=await uploadStorage(origin),object='academy/covers/'+randomUUID()+'.'+extension;
       return {ok:true,url:storage.put(s,object,type),ticket:sign({kind:'cover',username:actor,exp:epoch()+900,key:object,size,type})};
     }
     if(a==='cover_upload_complete'){
@@ -197,7 +205,7 @@ export function createApi({db,config,storage=createStorage(),now=Date.now}){
       const size=number(d.size,1,500*1024*1024),name=text(d.name,240,true),type=['video/mp4','video/webm','video/x-m4v'].includes(d.type)?d.type:/\.webm$/i.test(name)?'video/webm':'video/mp4';
       if(!/\.(mp4|webm|m4v)$/i.test(name))fail('INVALID_VIDEO','فایل MP4 یا WebM انتخاب کنید.');
       const safeName=name.replace(/[^a-zA-Z0-9._-]/g,'-').replace(/^-+/,'')||'video.mp4';
-      const object='academy/'+randomUUID()+'/'+safeName,s=await storageReady();
+      const object='academy/'+randomUUID()+'/'+safeName,s=await uploadStorage(origin);
       try{const uploadId=await storage.begin(s,object,type);return {ok:true,objectKey:object,uploadId,partSize:10*1024*1024,ticket:sign({kind:'upload',username:actor,exp:epoch()+86400,key:object,uploadId,size,type})};}catch(e){storageError(e);}
     }
     if(['upload_part','upload_complete','upload_abort'].includes(a)){
@@ -255,13 +263,16 @@ export function createHandler(api,{origins=['https://mofid-academy.github.io']}=
     headers['Access-Control-Allow-Methods']='POST, OPTIONS';headers['Access-Control-Allow-Headers']='Content-Type, Accept';
     const respond=(b,status=200)=>new Response(JSON.stringify(b),{status,headers});
     if(origin&&!origins.includes(origin))return respond({ok:false,code:'ORIGIN_DENIED',message:'این مبدأ مجاز نیست.'},403);
-    if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
+    if(req.method==='OPTIONS'){
+      headers['Access-Control-Max-Age']='600';
+      return new Response(null,{status:204,headers});
+    }
     if(req.method!=='POST')return respond({ok:false,message:'روش درخواست معتبر نیست.'},405);
     try{
       if(Number(req.headers.get('content-length'))>2200000)return respond({ok:false,message:'درخواست بیش از حد بزرگ است.'},413);
       const raw=await req.text();if(raw.length>2200000)return respond({ok:false,message:'درخواست بیش از حد بزرگ است.'},413);
       let body;try{body=JSON.parse(raw);}catch{return respond({ok:false,message:'درخواست معتبر نیست.'},400);}
-      return respond(await api.handle(body,{ip:req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown'}));
+      return respond(await api.handle(body,{ip:req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown',origin}));
     }catch(e){return respond({ok:false,code:e.code||'SERVER_UNAVAILABLE',message:e instanceof ApiError?e.message:'ارتباط با سامانه برقرار نشد؛ دوباره تلاش کنید.'},e instanceof ApiError?e.status:503);}
   };
 }

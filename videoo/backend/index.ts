@@ -9,11 +9,13 @@ async function handler(){
   if(key.startsWith('eyJ'))headers.Authorization='Bearer '+key;
   const response=await fetch(url+'/rest/v1/rpc/zr_runtime_config',{method:'POST',headers,body:'{}',signal:AbortSignal.timeout(10000)});
   if(!response.ok)throw Error('Management configuration unavailable');
-  const config={...await response.json(),siteOrigin:origins[0]};
+  const config={...await response.json(),siteOrigin:origins[0],siteOrigins:origins};
   cached={handler:createHandler(createApi({db:createStore({url,key}),config}),{origins}),expires:Date.now()+60000};
   return cached.handler;
 }
+const preflight=createHandler({handle(){throw Error('Expected a preflight request');}},{origins});
 Deno.serve(async(req:Request)=>{
+  if(req.method==='OPTIONS')return preflight(req);
   try{return await(await handler())(req);}catch{
     const origin=req.headers.get('Origin');
     const headers:Record<string,string>={'Cache-Control':'no-store','Vary':'Origin'};
