@@ -15,32 +15,49 @@
     if(!surface)return ()=>{};
     const host=surface.querySelector('.mofid-metal-shader');
     if(!host)return ()=>{};
-    let mount,closed=false,boostTimer;
-    const speed=value=>mount?.setSpeed(reduced.matches?0:value);
-    const enter=()=>{surface.classList.add('metal-hover');speed(1);};
-    const leave=()=>{surface.classList.remove('metal-hover');surface.classList.remove('metal-pressed');speed(.6);};
+    let mount,closed=false,loading=false,boostTimer;
+    const speed=value=>mount?.setSpeed(!fine.matches||reduced.matches?0:value);
+    const activeSpeed=()=>surface.classList.contains('metal-hover')||trigger.matches(':focus-visible')?1:0;
+    const preference=()=>speed(activeSpeed());
+    const enter=()=>{surface.classList.add('metal-hover');startMetal();preference();};
+    const leave=()=>{surface.classList.remove('metal-hover');surface.classList.remove('metal-pressed');preference();};
+    const focus=()=>{startMetal();preference();};
     const down=event=>{
       if(trigger.disabled)return;
-      surface.classList.add('metal-pressed');speed(2.4);clearTimeout(boostTimer);boostTimer=setTimeout(()=>speed(surface.matches(':hover')?1:.6),300);
+      surface.classList.add('metal-pressed');speed(2.4);clearTimeout(boostTimer);boostTimer=setTimeout(preference,300);
       const rect=surface.getBoundingClientRect(),ripple=document.createElement('span');ripple.className='mofid-metal-ripple';
       const inside=event.clientX>=rect.left&&event.clientX<=rect.right&&event.clientY>=rect.top&&event.clientY<=rect.bottom;
       ripple.style.left=(inside?event.clientX-rect.left:rect.width/2)+'px';ripple.style.top=(inside?event.clientY-rect.top:rect.height/2)+'px';
       surface.append(ripple);ripple.addEventListener('animationend',()=>ripple.remove(),{once:true});
     };
     const up=()=>surface.classList.remove('metal-pressed');
-    const preference=()=>speed(surface.matches(':hover')?1:.6);
-    trigger.addEventListener('pointerenter',enter);trigger.addEventListener('pointerleave',leave);trigger.addEventListener('pointerdown',down);trigger.addEventListener('pointerup',up);trigger.addEventListener('pointercancel',leave);reduced.addEventListener('change',preference);
-    loadMetal().then(([{ShaderMount},{liquidMetalFragmentShader}])=>{
-      if(closed||!host.isConnected)return;
-      try{
+    function startMetal() {
+      if(loading||!fine.matches||reduced.matches)return;
+      loading=true;
+      loadMetal().then(([{ShaderMount},{liquidMetalFragmentShader}])=>{
+        if(closed||!host.isConnected||!fine.matches||reduced.matches){loading=false;return;}
         mount=new ShaderMount(host,liquidMetalFragmentShader,{
           u_repetition:4,u_softness:.5,u_shiftRed:.08,u_shiftBlue:.08,u_distortion:0,u_contour:0,u_angle:45,u_scale:8,u_shape:1,u_offsetX:.1,u_offsetY:-.1,
           u_fit:0,u_rotation:0,u_originX:.5,u_originY:.5,u_worldWidth:0,u_worldHeight:0,u_isImage:false,u_colorBack:[0,0,0,0],u_colorTint:[.7,.94,.79,.6]
-        },{alpha:true,antialias:false,powerPreference:'low-power'},reduced.matches?0:.6,0,1.5,250000);
+        },{alpha:true,antialias:false,powerPreference:'low-power'},activeSpeed(),0,1.5,250000);
         surface.dataset.metalRenderer='webgl';
-      }catch{surface.dataset.metalRenderer='css';host.querySelectorAll('canvas').forEach(canvas=>canvas.remove());}
-    }).catch(()=>{surface.dataset.metalRenderer='css';});
-    return ()=>{closed=true;clearTimeout(boostTimer);mount?.dispose();trigger.removeEventListener('pointerenter',enter);trigger.removeEventListener('pointerleave',leave);trigger.removeEventListener('pointerdown',down);trigger.removeEventListener('pointerup',up);trigger.removeEventListener('pointercancel',leave);reduced.removeEventListener('change',preference);};
+      }).catch(()=>{
+        surface.dataset.metalRenderer='css';
+        host.querySelectorAll('canvas').forEach(canvas=>canvas.remove());
+      });
+    }
+    const listeners={pointerenter:enter,pointerleave:leave,pointerdown:down,pointerup:up,pointercancel:leave,focus,blur:preference};
+    for(const [event,handler] of Object.entries(listeners))trigger.addEventListener(event,handler);
+    reduced.addEventListener('change',preference);
+    fine.addEventListener('change',preference);
+    return ()=>{
+      closed=true;
+      clearTimeout(boostTimer);
+      mount?.dispose();
+      for(const [event,handler] of Object.entries(listeners))trigger.removeEventListener(event,handler);
+      reduced.removeEventListener('change',preference);
+      fine.removeEventListener('change',preference);
+    };
   }
   function mountBackground(kind) {
     const root=document.documentElement,previous=root.getAttribute('data-mofid-entry');
