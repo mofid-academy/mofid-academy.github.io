@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="/videoo/style.css?v=20261109-password-1">
   <script defer src="/academy-assets/navigation.js?v=20261108-studio-1" data-academy-section="videos"></script>
   <script defer src="/academy-assets/entry-ui.js?v=20261107-lighting-1" data-entry-surface="home"></script>
-  <script type="module" src="/videoo/portal.mjs?v=20261110-presence-2"></script>
+  <script type="module" src="/videoo/portal.mjs?v=20261124-entry-1"></script>
   <link rel="stylesheet" href="/academy-assets/theme.css?v=20261104-player-2">
 <link rel="stylesheet" href="/academy-assets/lighting.css?v=20261107-lighting-3">
 <script defer src="/academy-assets/lighting.js?v=20261107-lighting-1"></script>
@@ -36,7 +36,26 @@
     </section>
     <footer class="video-footer"><span>آکادمی مفید · برای یادگیری ماندگار</span><a href="/videoo/admin.html">ورود مدیریت</a></footer>
   </main>
-  <main id="videoApp" aria-live="polite" aria-busy="true"><div class="initial-loader" role="status"><span class="spinner" aria-hidden="true"></span><p>در حال آماده‌سازی ویدیوها…</p></div></main>
+  <main id="videoApp" aria-live="polite">
+    <div class="login-layout">
+      <section class="login-card">
+        <div class="login-top">
+          <img class="login-logo" src="/Academy-Exam/assets/mofid-academy-logo.webp" alt="آکادمی مفید" width="64" height="64">
+          <span class="chip">ویدیوهای خصوصی</span>
+        </div>
+        <h1>یادگیری از اینجا شروع می‌شود.</h1>
+        <p class="intro">با نام کاربری و رمزی که آکادمی در اختیارت گذاشته وارد شو؛ مجموعه‌ها، قسمت‌ها و ادامهٔ تماشایت اینجا منتظرند.</p>
+        <form id="studentLogin" method="post">
+          <label class="field"><span>نام کاربری</span><input name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" dir="ltr" required maxlength="64"></label>
+          <label class="field"><span>رمز عبور</span><input name="password" type="password" autocomplete="current-password" dir="ltr" required maxlength="256"></label>
+          <p class="form-error" role="alert"></p>
+          <button class="btn primary" type="submit" disabled>ورود به ویدیوها ←</button>
+        </form>
+        <a class="login-bottom" href="/videoo/admin.html">ورود مدیریت</a>
+        <noscript>برای ورود، جاوااسکریپت مرورگر را فعال کنید.</noscript>
+      </section>
+    </div>
+  </main>
   <div id="toasts" class="toasts" aria-live="polite"></div>
   <dialog id="videoDialog" class="video-dialog"></dialog>
 </body>

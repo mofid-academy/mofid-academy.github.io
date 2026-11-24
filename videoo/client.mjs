@@ -7,7 +7,7 @@ const EXISTING_MANAGEMENT_API='https://siwmzffadbbhcyyppwzn.supabase.co/function
 let draft,draftMessage='';
 export function session(){try{return JSON.parse(sessionStorage.getItem('mofid-video-admin')||'null');}catch{return null;}}
 export function remember(value){if(!value){draft=null;draftMessage='';}try{if(value)sessionStorage.setItem('mofid-video-admin',JSON.stringify(value));else sessionStorage.removeItem('mofid-video-admin');}catch{}}
-export async function request(action,data={},token){
+export async function request(action,data={},token,{timeout=45000}={}){
   if(BACKEND_MODE==='server'&&action==='draft_import'){
     const latest=await request('bootstrap',{},token),snapshot=await draft?.request('migration_snapshot');
     if(!snapshot)throw Error('پیش‌نویس قابل انتقالی در این مرورگر وجود ندارد.');
@@ -32,7 +32,7 @@ export async function request(action,data={},token){
     if(!draft){const e=Error('دوباره وارد مدیریت شوید.');e.status=401;throw e;}
     return draft.request(action,data);
   }
-  let response;try{response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,data,token}),signal:AbortSignal.timeout(45000),keepalive:['progress_save','logout'].includes(action)});}catch{throw Error('ارتباط با سامانه برقرار نشد؛ اتصال اینترنت را بررسی و دوباره تلاش کنید.');}
+  let response;try{response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,data,token}),signal:AbortSignal.timeout(timeout),keepalive:['progress_save','logout'].includes(action)});}catch{throw Error('ارتباط با سامانه برقرار نشد؛ اتصال اینترنت را بررسی و دوباره تلاش کنید.');}
   let result;try{result=await response.json();}catch{throw Error('پاسخ سامانه خوانده نشد؛ دوباره تلاش کنید.');}
   if(!response.ok||!result.ok){const e=new Error(result.message||'عملیات انجام نشد.');e.code=result.code;e.status=response.status;throw e;}
   if(action==='admin_login'&&hasDraft(result.username)){
