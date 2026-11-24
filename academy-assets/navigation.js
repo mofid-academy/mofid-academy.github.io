@@ -17,7 +17,7 @@
   brand.className = 'academy-navigation-brand';
   brand.href = '/';
   const logo = document.createElement('img');
-  logo.src = '/Academy-Exam/assets/mofid-academy-logo.webp';
+  logo.src = '/Academy-Exam/assets/mofid-academy-logo-small.webp';
   logo.alt = '';
   logo.width = 46;
   logo.height = 46;

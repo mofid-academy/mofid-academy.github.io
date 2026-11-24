@@ -4,7 +4,7 @@ import {fa,esc,uid,lessons,watched,completed,courseProgress,mergeWatch,durationL
 import {icon} from './icons.mjs?v=20261107-player-1';
 import {PLAYBACK_RATES,playbackRate,readPlaybackRate,savePlaybackRate} from './playback.mjs?v=20261107-player-1';
 import {installPublishing} from './publishing-ui.mjs?v=20261104-theme-1';
-import {request,session,remember,VideoUpload} from './client.mjs?v=20261124-entry-1';
+import {request,session,remember,VideoUpload} from './client.mjs?v=20261124-lean-1';
 
 const button=(action,label,ico,cls='',attrs='')=>`<button type="button" class="btn ${cls}" data-action="${action}" ${attrs}>${ico?icon(ico):''}${label}</button>`;
 // Native button version of the referenced rotating-gradient pill; navigation stays delegated.

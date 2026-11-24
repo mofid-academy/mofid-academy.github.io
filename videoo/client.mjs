@@ -1,9 +1,8 @@
-import {openDraft,hasDraft} from './draft-store.mjs?v=20261103-publish-1';
-import {planDraftImport} from './migration.mjs?v=20261103-publish-1';
 export const API='https://siwmzffadbbhcyyppwzn.supabase.co/functions/v1/academy-video-api';
 // The server enforces authentication and publication for both portal roles.
 export const BACKEND_MODE='server';
 const EXISTING_MANAGEMENT_API='https://siwmzffadbbhcyyppwzn.supabase.co/functions/v1/parent-survey-api';
+const draftStore=()=>import('./draft-store.mjs?v=20261103-publish-1');
 let draft,draftMessage='';
 export function session(){try{return JSON.parse(sessionStorage.getItem('mofid-video-admin')||'null');}catch{return null;}}
 export function remember(value){if(!value){draft=null;draftMessage='';}try{if(value)sessionStorage.setItem('mofid-video-admin',JSON.stringify(value));else sessionStorage.removeItem('mofid-video-admin');}catch{}}
@@ -11,6 +10,7 @@ export async function request(action,data={},token,{timeout=45000}={}){
   if(BACKEND_MODE==='server'&&action==='draft_import'){
     const latest=await request('bootstrap',{},token),snapshot=await draft?.request('migration_snapshot');
     if(!snapshot)throw Error('پیش‌نویس قابل انتقالی در این مرورگر وجود ندارد.');
+    const {planDraftImport}=await import('./migration.mjs?v=20261103-publish-1');
     const plan=planDraftImport(latest.catalog.courses,snapshot);
     if(plan.added)await request('catalog_save',{revision:latest.catalog.revision,courses:plan.courses},token);
     for(const progress of plan.progress)await request('progress_save',progress,token);
@@ -21,13 +21,18 @@ export async function request(action,data={},token,{timeout=45000}={}){
     if(action==='admin_login'){
       const r=await fetch(EXISTING_MANAGEMENT_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'admin_login',username:data.username,secret:data.password}),signal:AbortSignal.timeout(30000)});
       const result=await r.json();if(!r.ok||!result.ok){const e=Error(result.message||'نام کاربری یا رمز معتبر نیست.');e.status=r.status;throw e;}
+      const {openDraft}=await draftStore();
       draft=await openDraft(result.username,data.password);
       return {...result,draftKey:draft.exportedKey};
     }
     if(action==='bootstrap'){
       const r=await fetch(EXISTING_MANAGEMENT_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'admin_settings',token}),signal:AbortSignal.timeout(30000)});
       const verified=await r.json();if(!r.ok||verified.ok!==true){const e=Error('نشست مدیریت معتبر نیست؛ دوباره وارد شوید.');e.status=r.status;throw e;}
-      const stored=session();if(!draft&&stored?.draftKey)draft=await openDraft(stored.username,undefined,stored.draftKey);
+      const stored=session();
+      if(!draft&&stored?.draftKey){
+        const {openDraft}=await draftStore();
+        draft=await openDraft(stored.username,undefined,stored.draftKey);
+      }
     }
     if(!draft){const e=Error('دوباره وارد مدیریت شوید.');e.status=401;throw e;}
     return draft.request(action,data);
@@ -35,12 +40,15 @@ export async function request(action,data={},token,{timeout=45000}={}){
   let response;try{response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,data,token}),signal:AbortSignal.timeout(timeout),keepalive:['progress_save','logout'].includes(action)});}catch{throw Error('ارتباط با سامانه برقرار نشد؛ اتصال اینترنت را بررسی و دوباره تلاش کنید.');}
   let result;try{result=await response.json();}catch{throw Error('پاسخ سامانه خوانده نشد؛ دوباره تلاش کنید.');}
   if(!response.ok||!result.ok){const e=new Error(result.message||'عملیات انجام نشد.');e.code=result.code;e.status=response.status;throw e;}
-  if(action==='admin_login'&&hasDraft(result.username)){
-    try{draft=await openDraft(result.username,data.password);result.draftKey=draft.exportedKey;draftMessage='';}
-    catch{draftMessage='پیش‌نویس قبلی این مرورگر با رمز فعلی باز نشد. نسخهٔ رمزگذاری‌شده حفظ شده است.';}
+  if(action==='admin_login'){
+    try{
+      const {hasDraft,openDraft}=await draftStore();
+      if(hasDraft(result.username)){draft=await openDraft(result.username,data.password);result.draftKey=draft.exportedKey;draftMessage='';}
+    }catch{draftMessage='پیش‌نویس قبلی این مرورگر با رمز فعلی باز نشد. نسخهٔ رمزگذاری‌شده حفظ شده است.';}
   }
   if(action==='bootstrap'&&result.role!=='student'){
     const stored=session();
+    const {hasDraft,openDraft}=await draftStore();
     if(!draft&&stored?.draftKey&&hasDraft(result.username)){
       try{draft=await openDraft(result.username,undefined,stored.draftKey);}catch{draftMessage='برای بازیابی پیش‌نویس مرورگر، یک بار خارج و دوباره وارد شوید.';}
     }

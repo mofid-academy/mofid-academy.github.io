@@ -1,6 +1,6 @@
 /* Mofid entry surfaces: the previous mint palette blended with Sfondo centrafit 2.
    Liquid-metal motion remains on the home links; the sign-in card has no sweeping light. */
-@font-face{font-family:"Pinar VF";src:url('/Academy-Exam/assets/Pinar-VF.woff') format('woff');font-weight:300 900;font-display:swap}
+@font-face{font-family:"Pinar VF";src:url('/Academy-Exam/assets/Pinar-VF.woff2') format('woff2'), url('/Academy-Exam/assets/Pinar-VF.woff') format('woff');font-weight:300 900;font-display:swap}
 html[data-mofid-entry]{color-scheme:light;--entry-ink:#164d3b;--entry-muted:#58776a;--entry-mint:#e1f4e8;--entry-teal:#0f7c72;--entry-sky:#d0e9f0}
 html[data-mofid-entry] body{margin:0;min-height:100svh;position:relative;isolation:isolate;overflow-x:hidden;background:#f2faf5!important;color:var(--entry-ink);font-family:"Pinar VF",Pinar,Tahoma,sans-serif}
 .mofid-entry-background{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;background:linear-gradient(145deg,#f7fcf9,#e9f5ed 55%,#effaf8)}

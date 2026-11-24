@@ -1,4 +1,4 @@
-import {request} from './client.mjs?v=20261124-entry-1';
+import {request} from './client.mjs?v=20261124-lean-1';
 
 const storageKey = 'mofid-video-student-v1';
 const root = document.getElementById('videoApp');
@@ -107,8 +107,9 @@ async function openLibrary(initialSession) {
 
   try {
     const [{VideoApp}, catalogue] = await Promise.all([
-      import('./app.mjs?v=20261124-entry-1'),
+      import('./app.mjs?v=20261124-lean-1'),
       api('bootstrap', {}, {timeout: 15000}),
+      window.AcademyWorkspaceStyle?.loadStyles(),
     ]);
     app = new VideoApp({
       root, api, username: session.username, studentMode: true,
@@ -122,6 +123,7 @@ async function openLibrary(initialSession) {
       },
     });
     await app.load(catalogue);
+    window.AcademyWorkspaceStyle?.decorateWorkspace();
   } catch (e) {
     if (e.status !== 401 && e.code !== 'NOT_RELEASED') {
       login(e.message || 'ویدیوها بارگیری نشدند. دوباره تلاش کنید.');
