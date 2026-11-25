@@ -35,7 +35,7 @@
   const modules = [
     ['home', '/', 'خانه'],
     ['studio', '/learning-studio/', 'مفید استودیو'],
-    ['exam', '/Academy-Exam/', 'آزمون‌ها'],
+    ['exam', 'https://mofid-academy.github.io/Academy-Exam/', 'آزمون‌ها'],
     ['videos', '/videoo/', 'ویدیوهای آموزشی']
   ];
   const protectCurrentPage = section === 'exam';
