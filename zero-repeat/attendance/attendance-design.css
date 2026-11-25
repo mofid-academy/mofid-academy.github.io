@@ -41,9 +41,7 @@
 .entry-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .entry-icon { display: flex; align-items: center; justify-content: center; width: 43px; height: 43px; border-radius: 13px; background: #f3f6f1; border: 1px solid #e6ece4; color: #5a7d68; }
 .entry-icon svg { width: 23px; height: 23px; }
-.entry-step { font-size: 9px; color: #88998d; background: #f7f9f5; border: 1px solid #e8eee5; padding: 6px 10px; border-radius: 7px; }
-.entry-card h2 { font-size: 24px; letter-spacing: -.7px; margin-bottom: 8px; }
-.entry-card .card-caption { font-size: 10px; color: #859589; line-height: 2; margin-bottom: 25px; }
+.entry-card h2 { font-size: 24px; letter-spacing: -.7px; margin-bottom: 24px; }
 .entry-card .name-fields { gap: 15px; align-items: start; }
 .entry-card .field { gap: 9px; font-size: 10px; }
 .entry-card .field input { height: 48px; border-radius: 11px; border-color: #dfe7dd; box-shadow: 0 1px 3px #304a2e04, inset 0 1px 1px #fff; background: #fbfcfa; font-size: 12px; }
@@ -51,19 +49,15 @@
 .entry-card .field > small { font-size: 8px; line-height: 1.8; font-weight: 400; color: #9aa69d; margin-top: -3px; }
 .entry-card .required { color: #af735b; }
 .entry-card .mode-fieldset { margin-top: 24px; margin-bottom: 23px; }
-.entry-card .mode-fieldset legend { font-size: 11px; }
+.entry-card .mode-fieldset legend { font-size: 12px; line-height: 1.9; }
 .entry-card .mode-options { gap: 12px; }
-.entry-card .mode-card { border: 1px solid #e0e7dd; border-radius: 15px; padding: 17px 16px; background: linear-gradient(150deg, #ffffff, #f8faf5); box-shadow: 0 2px 4px #26432d04; transition: border-color .2s, background .2s, box-shadow .2s, transform .2s; }
-.entry-card .mode-top { margin-bottom: 13px; }
-.entry-card .mode-icon { color: #719781; }
-.entry-card .mode-icon svg { width: 27px; height: 27px; }
-.entry-card .radio-mark { width: 17px; height: 17px; border-color: #c5d1c5; box-shadow: inset 0 1px 2px #234d3010; }
-.entry-card .mode-card strong { font-size: 16px; margin-bottom: 6px; }
-.entry-card .mode-caption { font-size: 8px; color: #8a9b8c; line-height: 2; }
+.entry-card .mode-card { display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid #e0e7dd; border-radius: 15px; padding: 17px 16px; background: linear-gradient(150deg, #ffffff, #f8faf5); box-shadow: 0 2px 4px #26432d04; transition: border-color .2s, background .2s, box-shadow .2s, transform .2s; }
+.entry-card .mode-option input { top: calc(50% - 10px); left: 16px; }
+.entry-card .radio-mark { flex: 0 0 17px; height: 17px; border-color: #a6baab; box-shadow: inset 0 1px 2px #234d3010; }
+.entry-card .mode-card strong { font-size: 13px; line-height: 1.9; margin: 0; }
 .entry-card .mode-option:hover .mode-card { transform: translateY(-2px); border-color: #93b59e; box-shadow: 0 6px 16px #4465400a; }
 .entry-card .mode-option input:checked + .mode-card { border-color: #7da68a; background: linear-gradient(145deg, #eaf5e9, #f4f9f0); box-shadow: inset 0 0 0 1px #7da68a, 0 4px 12px #476c4208; }
 .entry-card .mode-option input:checked + .mode-card .radio-mark { border: 5px solid #4f8b68; box-shadow: none; }
-.entry-card .mode-option input:checked + .mode-card .mode-icon { color: #4f8b68; }
 .gradient-button {
   position: relative;
   isolation: isolate;
@@ -137,8 +131,7 @@
   .entry-card .field input { height: 49px; }
   .entry-card .mode-fieldset { margin-top: 25px; }
   .entry-card .mode-card { padding: 17px 14px; }
-  .entry-card .mode-card strong { font-size: 17px; }
-  .entry-card .mode-caption { font-size: 9px; }
+  .entry-card .mode-card strong { font-size: 12px; }
 }
 @media (max-width: 370px) {
   .attendance-page .header-label { font-size: 8px; padding: 7px 9px; }
@@ -148,18 +141,10 @@
   .entry-card h2 { font-size: 21px; }
   .entry-card .mode-options { gap: 10px; }
   .entry-card .mode-card { padding: 16px 11px; }
-  .entry-card .mode-caption { font-size: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .attendance-page *, .attendance-page *::before, .attendance-page *::after { animation: none !important; transition: none !important; }
 }
 @media (forced-colors: active) { .gradient-button::before, .gradient-button::after { display: none; } }
-.capacity-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: -3px 0 14px; color: #718777; font-size: 10px; }
-.capacity-heading button { border: 0; background: transparent; color: #356a50; font-size: 9px; padding: 4px 0; text-decoration: underline; text-underline-offset: 4px; }
-.capacity-badge { display: inline-block; margin-top: 11px; padding: 4px 8px; border-radius: 6px; background: #e9f2e8; color: #5c8465; font-size: 9px; line-height: 1.8; }
-.capacity-message { margin: 12px 0 0; padding: 10px 12px; border: 1px solid #e3e9e0; border-radius: 9px; background: #f7faf5; color: #748570; font-size: 10px; line-height: 2; }
-.capacity-message.is-full { background: #faf4e7; border-color: #ece0c8; color: #836c36; }
 .entry-card .mode-option:has(input:disabled) { cursor: not-allowed; }
 .entry-card .mode-option input:disabled + .mode-card { background: #f3f5f2; border-color: #e0e5dd; box-shadow: none; color: #8e9a8e; transform: none; }
-.entry-card .mode-option input:disabled + .mode-card .mode-icon { color: #a1b1a1; }
-.entry-card .mode-option.capacity-full .capacity-badge { background: #ebece7; color: #8c947f; }

@@ -1,0 +1,15 @@
+.mentor-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.mentor-stats .stat { gap: 12px; }
+.mentor-stats .stat:nth-child(4) { background: #f6f1e4; }
+.filters .filter-input { min-width: min(100%, 220px); }
+.mentor-pending { color: #736038; }
+.response-actions { display: flex; align-items: center; gap: 7px; }
+.response-actions .button { min-height: 36px; padding: 6px 11px; }
+.table-wrap:focus-visible { outline: 2px solid #137a68; outline-offset: 3px; }
+.assignment-dialog { width: min(100% - 32px, 450px); color: var(--ink); }
+.assignment-dialog::backdrop { background: #153c3580; }
+#assignment-participant { margin: 9px 0 20px; color: #587166; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.dialog-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+@media (max-width: 760px) {
+  .mentor-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
