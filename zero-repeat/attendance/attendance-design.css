@@ -117,8 +117,7 @@
   .attendance-layout { grid-template-columns: 1fr; gap: 20px; }
   .course-card { display: grid; grid-template-columns: 1fr 118px; column-gap: 15px; align-items: start; padding: 21px; border-radius: 24px; }
   .course-meta { grid-column: 1 / -1; margin-bottom: 17px; }
-  .course-art { grid-column: 2; grid-row: 2 / 5; margin: 0; align-self: stretch; display: flex; align-items: center; border-radius: 16px; }
-  .course-art img { width: 165%; max-width: none; margin-right: -32%; }
+  .course-art { grid-column: 2; grid-row: 2 / 5; margin: 0; align-self: center; border-radius: 16px; }
   .attendance-page .intro .eyebrow { font-size: 8px; margin-bottom: 6px; }
   .attendance-page .intro h1 { font-size: 17px; margin-bottom: 4px; }
   .attendance-page .intro h1 bdi { font-size: 23px; letter-spacing: -.8px; }
