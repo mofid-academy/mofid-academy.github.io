@@ -35,7 +35,7 @@ export function normalizeFilters(data={}){
   return out;
 }
 export function normalizeCatalog(catalog){
-  if(!Array.isArray(catalog)||catalog.length!==DEFAULT_CATALOG.length)fail('هر سه دوره باید در فهرست باشند.');
+  if(!Array.isArray(catalog)||catalog.length!==DEFAULT_CATALOG.length)fail('همهٔ دوره‌ها باید در فهرست باشند.');
   return DEFAULT_CATALOG.map(base=>{const c=catalog.find(c=>c?.id===base.id);if(!c||typeof c.is_open!=='boolean')fail('تنظیمات دوره معتبر نیست.');
     const list=k=>{if(!Array.isArray(c[k])||c[k].length>200)fail('فهرست مدرس یا کلاس معتبر نیست.');return [...new Set(c[k].map(v=>clean(v,k==='classes'?200:140,true)))];};
     return {id:base.id,label:clean(c.label,100,true),team_name:clean(c.team_name,100,true),is_open:c.is_open,class_required:base.id!=='19',instructors:list('instructors'),classes:list('classes')};});
@@ -49,7 +49,7 @@ export function createApi({db,config,now=Date.now,schedule=()=>{}}){
   return {sign,verify,async handle(body,{ip='unknown'}={}){
     if(!body||typeof body!=='object'||Array.isArray(body))fail('درخواست معتبر نیست.');
     const {action}=body;
-    if(action==='health'){const s=await db('settings');return {ok:true,ready:!!s,version:'instructor-survey/4'};}
+    if(action==='health'){const s=await db('settings');return {ok:true,ready:!!s,version:'instructor-survey/5'};}
     if(action==='config'){const s=await db('settings');if(!s)fail('تنظیمات فرم در دسترس نیست.',503);return {ok:true,survey_id:SURVEY_ID,settings:{is_open:s.is_open,catalog:s.catalog}};}
     if(action==='admin_login'){await gate('login',ip,12,15);const secret=body.secret;if(typeof secret!=='string'||secret.length>256||clean(body.username,64).toLowerCase()!==username||!equal(hash(secret),config.adminKeyHash))fail('نام کاربری یا رمز مدیریت معتبر نیست.',401);return {ok:true,token:sign(),expires_at:new Date(now()+7200000).toISOString()};}
     if(action==='submit'||action==='admin_test_submit'){

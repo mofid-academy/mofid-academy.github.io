@@ -2,7 +2,7 @@
 create table if not exists public.instructor_survey_settings(id text primary key,is_open boolean not null default true,updated_at timestamptz not null default now());
 insert into public.instructor_survey_settings(id) values('main') on conflict do nothing;
 create table if not exists public.instructor_survey_responses(
-  id uuid primary key,created_at timestamptz not null default now(),academy text not null check(academy in('call-center','19','20')),
+  id uuid primary key,created_at timestamptz not null default now(),academy text not null,
   team_name text not null check(length(team_name) between 1 and 100),organizational_name text not null check(length(organizational_name) between 1 and 120),
   instructor_name text not null check(length(instructor_name) between 1 and 140),course_title text not null default '' check(length(course_title)<=200),
   teaching_score smallint not null check(teaching_score between 1 and 5),interaction_score smallint not null check(interaction_score between 1 and 5),
@@ -16,12 +16,29 @@ alter table public.instructor_survey_responses
   add column if not exists request_hash text,
   add column if not exists is_test boolean not null default false,
   add column if not exists deleted_at timestamptz;
+
+alter table public.instructor_survey_responses
+  drop constraint if exists instructor_survey_responses_academy_check,
+  add constraint instructor_survey_responses_academy_check
+    check (academy in ('call-center', '19', '20', '21'));
+
 alter table public.instructor_survey_settings add column if not exists catalog jsonb not null default '[]'::jsonb;
 update public.instructor_survey_settings set catalog='[
  {"id":"call-center","label":"مرکز تماس","team_name":"دوره‌های آموزشی مرکز تماس","is_open":true,"instructors":["رضوان زکریا","محمدرضا داودآبادی","مریم سلطانی","سمیعی","نفیسه هاشمی","زهرا کوکبی"],"classes":["پیگیری ثبت نام و اکانت حقیقی","پیگیری اعتبار و تقاضای وجه","پیگیری دارایی","طرح حامی","اپ مفید","پیگیری معاملات آپشن"]},
  {"id": "19", "label": "آکادمی ۱۹", "team_name": "آکادمی دوره نوزدهم", "is_open": true, "class_required": false, "instructors": ["امیرحسین عباسی", "محمد میثاق فتوگرافی", "فاطمه شمسی", "آرمین شفیع‌نژاد", "مرجان مهردل", "کامبیز گروسیان", "ملیکا سینایی", "نازنین قاسمی", "نگین قاسمی", "رویا قلاوند", "مصطفی زارع", "مرجان محمدهاشم", "فائزه منور", "سجاد زعفرانی", "علیرضا صفایی", "حدیث برزگر", "محمد نظیری", "فرخنده رحیمی", "ریحانه نوروزی زاده", "علی حصارخانی", "سارا کریمی", "مینا حبیب اله", "مهدی حائری", "محمدرضا شهاب", "عطیه خوش طینت", "صبا حائری", "دانیال حسن بیگی", "پیام رحیمی", "حسین باقری", "الهه نصیری", "پارسا هاشمی", "مریم سخنگو", "بهزاد فرهمندپور", "محدثه بهشتی نژاد", "سجاد علیرضایی", "حامد ستاری", "حسن مرادآبادی"], "classes": ["ساختار بازار سرمایه و معاملات آتی", "مراحل ثبت نام، انجام ثبت نام در کارگزاری مفید", "سامانه ذینفعان", "قوانین معاملاتی و رضایت مشتریان", "آشنایی با عرضه اولیه و پذیره نویسی", "tsetmc و کدال", "تفاوت و توقف نمادها", "معرفی سایت های بورسی", "تخلف های معاملاتی", "معرفی سامانه های معاملاتی", "اوراق تبعی", "انواع مجامع", "افزایش سرمایه", "آموزش n8n", "صندوق حامی", "پرتفوی عملکرد", "ثبت‌نام بورس کالا", "انواع روش های سرمایه گذاری و صندوق ها 1", "پنل فینس و ثبت تیکت", "اوراق درامد ثابت و بدهی و اکسل", "فلوچارت دارایی و ادمین ها", "فلوچارت سفارشات و ادمین ها", "مفید کارت و جت کارت", "اختیار معاملات", "مهارت نرم ورودی و سمپل تماس", "انواع روش های سرمایه گذاری و صندوق ها 3", "فلوچارت ثبت نام - ادمین رج و اکانت", "DISC و HOLLAND", "آشنایی با kpi های مرکز تماس", "آموزش بورس ویو", "پلکان و اعتبار و فلوچارت و ادمین ها", "فرایند های پایش", "معرفی مسیرهای شغلی", "تحلیل بنیادی", "آموزش چت", "آموزش چارگون", "سامانه ی گذر", "آموزش حامی"]},
  {"id": "20", "label": "آکادمی ۲۰", "team_name": "آکادمی دوره بیستم", "is_open": true, "class_required": true, "instructors": ["حدیث برزگر", "سارا کریمی", "نگین قاسمی", "علیرضا صفایی", "کامبیز گروسیان", "فائزه منور", "فرخنده رحیمی", "ریحانه نوروزی زاده", "محمدرضا شهاب", "محمد نظیری", "علی حصارخانی", "مینا حبیب اله"], "classes": ["پرتفوی عملکرد", "فلوچارت دارایی و ادمین ها", "تخلف های معاملاتی", "انواع مجامع و حامی", "اوراق تبعی", "افزایش سرمایه", "انواع روش های سرمایه گذاری و صندوق ها 1", "پنل فینس و ثبت تیکت", "اختیار معاملات", "ثبت‌نام بورس کالا", "اکسل 1", "فلوچارت سفارشات و ادمین ها"]}
 ]'::jsonb where id='main' and catalog='[]'::jsonb;
+
+update public.instructor_survey_settings as settings
+set catalog = settings.catalog || '[{"id":"21","label":"آکادمی ۲۱","team_name":"آکادمی دوره بیست‌ویکم","is_open":true,"class_required":true,"instructors":[],"classes":[]}]'::jsonb,
+    updated_at = now()
+where settings.id = 'main'
+  and not exists (
+    select 1
+    from jsonb_array_elements(settings.catalog) as academies(course)
+    where course->>'id' = '21'
+  );
+
 alter table public.instructor_survey_responses enable row level security;
 alter table public.instructor_survey_settings enable row level security;
 alter table public.instructor_survey_rate_limits enable row level security;

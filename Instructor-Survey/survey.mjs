@@ -1,4 +1,4 @@
-import {QUESTIONS,SCORE_QUESTIONS,SURVEY_ID,DEFAULT_CATALOG,academyLabel,answerProvided} from './questions.mjs?v=20261031.3-instructor';
+import {QUESTIONS,SCORE_QUESTIONS,SURVEY_ID,DEFAULT_CATALOG,academyLabel,answerProvided} from './questions.mjs?v=20261128.1-instructor';
 import {api,fa,esc,dateFa,icons,initTheme} from './shared.mjs?v=20261031.3-instructor';
 import {mountQuestionEffects} from './question-effects.mjs?v=20261031.3-instructor';
 initTheme();
